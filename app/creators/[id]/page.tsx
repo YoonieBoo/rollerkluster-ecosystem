@@ -1,0 +1,359 @@
+'use client';
+
+import { useMemo } from 'react';
+import { Sidebar } from '@/components/sidebar';
+import { useApp } from '@/lib/app-context';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Briefcase, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, ShieldCheck, Sparkles, Star, Users } from 'lucide-react';
+import { formatCompact, initials, statusLabel, statusTone } from '@/lib/platform-utils';
+import { cn } from '@/lib/utils';
+import { getMonthYear, isSubmissionApproved, submissionStatusLabel } from '@/lib/creator-performance';
+import type { Creator, CreatorEvaluation, Submission } from '@/lib/mock-data';
+import { RankBadge, RankBadgeIcon } from '@/components/rank-badge';
+import { getCreatorMonthlyPerformance, getCreatorMonthlySubmissionsForDisplay } from '@/lib/creator-performance-source';
+import { useUiStore } from '@/lib/ui-store';
+
+export default function CreatorProfile() {
+  const { creators, engagements, campaigns, submissions } = useApp();
+  const { creatorInvitationStatus } = useUiStore();
+  const params = useParams();
+  const creatorId = params.id as string;
+
+  const creator = creators.find(c => c.id === creatorId);
+  const creatorEngagements = engagements.filter(e => e.creatorId === creatorId);
+  const { month, year } = getMonthYear();
+  const creatorSubmissions = getCreatorMonthlySubmissionsForDisplay(creatorId, submissions, month, year);
+  const approvedSubmissions = creatorSubmissions.filter(isSubmissionApproved);
+
+  const campaignReliability = creator ? Math.min(100, creator.approvalRate + creator.completedEngagements) : 0;
+  const completionRate = creatorEngagements.length
+    ? Math.round((creatorEngagements.filter(e => e.status === 'completed').length / creatorEngagements.length) * 100)
+    : creator?.completedEngagements ? 92 : 0;
+  const complianceScore = creator?.verified ? 98 : 86;
+  const audienceQuality = creator ? Math.round((creator.contentQualityScore / 5) * 100) : 0;
+  const totalFollowers = useMemo(
+    () => creator?.platforms.reduce((sum, platform) => sum + platform.followers, 0) ?? 0,
+    [creator],
+  );
+  const rankState = creator ? getCreatorMonthlyPerformance(creator, submissions, campaigns, month, year) : undefined;
+  const primaryPlatform = creator?.platforms[0];
+  const creatorTitle = `${rankState?.currentRank ?? 'Bronze I'} Campus Creator`;
+  const contentStyles = ['Campus storytelling', 'Short-form video', 'Student lifestyle', 'Brand-safe captions'];
+  const brandFitTags = [creator?.niche ?? 'Creator', 'Campus culture', 'Scholarship programs', 'Student engagement', 'University events'].filter(Boolean);
+  const acceptedCampusInvitation = creator?.id === 'creator-2' && creatorInvitationStatus === 'accepted';
+
+  if (!creator) {
+    return (
+      <div className="flex h-screen ecosystem-shell">
+        <Sidebar />
+        <main className="flex-1 overflow-auto">
+          <div className="p-8 text-center text-muted-foreground">Creator not found</div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen ecosystem-shell">
+      <Sidebar />
+      <main className="flex-1 overflow-auto">
+        <div className="page-wrap">
+          <Link href="/creators" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+            <ArrowLeft className="size-4" />
+            Back to Creator Discovery
+          </Link>
+
+          <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+            <aside className="space-y-5">
+              <section className="panel overflow-hidden">
+                <div className="relative bg-muted">
+                  <div className="aspect-[4/5] w-full bg-[linear-gradient(145deg,#dbeafe,#f8fafc)]">
+                    {creator.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={creator.avatar} alt={creator.name} className="size-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="flex size-28 items-center justify-center rounded-full bg-primary text-4xl font-semibold text-white shadow-sm">
+                          {initials(creator.name)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute bottom-4 left-4">
+                    <RankBadge rank={rankState?.currentRank ?? 'Bronze I'} className="bg-white/95" />
+                  </div>
+                </div>
+                <div className="space-y-5 p-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Category</p>
+                    <p className="mt-1 text-sm font-semibold">{creator.niche}</p>
+                  </div>
+                  <ProfileInfo icon={<MapPin className="size-4" />} label="University" value="Assumption University" />
+                  <ProfileInfo icon={<Users className="size-4" />} label="Followers" value={formatCompact(totalFollowers)} />
+                  <ProfileInfo icon={<Star className="size-4" />} label="Engagement Rate" value={`${creator.engagementRate}%`} />
+                  <ProfileInfo icon={<Sparkles className="size-4" />} label="Content Style" value={contentStyles.slice(0, 2).join(', ')} />
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Platforms</p>
+                    <div className="mt-3 space-y-2">
+                      {creator.platforms.map(platform => (
+                        <div key={platform.name} className="rounded-[10px] border border-border bg-muted/35 p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold">{platform.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">{platform.handle}</p>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">{formatCompact(platform.followers)} followers</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Contact / Social</p>
+                    <div className="mt-3 grid gap-2">
+                      <a className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href={`mailto:${primaryPlatform?.handle.replace('@', '') || 'creator'}@rollerkluster.com`}>
+                        <Mail className="size-4" />
+                        Message creator
+                      </a>
+                      {primaryPlatform && (
+                        <a className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href="#" onClick={(event) => event.preventDefault()}>
+                          <ExternalLink className="size-4" />
+                          {primaryPlatform.handle}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </aside>
+
+            <section className="space-y-5">
+              <section className="panel p-6">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="page-title">{creator.name}</h1>
+                      {creator.verified && <CheckCircle2 className="size-5 text-primary" />}
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-primary">{creatorTitle}</p>
+                    <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">{creator.bio}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" className="border-border bg-white">
+                      <Mail className="size-4" />
+                      Message
+                    </Button>
+                    <Button className="bg-primary text-white">
+                      <Briefcase className="size-4" />
+                      Invite to Campaign
+                    </Button>
+                    <Button variant="outline" size="icon" className="border-border bg-white">
+                      <MoreHorizontal className="size-4" />
+                      <span className="sr-only">More options</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-4">
+                  <PortfolioStat label="Creator Score" value={creator.reputationScore} />
+                  <PortfolioStat label="Approved Content" value={rankState?.totalContentApproved ?? approvedSubmissions.length} />
+                  <PortfolioStat label="Monthly Views" value={formatCompact(rankState?.totalViews ?? 0)} />
+                  <PortfolioStat label="Campaign Fit" value={`${campaignReliability}%`} />
+                </div>
+              </section>
+
+              <section className="grid gap-5 lg:grid-cols-[1fr_300px]">
+                <div className="panel p-5">
+                  <h2 className="section-heading">Performance Summary</h2>
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    <ScoreBlock label="Audience quality" value={audienceQuality} />
+                    <ScoreBlock label="Reliability" value={campaignReliability} />
+                    <ScoreBlock label="Readiness" value={complianceScore} />
+                  </div>
+                  <div className="mt-5 space-y-3">
+                    <TimelineItem icon={<RankBadgeIcon rank={rankState?.currentRank ?? 'Bronze I'} className="size-5" />} title={`Current rank: ${rankState?.currentRank ?? 'Bronze I'}`} detail={`${rankState?.rankProgressPercentage ?? 0}% progress toward next creator milestone`} />
+                    <TimelineItem icon={<ShieldCheck className="size-4" />} title="Verification status" detail={creator.verified ? 'Identity, portfolio, and platform presence approved.' : 'Verification pending profile review.'} />
+                  </div>
+                </div>
+
+                <div className="panel p-5">
+                  <h2 className="section-heading">Brand Fit Tags</h2>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {brandFitTags.map(tag => <Badge key={tag} variant="secondary" className="rounded-full">{tag}</Badge>)}
+                  </div>
+                  <h3 className="mt-6 text-sm font-semibold">Skills / Categories</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {contentStyles.map(style => <Badge key={style} variant="outline" className="rounded-full border-border bg-white">{style}</Badge>)}
+                  </div>
+                </div>
+              </section>
+
+              <section className="panel overflow-hidden">
+                <div className="border-b border-border px-5 py-4">
+                  <h2 className="section-heading">Work / Campaign History</h2>
+                  <p className="section-subtitle">Campaign participation and collaboration status.</p>
+                </div>
+                <div className="divide-y divide-border">
+                  {acceptedCampusInvitation && (
+                    <div className="grid gap-3 px-5 py-4 md:grid-cols-[1fr_auto] md:items-center">
+                      <div>
+                        <p className="text-sm font-semibold">AU Creator Campus Program 2026</p>
+                        <p className="text-xs text-muted-foreground">Assumption University Student Affairs Office · Campus creator campaign</p>
+                      </div>
+                      <Badge variant="outline" className="w-fit rounded-full border-blue-200 bg-blue-50 text-blue-700">Accepted</Badge>
+                    </div>
+                  )}
+                  {creatorEngagements.length === 0 && !acceptedCampusInvitation ? (
+                    <div className="p-5 text-sm text-muted-foreground">No campaign history yet.</div>
+                  ) : creatorEngagements.map(engagement => {
+                    const campaign = campaigns.find(item => item.id === engagement.campaignId);
+                    return (
+                      <Link key={engagement.id} href={`/campaigns/${campaign?.id}`} className="grid gap-3 px-5 py-4 transition hover:bg-muted/35 md:grid-cols-[1fr_auto] md:items-center">
+                        <div>
+                          <p className="text-sm font-semibold">{campaign?.title ?? 'Campaign'}</p>
+                          <p className="text-xs text-muted-foreground">{campaign?.brand ?? 'Brand'} · {engagement.matchScore}% fit score</p>
+                        </div>
+                        <Badge variant="outline" className={cn('w-fit rounded-full', statusTone(engagement.status))}>{statusLabel(engagement.status)}</Badge>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="panel overflow-hidden">
+                <div className="border-b border-border px-5 py-4">
+                  <h2 className="section-heading">Approved Content Examples</h2>
+                  <p className="section-subtitle">Published work that has passed review.</p>
+                </div>
+                <ApprovedContentList submissions={approvedSubmissions} campaigns={campaigns} />
+              </section>
+
+              <section className="panel overflow-hidden">
+                <div className="border-b border-border px-5 py-4">
+                  <h2 className="section-heading">Performance Notes</h2>
+                  <p className="section-subtitle">Review notes from completed engagements.</p>
+                </div>
+                <ReviewList creator={creator} />
+              </section>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function ProfileInfo({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex gap-3 rounded-[10px] border border-border bg-white p-3">
+      <div className="mt-0.5 text-primary">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
+        <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function PortfolioStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-[12px] border border-border bg-muted/35 p-4">
+      <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-normal text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function ScoreBlock({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="panel-muted p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="text-sm font-bold">{value}%</p>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, value)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function ApprovedContentList({ submissions, campaigns }: { submissions: Submission[]; campaigns: { id: string; title: string; brand: string }[] }) {
+  if (submissions.length === 0) {
+    return <div className="p-5 text-sm text-muted-foreground">No approved content has been recorded yet.</div>;
+  }
+
+  return (
+    <div className="divide-y divide-border">
+      {submissions.map((submission) => {
+        const campaign = campaigns.find(item => item.id === submission.campaignId);
+        return (
+          <a key={submission.id} href={submission.contentUrl ?? submission.link} target="_blank" rel="noreferrer" className="grid gap-3 px-5 py-4 transition hover:bg-muted/35 md:grid-cols-[1fr_auto] md:items-center">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="truncate text-sm font-semibold">{submission.title}</p>
+                <Badge variant="outline" className={cn('rounded-full', statusTone(submission.status))}>{submissionStatusLabel(submission.status)}</Badge>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{campaign?.brand ?? 'Brand'} · {campaign?.title ?? 'Campaign'} · {submission.platform ?? 'Content'}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-right text-xs text-muted-foreground md:min-w-[220px]">
+              <span>{(submission.views ?? 0).toLocaleString()} views</span>
+              <span>{(submission.impressions ?? 0).toLocaleString()} impressions</span>
+              <span>{submission.engagementRate ?? 0}% ER</span>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReviewList({ creator }: { creator: Creator }) {
+  if (creator.evaluations.length === 0) {
+    return <div className="p-5 text-sm text-muted-foreground">No engagement evaluations have been recorded yet.</div>;
+  }
+
+  return (
+    <div className="divide-y divide-border">
+      {creator.evaluations.map((evaluation: CreatorEvaluation) => (
+        <div key={evaluation.id} className="p-5">
+          <div className="mb-3 flex items-start justify-between">
+            <div>
+              <p className="text-sm font-semibold">Engagement evaluation</p>
+              <p className="text-xs text-muted-foreground">{new Date(evaluation.evaluatedAt).toLocaleDateString()} · {evaluation.evaluatedBy}</p>
+            </div>
+            <Badge variant="secondary" className="rounded-full">Manager rated</Badge>
+          </div>
+          <div className="grid gap-2 md:grid-cols-5">
+            {[
+              ['Content', evaluation.contentQuality],
+              ['Communication', evaluation.communication],
+              ['Deadline', evaluation.deadlineCompletion],
+              ['Professionalism', evaluation.professionalism],
+              ['Campaign fit', evaluation.campaignFit],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-[10px] bg-muted/45 p-3">
+                <p className="text-[11px] font-semibold uppercase text-muted-foreground">{label}</p>
+                <p className="mt-1 text-sm font-semibold">{value}/5</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 rounded-[10px] border border-border bg-white p-3 text-sm text-muted-foreground">{evaluation.notes}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TimelineItem({ icon, title, detail }: { icon: React.ReactNode; title: string; detail: string }) {
+  return (
+    <div className="flex gap-3 rounded-[12px] border border-border bg-white p-3">
+      <div className="flex size-8 items-center justify-center rounded-full bg-blue-50 text-primary">{icon}</div>
+      <div>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="text-xs leading-5 text-muted-foreground">{detail}</p>
+      </div>
+    </div>
+  );
+}

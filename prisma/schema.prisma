@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CreatorStatus {
+  pending
+  approved
+  rejected
+  suspended
+}
+
+enum CampaignStatus {
+  draft
+  open
+  in_progress
+  completed
+}
+
+enum EngagementStatus {
+  matched
+  in_discussion
+  active
+  completed
+  declined
+}
+
+enum CreatorSubmissionPlatform {
+  Instagram
+  TikTok
+  Facebook
+}
+
+enum CreatorSubmissionStatus {
+  pending_review
+  approved
+  needs_changes
+  rejected
+}
+
+enum CreatorPerformanceRank {
+  bronze_i
+  bronze_ii
+  bronze_iii
+  bronze_iv
+  silver_i
+  silver_ii
+  silver_iii
+  silver_iv
+  gold_i
+  gold_ii
+  gold_iii
+  gold_iv
+  platinum
+}
+
+enum CreatorTier {
+  bronze
+  bronze_ii
+  bronze_iii
+  silver
+  gold
+  platinum
+  top_performer
+}
+
+model Creator {
+  id                   String              @id @default(cuid())
+  name                 String
+  handle               String              @unique
+  bio                  String
+  niche                String
+  avatarUrl            String?
+  tier                 CreatorTier         @default(bronze)
+  creatorRank          String              @default("Bronze I") @map("creator_rank")
+  verified             Boolean             @default(false)
+  approvalStatus       CreatorStatus       @default(pending)
+  reputationScore      Int                 @default(0)
+  engagementRate       Float               @default(0)
+  contentQualityScore  Float               @default(0)
+  campaignReliability  Int                 @default(0)
+  completionRate       Int                 @default(0)
+  complianceScore      Int                 @default(100)
+  responseTimeHours    Int                 @default(24)
+  audienceQualityScore Int                 @default(0)
+  joinedAt             DateTime            @default(now())
+  platforms            CreatorPlatform[]
+  engagements          Engagement[]
+  evaluations          CreatorEvaluation[]
+  trainingProgress     TrainingProgress[]
+  submissions          CreatorSubmission[]
+  monthlyReports       CreatorMonthlyReport[]
+  rankHistory          CreatorRankHistory[]
+  scholarshipHourLogs  ScholarshipHourLog[]
+}
+
+model CreatorPlatform {
+  id         String  @id @default(cuid())
+  creatorId String
+  name       String
+  handle     String
+  followers  Int
+  creator    Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id              String       @id @default(cuid())
+  title           String
+  description     String
+  brand           String
+  budget          Int
+  spent           Int          @default(0)
+  startDate       DateTime
+  endDate         DateTime
+  targetNiches    String[]
+  targetPlatforms String[]
+  minFollowers    Int
+  contentType     String
+  goals           String[]
+  requirements    String[]
+  status          CampaignStatus @default(draft)
+  createdAt       DateTime       @default(now())
+  engagements     Engagement[]
+  submissions     CreatorSubmission[]
+}
+
+model Engagement {
+  id          String           @id @default(cuid())
+  creatorId   String
+  campaignId  String
+  matchScore  Int
+  status      EngagementStatus @default(matched)
+  createdAt   DateTime         @default(now())
+  startDate   DateTime?
+  endDate     DateTime?
+  creator     Creator          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  campaign    Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CreatorEvaluation {
+  id                 String   @id @default(cuid())
+  creatorId          String
+  campaignId         String
+  contentQuality     Int
+  communication      Int
+  deadlineCompletion Int
+  professionalism    Int
+  campaignFit        Int
+  compliance         Int      @default(5)
+  notes              String
+  evaluatedAt        DateTime @default(now())
+  evaluatedBy        String
+  creator            Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model TrainingModule {
+  id          String             @id @default(cuid())
+  title       String
+  description String
+  category    String
+  duration    Int
+  required    Boolean            @default(false)
+  progress    TrainingProgress[]
+}
+
+model TrainingProgress {
+  id          String         @id @default(cuid())
+  creatorId   String
+  moduleId    String
+  completedAt DateTime?
+  percent     Int            @default(0)
+  creator     Creator        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  module      TrainingModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, moduleId])
+}
+
+model CreatorSubmission {
+  id             String                  @id @default(cuid())
+  creatorId      String
+  campaignId     String
+  engagementId   String?
+  platform       CreatorSubmissionPlatform
+  contentUrl     String
+  contentType    String
+  note           String?
+  submissionDate DateTime                @default(now())
+  status         CreatorSubmissionStatus @default(pending_review)
+  views          Int?
+  impressions    Int?
+  likes          Int?
+  comments       Int?
+  shares         Int?
+  saves          Int?
+  engagementRate Float?
+  cpiScore       Float?
+  staffFeedback  String?
+  approvedAt     DateTime?
+  rejectedReason String?
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  creator        Creator                 @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  campaign       Campaign                @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, submissionDate])
+  @@index([campaignId, status])
+  @@map("creator_submissions")
+}
+
+model CreatorMonthlyReport {
+  id                     String                 @id @default(cuid())
+  creatorId              String
+  month                  Int
+  year                   Int
+  totalContentSubmitted  Int                    @default(0)
+  totalContentApproved   Int                    @default(0)
+  totalViews             Int                    @default(0)
+  totalImpressions       Int                    @default(0)
+  totalLikes             Int                    @default(0)
+  totalComments          Int                    @default(0)
+  totalShares            Int                    @default(0)
+  totalSaves             Int                    @default(0)
+  averageEngagementRate  Float                  @default(0)
+  averageCpiScore        Float                  @default(0)
+  consistencyScore       Float                  @default(0)
+  scholarshipHoursEarned Float                  @default(0)
+  currentRank            CreatorPerformanceRank @default(bronze_i)
+  nextRank               CreatorPerformanceRank?
+  rankProgressPercentage Int                    @default(0)
+  campaignsParticipated  String[]               @default([])
+  staffNotes             String?
+  generatedAt            DateTime               @default(now())
+  creator                Creator                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, month, year])
+  @@index([year, month])
+  @@map("creator_monthly_reports")
+}
+
+model CreatorRankHistory {
+  id           String                 @id @default(cuid())
+  creatorId    String
+  previousRank CreatorPerformanceRank
+  newRank      CreatorPerformanceRank
+  reason       String?
+  changedAt    DateTime               @default(now())
+  creator      Creator                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, changedAt])
+  @@map("creator_rank_history")
+}
+
+model ScholarshipHourLog {
+  id           String   @id @default(cuid())
+  creatorId    String
+  submissionId String?
+  month        Int
+  year         Int
+  reason       String
+  hours        Float
+  createdAt    DateTime @default(now())
+  creator      Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, year, month])
+  @@map("scholarship_hour_logs")
+}
