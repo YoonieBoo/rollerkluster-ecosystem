@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Sidebar } from '@/components/sidebar';
+import { RightDashboardSidebar } from '@/components/right-dashboard-sidebar';
 import { useApp } from '@/lib/app-context';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -30,9 +31,7 @@ import {
   type SubmissionPlatform,
 } from '@/lib/creator-performance';
 import type { Campaign } from '@/lib/mock-data';
-import { RankBadgeIcon } from '@/components/rank-badge';
 import { hasSupabaseConfig, isValidUuid } from '@/lib/supabase-data';
-import { openCreatorReportDocument } from '@/lib/creator-report-document';
 import {
   getCreatorMonthlyPerformance,
   getCreatorMonthlySubmissionsForDisplay,
@@ -234,13 +233,14 @@ export default function Dashboard() {
           </section>
         </div>
       </main>
+      <RightDashboardSidebar />
     </div>
   );
 }
 
 function CreatorPortal() {
   const { creators, campaigns, engagements, submissions, addSubmission, generateMonthlyReport } = useApp();
-  const { creatorInvitationStatus } = useUiStore();
+  const { sessionEmail } = useUiStore();
   const [submissionOpen, setSubmissionOpen] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [submissionForm, setSubmissionForm] = useState({
@@ -275,15 +275,6 @@ function CreatorPortal() {
   const assignedCampaigns = campaigns.filter(campaign => creatorEngagements.some(engagement => engagement.campaignId === campaign.id));
   const selectableCampaigns = (assignedCampaigns.length > 0 ? assignedCampaigns : availableCampaigns)
     .filter(campaign => !hasSupabaseConfig() || isValidUuid(campaign.id));
-  const campaignInvitations = creatorEngagements
-    .filter(engagement => engagement.status === 'matched' || engagement.status === 'in_discussion')
-    .map(engagement => ({
-      engagement,
-      campaign: campaigns.find(campaign => campaign.id === engagement.campaignId),
-      status: engagement.status === 'matched' ? 'New' : 'Viewed',
-    }))
-    .filter((item): item is { engagement: typeof creatorEngagements[number]; campaign: Campaign; status: 'New' | 'Viewed' } => Boolean(item.campaign));
-
   const submitContent = () => {
     setSubmissionError('');
     if (!creator || !submissionForm.campaignId || !submissionForm.contentUrl) return;
@@ -314,8 +305,7 @@ function CreatorPortal() {
         <div className="page-wrap">
           <header className="page-header">
             <div>
-              <p className="section-label">Creator ecosystem portal</p>
-              <h1 className="page-title mt-2">Welcome back, {creator?.name}</h1>
+              <h1 className="page-title">Welcome back, {creator?.name ?? sessionEmail}</h1>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline" className="h-10 border-border bg-white">
@@ -387,33 +377,26 @@ function CreatorPortal() {
           </header>
 
           <section className="space-y-6">
-            <RankAchievementCard
-              currentRank={monthlyPerformance?.currentRank ?? 'Bronze I'}
-              nextRank={monthlyPerformance?.nextRank}
-              progress={monthlyPerformance?.rankProgressPercentage ?? 0}
-              onDownloadReport={() => creator && openCreatorReportDocument(creator.name, generateMonthlyReport(creator.id, month, year), campaigns, submissions)}
-            />
-
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <CreatorDashboardMetric
                 label="Approved Content"
                 value={approvedContentThisMonth}
-                description="Content successfully approved this month."
+                description=""
               />
               <CreatorDashboardMetric
                 label="Submitted Content"
                 value={submittedContentThisMonth}
-                description="Total content submitted this month."
+                description=""
               />
               <CreatorDashboardMetric
                 label="Pending Review"
                 value={pendingReviewThisMonth}
-                description="Content waiting for review."
+                description=""
               />
               <CreatorDashboardMetric
                 label="Weekly Consistency"
                 value={`${weeklyConsistency.completed} / ${weeklyConsistency.required} Weeks`}
-                description="Progress toward the next rank requirement."
+                description=""
               />
             </div>
 
@@ -425,60 +408,18 @@ function CreatorPortal() {
                 <MonthlyPerformanceMetric
                   label="Views"
                   value={(monthlyPerformance?.totalViews ?? 0).toLocaleString()}
-                  description="Total views from approved content this month."
+                  description=""
                 />
                 <MonthlyPerformanceMetric
                   label="Impressions"
                   value={(monthlyPerformance?.totalImpressions ?? 0).toLocaleString()}
-                  description="Total impressions from approved content this month."
+                  description=""
                 />
                 <MonthlyPerformanceMetric
                   label="Engagement Rate"
                   value={`${monthlyPerformance?.averageEngagementRate ?? 0}%`}
-                  description="Average engagement rate across approved content."
+                  description=""
                 />
-              </div>
-            </div>
-
-            <div className="panel overflow-hidden">
-              <div className="border-b border-border px-5 py-4">
-                <h2 className="section-heading">Campaign Invitations</h2>
-              </div>
-              <div className="divide-y divide-border">
-                {campaignInvitations.length === 0 && creatorInvitationStatus === 'declined' ? (
-                  <div className="px-5 py-8 text-sm text-muted-foreground">No campaign invitations right now.</div>
-                ) : (
-                  <>
-                    {creatorInvitationStatus !== 'declined' && (
-                      <Link href="/campaigns/au-creator-campus-2026" className="block px-5 py-4 transition hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-sm font-semibold">Assumption University Student Affairs Office · AU Creator Campus Program 2026</p>
-                            <Badge variant="outline" className={cn('rounded-full', creatorInvitationStatus === 'accepted' ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-amber-200 bg-amber-50 text-amber-700')}>
-                              {creatorInvitationStatus === 'accepted' ? 'Accepted' : 'Invitation Pending'}
-                            </Badge>
-                          </div>
-                          <p className="mt-1 text-sm text-muted-foreground">Showcase student life, campus culture, activities, and scholarship opportunities.</p>
-                          <p className="mt-2 text-xs text-muted-foreground">Instagram, TikTok · Deadline June 25, 2026</p>
-                        </div>
-                      </Link>
-                    )}
-                    {campaignInvitations.map(({ campaign, engagement, status }) => (
-                      <Link key={engagement.id} href={`/campaigns/${campaign.id}`} className="block px-5 py-4 transition hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-sm font-semibold">{campaign.brand} · {campaign.title}</p>
-                            <Badge variant="outline" className={cn('rounded-full', status === 'New' ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-slate-50 text-slate-700')}>{status}</Badge>
-                          </div>
-                          <p className="mt-1 text-sm text-muted-foreground">{campaign.managerMessage ?? 'The campaign manager invited you to review this brief.'}</p>
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            {campaign.targetNiches.join(', ')} · Deadline {new Date(campaign.endDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </>
-                )}
               </div>
             </div>
 
@@ -519,7 +460,6 @@ function CreatorPortal() {
             <div className="panel overflow-hidden">
               <div className="border-b border-border px-5 py-4">
                 <h2 className="section-heading">New Campaigns Available</h2>
-                <p className="section-subtitle">Campaigns you can apply for.</p>
               </div>
               <div className="divide-y divide-border">
                 {availableCampaigns.length === 0 ? (
@@ -542,6 +482,7 @@ function CreatorPortal() {
           </section>
         </div>
       </main>
+      <RightDashboardSidebar />
     </div>
   );
 }
@@ -561,8 +502,8 @@ function CreatorDashboardMetric({ label, value, description }: { label: string; 
   return (
     <div className="panel p-5">
       <p className="text-sm font-semibold text-muted-foreground">{label}</p>
-      <p className="mt-3 text-3xl font-semibold leading-none tracking-normal">{value}</p>
-      <p className="mt-3 text-sm leading-5 text-muted-foreground">{description}</p>
+      <p className="mt-3 text-2xl font-semibold leading-tight tracking-normal">{value}</p>
+      {description && <p className="mt-3 text-sm leading-5 text-muted-foreground">{description}</p>}
     </div>
   );
 }
@@ -571,87 +512,10 @@ function MonthlyPerformanceMetric({ label, value, description }: { label: string
   return (
     <div className="bg-white p-5">
       <p className="text-sm font-semibold text-muted-foreground">{label}</p>
-      <p className="mt-3 text-3xl font-semibold leading-none tracking-normal">{value}</p>
-      <p className="mt-3 text-sm leading-5 text-muted-foreground">{description}</p>
+      <p className="mt-3 text-2xl font-semibold leading-tight tracking-normal">{value}</p>
+      {description && <p className="mt-3 text-sm leading-5 text-muted-foreground">{description}</p>}
     </div>
   );
-}
-
-function RankAchievementCard({
-  currentRank,
-  nextRank,
-  progress,
-  onDownloadReport,
-}: {
-  currentRank: string;
-  nextRank: string | null | undefined;
-  progress: number;
-  onDownloadReport: () => void;
-}) {
-  const theme = getRankAchievementTheme(currentRank);
-  const displayProgress = Math.min(100, Math.max(0, progress));
-
-  return (
-    <div className={cn('relative overflow-hidden rounded-[12px] border p-5 text-white shadow-sm', theme.card)}>
-      <div className="relative z-10 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-start">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className={cn('flex size-12 items-center justify-center rounded-[10px] border', theme.icon)}>
-              <RankBadgeIcon rank={currentRank} className="size-9" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-white/75">Rank status</p>
-              <h2 className="mt-1 text-2xl font-semibold leading-none tracking-normal">{currentRank}</h2>
-              <p className="mt-2 text-sm font-semibold text-white/80">{nextRank ? `Next: ${nextRank}` : 'Highest rank'}</p>
-            </div>
-          </div>
-        </div>
-
-        <Button
-          variant="outline"
-          className="h-9 border-white/40 bg-white/15 text-white hover:bg-white/25 hover:text-white"
-          onClick={onDownloadReport}
-        >
-          Download monthly report
-        </Button>
-      </div>
-
-      <div className="relative z-10 mt-5">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <span />
-          <span className="font-semibold text-white">{displayProgress}%</span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-white/25">
-          <div className="h-full rounded-full bg-white transition-all" style={{ width: `${displayProgress}%` }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function getRankAchievementTheme(rank: string) {
-  if (rank.startsWith('Silver')) {
-    return {
-      card: 'border-slate-300 bg-[linear-gradient(135deg,#64748b_0%,#94a3b8_46%,#dbeafe_100%)]',
-      icon: 'border-white/35 bg-white/18 text-white',
-    };
-  }
-  if (rank.startsWith('Gold')) {
-    return {
-      card: 'border-amber-300 bg-[linear-gradient(135deg,#b45309_0%,#f59e0b_48%,#fde68a_100%)]',
-      icon: 'border-white/35 bg-white/18 text-white',
-    };
-  }
-  if (rank.startsWith('Platinum')) {
-    return {
-      card: 'border-violet-300 bg-[linear-gradient(135deg,#5b5f72_0%,#8b7aa8_50%,#ddd6fe_100%)]',
-      icon: 'border-white/35 bg-white/18 text-white',
-    };
-  }
-  return {
-    card: 'border-orange-400 bg-[linear-gradient(135deg,#6f2d12_0%,#b45309_46%,#ea580c_100%)]',
-    icon: 'border-white/35 bg-white/18 text-white',
-  };
 }
 
 function ReadinessRow({ label, value }: { label: string; value: string | number }) {

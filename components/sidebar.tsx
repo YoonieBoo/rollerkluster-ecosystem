@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
   BarChart3,
   Bell,
@@ -12,13 +13,13 @@ import {
   Menu,
   Settings,
   ShieldCheck,
-  Trophy,
   UserCircle,
   Users,
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
+import { useApp } from '@/lib/app-context';
 
 const menuItems = [
   { href: '/', label: 'Home', icon: Home, group: 'Operate' },
@@ -35,26 +36,22 @@ const menuItems = [
 const creatorMenuItems = [
   { href: '/', label: 'Home', icon: Home, group: 'Creator portal' },
   { href: '/creators/creator-2', label: 'My profile', icon: UserCircle, group: 'Creator portal' },
-  { href: '/leaderboard', label: 'Progress', icon: Trophy, group: 'Creator portal' },
-  { href: '/notifications', label: 'Messages', icon: Bell, group: 'Support' },
-  { href: '/account', label: 'Profile setup', icon: Settings, group: 'Support' },
+  { href: '/notifications', label: 'Invites', icon: Bell, group: 'Support' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar, activeRole, sessionEmail, signOut } = useUiStore();
+  const { creators } = useApp();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const visibleItems = activeRole === 'admin' ? menuItems : creatorMenuItems;
   const groups = activeRole === 'admin' ? ['Operate', 'Review', 'Account'] : ['Creator portal', 'Support'];
   const roleLabel = activeRole === 'admin' ? 'Brand Side' : 'Creator Side';
   const roleDescription = activeRole === 'admin' ? 'For brands and campaign owners' : 'For student creators';
+  const activeCreatorName = creators.find(creator => creator.id === 'creator-2')?.name ?? sessionEmail;
 
-  return (
-    <aside
-      className={cn(
-        'sidebar-modern sticky top-0 flex h-screen shrink-0 flex-col transition-[width] duration-200',
-        sidebarCollapsed ? 'w-[76px]' : 'w-[262px]',
-      )}
-    >
+  const sidebarBody = (
+    <>
       <div className="flex items-center justify-between px-5 py-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-white shadow-sm">
@@ -62,7 +59,6 @@ export function Sidebar() {
           </div>
           <div className={cn('min-w-0 transition-opacity', sidebarCollapsed && 'pointer-events-none opacity-0')}>
             <h1 className="truncate text-[14px] font-semibold leading-tight text-sidebar-foreground">RollerKluster</h1>
-            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">Governed creator ecosystem</p>
           </div>
         </div>
         <button
@@ -75,14 +71,16 @@ export function Sidebar() {
         </button>
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-5">
-        {groups.map((group) => (
+      <nav className={cn('min-h-0 flex-1 overflow-y-auto px-4 pb-5', activeRole === 'admin' ? 'space-y-5' : 'space-y-1')}>
+        {(activeRole === 'admin' ? groups : ['Creator navigation']).map((group) => (
           <div key={group}>
-            <p className={cn('mb-2 px-3 text-[10px] font-bold uppercase text-muted-foreground', sidebarCollapsed && 'sr-only')}>
-              {group}
-            </p>
+            {activeRole === 'admin' && (
+              <p className={cn('mb-2 px-3 text-[10px] font-bold uppercase text-muted-foreground', sidebarCollapsed && 'sr-only')}>
+                {group}
+              </p>
+            )}
             <div className="space-y-1">
-              {visibleItems.filter((item) => (item.group ?? 'Account') === group).map((item) => {
+              {(activeRole === 'admin' ? visibleItems.filter((item) => (item.group ?? 'Account') === group) : visibleItems).map((item) => {
                 const Icon = item.icon;
                 const isActive = item.href === '/' ? pathname === item.href : pathname.startsWith(item.href);
 
@@ -90,6 +88,7 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setMobileOpen(false)}
                     title={sidebarCollapsed ? item.label : undefined}
                     className={cn(
                       'sidebar-item flex items-center gap-2.5 rounded-[10px] px-3 py-2.5',
@@ -118,9 +117,15 @@ export function Sidebar() {
           <div className="flex items-start gap-2">
             <UserCircle className="mt-0.5 size-4 shrink-0 text-primary" />
             <div className="min-w-0">
-              <p className="text-[12px] font-semibold text-sidebar-foreground">{roleLabel}</p>
-              <p className="mt-0.5 text-[11px] font-medium leading-4 text-muted-foreground">{roleDescription}</p>
-              <p className="mt-2 truncate text-[11px] text-muted-foreground">{sessionEmail}</p>
+              {activeRole === 'creator' ? (
+                <p className="text-[12px] font-semibold text-sidebar-foreground">{activeCreatorName}</p>
+              ) : (
+                <>
+                  <p className="text-[12px] font-semibold text-sidebar-foreground">{roleLabel}</p>
+                  <p className="mt-0.5 text-[11px] font-medium leading-4 text-muted-foreground">{roleDescription}</p>
+                  <p className="mt-2 truncate text-[11px] text-muted-foreground">{sessionEmail}</p>
+                </>
+              )}
             </div>
           </div>
           <button
@@ -133,6 +138,42 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        className="fixed left-3 top-3 z-40 flex size-11 items-center justify-center rounded-[11px] border border-border bg-white text-foreground shadow-sm lg:hidden"
+        aria-label="Open navigation"
+      >
+        <Menu className="size-5" />
+      </button>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/45"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation"
+          />
+          <aside className="sidebar-modern relative flex h-dvh w-[min(84vw,320px)] flex-col shadow-xl">
+            {sidebarBody}
+          </aside>
+        </div>
+      )}
+
+      <aside
+        className={cn(
+          'sidebar-modern sticky top-0 hidden h-screen shrink-0 flex-col transition-[width] duration-200 lg:flex',
+          sidebarCollapsed ? 'w-[76px]' : 'w-[262px]',
+        )}
+      >
+        {sidebarBody}
+      </aside>
+    </>
   );
 }

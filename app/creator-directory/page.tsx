@@ -15,11 +15,11 @@ export default function CreatorDirectoryPage() {
     <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-[1440px] px-7 py-6">
-          <header className="mb-6 flex items-end justify-between border-b border-border pb-5">
+        <div className="page-wrap max-w-[1440px]">
+          <header className="page-header">
             <div>
               <p className="section-label">Creator registry</p>
-              <h1 className="mt-2 text-[30px] font-semibold leading-tight">Creator capability registry</h1>
+              <h1 className="page-title mt-2">Creator capability registry</h1>
               <p className="mt-1 text-sm text-muted-foreground">Managed record of creator profiles, approval status, platforms, readiness, and engagement history.</p>
             </div>
             <Button className="bg-primary">
@@ -28,7 +28,8 @@ export default function CreatorDirectoryPage() {
             </Button>
           </header>
 
-          <div className="panel overflow-hidden">
+          <div className="panel overflow-x-auto">
+            <div className="min-w-[760px]">
             <div className="grid grid-cols-[1fr_130px_130px_150px_120px] border-b border-border px-4 py-3 text-xs font-semibold uppercase text-muted-foreground">
               <span>Creator profile</span>
               <span>Status</span>
@@ -65,6 +66,7 @@ export default function CreatorDirectoryPage() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
         </div>

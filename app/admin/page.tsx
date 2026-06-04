@@ -142,11 +142,11 @@ export default function GovernanceAdmin() {
       case 'completed':
         return 'bg-green-50 text-green-700 border-green-200';
       case 'active':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-primary/10 text-primary border-primary/20';
       case 'in_discussion':
         return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'matched':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-primary/10 text-primary border-primary/20';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
@@ -159,10 +159,10 @@ export default function GovernanceAdmin() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="page-wrap">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground">Brand Campaign Hub</h1>
@@ -269,7 +269,7 @@ export default function GovernanceAdmin() {
                           className="grid gap-4 bg-white px-4 py-5 transition hover:bg-gray-50/60 xl:grid-cols-[minmax(230px,1.55fr)_minmax(145px,1fr)_115px_130px_105px_125px_80px] xl:items-center xl:gap-5 xl:px-6 xl:py-4"
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-primary">
                               {initials(creator.name)}
                             </div>
                             <div className="min-w-0">

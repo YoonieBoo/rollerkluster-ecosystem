@@ -33,8 +33,8 @@ export default function SubmissionDetailPage() {
               <p className="mt-1 text-sm text-muted-foreground">This content submission may have been removed or is not available.</p>
             </div>
           </div>
-        </main>
-      </div>
+      </main>
+    </div>
     );
   }
 
@@ -84,7 +84,7 @@ export default function SubmissionDetailPage() {
 
               {feedback && (
                 <div className="mt-6 rounded-lg border border-blue-100 bg-blue-50/55 p-4">
-                  <p className="text-xs font-semibold uppercase text-blue-700">Feedback</p>
+                  <p className="text-xs font-semibold uppercase text-primary">Feedback</p>
                   <p className="mt-2 text-sm leading-6 text-foreground">{feedback}</p>
                 </div>
               )}

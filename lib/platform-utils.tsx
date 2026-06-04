@@ -36,7 +36,7 @@ export function brandRankLabel(rank?: string) {
 export function tierClass(tier?: string) {
   const label = tierLabel(tier);
 
-  if (label === 'Platinum') return 'border-blue-200 bg-blue-50 text-blue-800';
+  if (label === 'Platinum') return 'border-primary/20 bg-blue-50 text-blue-800';
   if (label === 'Gold') return 'border-amber-200 bg-amber-50 text-amber-800';
   if (label === 'Silver') return 'border-slate-200 bg-slate-100 text-slate-700';
   return 'border-orange-200 bg-orange-50 text-orange-800';
@@ -62,7 +62,7 @@ export function statusTone(status: string) {
     case 'active':
     case 'accepted':
     case 'in_progress':
-      return 'border-blue-200 bg-blue-50 text-blue-700';
+      return 'border-primary/20 bg-primary/10 text-primary';
     case 'in_discussion':
     case 'open':
     case 'pending':
@@ -72,7 +72,7 @@ export function statusTone(status: string) {
     case 'changes_requested':
       return 'border-orange-200 bg-orange-50 text-orange-700';
     case 'matched':
-      return 'border-blue-200 bg-blue-50 text-blue-700';
+      return 'border-primary/20 bg-primary/10 text-primary';
     case 'rejected':
     case 'suspended':
     case 'declined':

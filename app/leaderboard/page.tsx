@@ -76,10 +76,10 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="page-wrap">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground">Badges & Progress</h1>
@@ -94,7 +94,7 @@ export default function Leaderboard() {
                   <h2 className="mt-1 text-lg font-semibold text-foreground">AU Creator Campus Program 2026</h2>
                   <p className="mt-1 text-sm text-muted-foreground">Counts toward rank progression contribution and verified creator activity.</p>
                 </div>
-                <Badge variant="outline" className="w-fit rounded-full border-blue-200 bg-white text-blue-700">Accepted</Badge>
+                <Badge variant="outline" className="w-fit rounded-full border-primary/20 bg-white text-primary">Accepted</Badge>
               </div>
             </Card>
           )}

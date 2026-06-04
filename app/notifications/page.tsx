@@ -22,7 +22,15 @@ type InboxItem = {
 export default function NotificationsPage() {
   const { creators, campaigns, engagements, submissions, generateMonthlyReport } = useApp();
   const { activeRole, creatorInvitationStatus } = useUiStore();
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [readIds, setReadIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+
+    try {
+      return new Set(JSON.parse(window.localStorage.getItem('rollerkluster-read-notifications') ?? '[]'));
+    } catch {
+      return new Set();
+    }
+  });
   const pending = creators.filter(c => c.approvalStatus === 'pending');
   const openCampaigns = campaigns.filter(c => c.status !== 'completed');
   const latest = engagements.slice().reverse();
@@ -34,7 +42,11 @@ export default function NotificationsPage() {
     : [];
 
   const markRead = (id: string) => {
-    setReadIds(current => new Set(current).add(id));
+    setReadIds(current => {
+      const next = new Set(current).add(id);
+      window.localStorage.setItem('rollerkluster-read-notifications', JSON.stringify([...next]));
+      return next;
+    });
   };
 
   const brandNotifications: InboxItem[] = [
@@ -211,14 +223,12 @@ function InboxRow({ item, read, onRead }: { item: InboxItem; read: boolean; onRe
   ].join(' ');
   const content = (
     <>
-      <span className={read ? 'size-2.5 shrink-0 rounded-full bg-gray-300' : 'size-2.5 shrink-0 rounded-full bg-primary'} />
+      {!read && <span className="size-2.5 shrink-0 rounded-full bg-primary" />}
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{item.title}</span>
         <span className="mt-1 block text-xs text-muted-foreground">{item.meta}</span>
       </span>
-      <span className={read ? 'text-xs font-semibold text-muted-foreground' : 'text-xs font-semibold text-primary'}>
-        {read ? 'Read' : 'Unread'}
-      </span>
+      {!read && <span className="text-xs font-semibold text-primary">Unread</span>}
     </>
   );
 

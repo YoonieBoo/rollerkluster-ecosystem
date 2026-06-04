@@ -7,18 +7,19 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Briefcase, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, ShieldCheck, Sparkles, Star, Users } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ArrowLeft, Briefcase, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, Sparkles, Star, Users } from 'lucide-react';
 import { formatCompact, initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { cn } from '@/lib/utils';
 import { getMonthYear, isSubmissionApproved, submissionStatusLabel } from '@/lib/creator-performance';
 import type { Creator, CreatorEvaluation, Submission } from '@/lib/mock-data';
-import { RankBadge, RankBadgeIcon } from '@/components/rank-badge';
+import { RankBadge } from '@/components/rank-badge';
 import { getCreatorMonthlyPerformance, getCreatorMonthlySubmissionsForDisplay } from '@/lib/creator-performance-source';
 import { useUiStore } from '@/lib/ui-store';
 
 export default function CreatorProfile() {
   const { creators, engagements, campaigns, submissions } = useApp();
-  const { creatorInvitationStatus } = useUiStore();
+  const { activeRole, creatorInvitationStatus, creatorProfile } = useUiStore();
   const params = useParams();
   const creatorId = params.id as string;
 
@@ -28,19 +29,14 @@ export default function CreatorProfile() {
   const creatorSubmissions = getCreatorMonthlySubmissionsForDisplay(creatorId, submissions, month, year);
   const approvedSubmissions = creatorSubmissions.filter(isSubmissionApproved);
 
-  const campaignReliability = creator ? Math.min(100, creator.approvalRate + creator.completedEngagements) : 0;
-  const completionRate = creatorEngagements.length
-    ? Math.round((creatorEngagements.filter(e => e.status === 'completed').length / creatorEngagements.length) * 100)
-    : creator?.completedEngagements ? 92 : 0;
-  const complianceScore = creator?.verified ? 98 : 86;
-  const audienceQuality = creator ? Math.round((creator.contentQualityScore / 5) * 100) : 0;
   const totalFollowers = useMemo(
     () => creator?.platforms.reduce((sum, platform) => sum + platform.followers, 0) ?? 0,
     [creator],
   );
   const rankState = creator ? getCreatorMonthlyPerformance(creator, submissions, campaigns, month, year) : undefined;
+  const displayRank = activeRole === 'creator' && creatorProfile ? creatorProfile.creatorRank : rankState?.currentRank ?? 'Bronze I';
   const primaryPlatform = creator?.platforms[0];
-  const creatorTitle = `${rankState?.currentRank ?? 'Bronze I'} Campus Creator`;
+  const creatorTitle = `${displayRank} Campus Creator`;
   const contentStyles = ['Campus storytelling', 'Short-form video', 'Student lifestyle', 'Brand-safe captions'];
   const brandFitTags = [creator?.niche ?? 'Creator', 'Campus culture', 'Scholarship programs', 'Student engagement', 'University events'].filter(Boolean);
   const acceptedCampusInvitation = creator?.id === 'creator-2' && creatorInvitationStatus === 'accepted';
@@ -51,8 +47,8 @@ export default function CreatorProfile() {
         <Sidebar />
         <main className="flex-1 overflow-auto">
           <div className="p-8 text-center text-muted-foreground">Creator not found</div>
-        </main>
-      </div>
+      </main>
+    </div>
     );
   }
 
@@ -61,10 +57,12 @@ export default function CreatorProfile() {
       <Sidebar />
       <main className="flex-1 overflow-auto">
         <div className="page-wrap">
-          <Link href="/creators" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-            <ArrowLeft className="size-4" />
-            Back to Creator Discovery
-          </Link>
+          {activeRole === 'admin' && (
+            <Link href="/creators" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+              <ArrowLeft className="size-4" />
+              Back to Creator Discovery
+            </Link>
+          )}
 
           <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
             <aside className="space-y-5">
@@ -83,7 +81,7 @@ export default function CreatorProfile() {
                     )}
                   </div>
                   <div className="absolute bottom-4 left-4">
-                    <RankBadge rank={rankState?.currentRank ?? 'Bronze I'} className="bg-white/95" />
+                    <RankBadge rank={displayRank} className="bg-white/95" />
                   </div>
                 </div>
                 <div className="space-y-5 p-5">
@@ -129,110 +127,93 @@ export default function CreatorProfile() {
             </aside>
 
             <section className="space-y-5">
-              <section className="panel p-6">
+              <section className={cn('panel p-6', activeRole === 'creator' && 'relative pr-16')}>
+                {activeRole === 'creator' && (
+                  <div className="absolute right-5 top-5">
+                    <ProfileActionsMenu activeRole={activeRole} visibility="always" />
+                  </div>
+                )}
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="page-title">{creator.name}</h1>
-                      {creator.verified && <CheckCircle2 className="size-5 text-primary" />}
+                  <div className="min-w-0 lg:max-w-[560px]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h1 className="page-title truncate">{creator.name}</h1>
+                        {creator.verified && <CheckCircle2 className="size-5 shrink-0 text-primary" />}
+                      </div>
+                      {activeRole === 'admin' && <ProfileActionsMenu activeRole={activeRole} visibility="mobile" />}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-primary">{creatorTitle}</p>
                     <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">{creator.bio}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" className="border-border bg-white">
-                      <Mail className="size-4" />
-                      Message
-                    </Button>
-                    <Button className="bg-primary text-white">
-                      <Briefcase className="size-4" />
-                      Invite to Campaign
-                    </Button>
-                    <Button variant="outline" size="icon" className="border-border bg-white">
-                      <MoreHorizontal className="size-4" />
-                      <span className="sr-only">More options</span>
-                    </Button>
-                  </div>
+                  {activeRole === 'admin' && (
+                    <div className="flex shrink-0 flex-row flex-nowrap items-center gap-2">
+                      <Button variant="outline" className="h-10 shrink-0 whitespace-nowrap border-border bg-white">
+                        <Mail className="size-4" />
+                        Message
+                      </Button>
+                      <Button className="h-10 shrink-0 whitespace-nowrap bg-primary text-white">
+                        <Briefcase className="size-4" />
+                        Invite to Campaign
+                      </Button>
+                      <ProfileActionsMenu activeRole={activeRole} visibility="desktop" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-6 grid gap-3 md:grid-cols-4">
                   <PortfolioStat label="Creator Score" value={creator.reputationScore} />
                   <PortfolioStat label="Approved Content" value={rankState?.totalContentApproved ?? approvedSubmissions.length} />
                   <PortfolioStat label="Monthly Views" value={formatCompact(rankState?.totalViews ?? 0)} />
-                  <PortfolioStat label="Campaign Fit" value={`${campaignReliability}%`} />
+                  <PortfolioStat label="Engagement Rate" value={`${creator.engagementRate}%`} />
                 </div>
               </section>
 
-              <section className="grid gap-5 lg:grid-cols-[1fr_300px]">
-                <div className="panel p-5">
-                  <h2 className="section-heading">Performance Summary</h2>
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
-                    <ScoreBlock label="Audience quality" value={audienceQuality} />
-                    <ScoreBlock label="Reliability" value={campaignReliability} />
-                    <ScoreBlock label="Readiness" value={complianceScore} />
-                  </div>
-                  <div className="mt-5 space-y-3">
-                    <TimelineItem icon={<RankBadgeIcon rank={rankState?.currentRank ?? 'Bronze I'} className="size-5" />} title={`Current rank: ${rankState?.currentRank ?? 'Bronze I'}`} detail={`${rankState?.rankProgressPercentage ?? 0}% progress toward next creator milestone`} />
-                    <TimelineItem icon={<ShieldCheck className="size-4" />} title="Verification status" detail={creator.verified ? 'Identity, portfolio, and platform presence approved.' : 'Verification pending profile review.'} />
-                  </div>
-                </div>
-
-                <div className="panel p-5">
-                  <h2 className="section-heading">Brand Fit Tags</h2>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {brandFitTags.map(tag => <Badge key={tag} variant="secondary" className="rounded-full">{tag}</Badge>)}
-                  </div>
-                  <h3 className="mt-6 text-sm font-semibold">Skills / Categories</h3>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {contentStyles.map(style => <Badge key={style} variant="outline" className="rounded-full border-border bg-white">{style}</Badge>)}
-                  </div>
-                </div>
-              </section>
-
-              <section className="panel overflow-hidden">
-                <div className="border-b border-border px-5 py-4">
-                  <h2 className="section-heading">Work / Campaign History</h2>
-                  <p className="section-subtitle">Campaign participation and collaboration status.</p>
-                </div>
-                <div className="divide-y divide-border">
-                  {acceptedCampusInvitation && (
-                    <div className="grid gap-3 px-5 py-4 md:grid-cols-[1fr_auto] md:items-center">
-                      <div>
-                        <p className="text-sm font-semibold">AU Creator Campus Program 2026</p>
-                        <p className="text-xs text-muted-foreground">Assumption University Student Affairs Office · Campus creator campaign</p>
-                      </div>
-                      <Badge variant="outline" className="w-fit rounded-full border-blue-200 bg-blue-50 text-blue-700">Accepted</Badge>
+              <section className="panel p-5">
+                <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
+                  <div>
+                    <h2 className="section-heading">Creator Fit</h2>
+                    <p className="section-subtitle">Best suited for student-facing campaigns, campus culture stories, event coverage, and scholarship awareness.</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {brandFitTags.map(tag => <Badge key={tag} variant="secondary" className="rounded-full">{tag}</Badge>)}
                     </div>
-                  )}
-                  {creatorEngagements.length === 0 && !acceptedCampusInvitation ? (
-                    <div className="p-5 text-sm text-muted-foreground">No campaign history yet.</div>
-                  ) : creatorEngagements.map(engagement => {
-                    const campaign = campaigns.find(item => item.id === engagement.campaignId);
-                    return (
-                      <Link key={engagement.id} href={`/campaigns/${campaign?.id}`} className="grid gap-3 px-5 py-4 transition hover:bg-muted/35 md:grid-cols-[1fr_auto] md:items-center">
-                        <div>
-                          <p className="text-sm font-semibold">{campaign?.title ?? 'Campaign'}</p>
-                          <p className="text-xs text-muted-foreground">{campaign?.brand ?? 'Brand'} · {engagement.matchScore}% fit score</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Content strengths</h3>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {contentStyles.map(style => (
+                        <div key={style} className="rounded-[12px] border border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-foreground">
+                          {style}
                         </div>
-                        <Badge variant="outline" className={cn('w-fit rounded-full', statusTone(engagement.status))}>{statusLabel(engagement.status)}</Badge>
-                      </Link>
-                    );
-                  })}
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </section>
 
               <section className="panel overflow-hidden">
                 <div className="border-b border-border px-5 py-4">
-                  <h2 className="section-heading">Approved Content Examples</h2>
-                  <p className="section-subtitle">Published work that has passed review.</p>
+                  <h2 className="section-heading">Content Examples</h2>
+                  <p className="section-subtitle">Approved work that shows the creator's style and campaign delivery.</p>
                 </div>
                 <ApprovedContentList submissions={approvedSubmissions} campaigns={campaigns} />
               </section>
 
               <section className="panel overflow-hidden">
                 <div className="border-b border-border px-5 py-4">
-                  <h2 className="section-heading">Performance Notes</h2>
-                  <p className="section-subtitle">Review notes from completed engagements.</p>
+                  <h2 className="section-heading">Campaign Activity</h2>
+                  <p className="section-subtitle">Campaigns this creator has joined or been invited to.</p>
+                </div>
+                <CampaignActivityList
+                  acceptedCampusInvitation={acceptedCampusInvitation}
+                  creatorEngagements={creatorEngagements}
+                  campaigns={campaigns}
+                />
+              </section>
+
+              <section className="panel overflow-hidden">
+                <div className="border-b border-border px-5 py-4">
+                  <h2 className="section-heading">Feedback Highlights</h2>
+                  <p className="section-subtitle">Short review notes from completed collaborations.</p>
                 </div>
                 <ReviewList creator={creator} />
               </section>
@@ -256,25 +237,50 @@ function ProfileInfo({ icon, label, value }: { icon: React.ReactNode; label: str
   );
 }
 
+function ProfileActionsMenu({ activeRole, visibility }: { activeRole: 'admin' | 'creator'; visibility: 'always' | 'mobile' | 'desktop' }) {
+  const creatorActions = [
+    { href: '/account', label: 'Edit profile' },
+    { href: '/account', label: 'Update platforms' },
+    { href: '/leaderboard', label: 'View progress' },
+  ];
+  const brandActions = [
+    { href: '/creators', label: 'Compare creators' },
+    { href: '/campaigns', label: 'View campaigns' },
+  ];
+  const actions = activeRole === 'creator' ? creatorActions : brandActions;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            'size-10 shrink-0 border-border bg-white',
+            visibility === 'mobile' && 'lg:hidden',
+            visibility === 'desktop' && 'hidden lg:inline-flex',
+          )}
+        >
+          <MoreHorizontal className="size-4" />
+          <span className="sr-only">Profile actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        {actions.map(action => (
+          <DropdownMenuItem key={action.label} asChild>
+            <Link href={action.href}>{action.label}</Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function PortfolioStat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-[12px] border border-border bg-muted/35 p-4">
       <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
       <p className="mt-2 text-2xl font-semibold tracking-normal text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function ScoreBlock({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="panel-muted p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">{label}</p>
-        <p className="text-sm font-bold">{value}%</p>
-      </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, value)}%` }} />
-      </div>
     </div>
   );
 }
@@ -303,6 +309,46 @@ function ApprovedContentList({ submissions, campaigns }: { submissions: Submissi
               <span>{submission.engagementRate ?? 0}% ER</span>
             </div>
           </a>
+        );
+      })}
+    </div>
+  );
+}
+
+function CampaignActivityList({
+  acceptedCampusInvitation,
+  creatorEngagements,
+  campaigns,
+}: {
+  acceptedCampusInvitation: boolean;
+  creatorEngagements: { id: string; campaignId: string; status: string }[];
+  campaigns: { id: string; title: string; brand: string }[];
+}) {
+  if (creatorEngagements.length === 0 && !acceptedCampusInvitation) {
+    return <div className="p-5 text-sm text-muted-foreground">No campaign activity yet.</div>;
+  }
+
+  return (
+    <div className="divide-y divide-border">
+      {acceptedCampusInvitation && (
+        <div className="grid gap-3 px-5 py-4 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <p className="text-sm font-semibold">AU Creator Campus Program 2026</p>
+            <p className="text-xs text-muted-foreground">Assumption University Student Affairs Office · Campus creator campaign</p>
+          </div>
+          <Badge variant="outline" className="w-fit rounded-full border-primary/20 bg-primary/10 text-primary">Accepted</Badge>
+        </div>
+      )}
+      {creatorEngagements.map(engagement => {
+        const campaign = campaigns.find(item => item.id === engagement.campaignId);
+        return (
+          <Link key={engagement.id} href={`/campaigns/${campaign?.id}`} className="grid gap-3 px-5 py-4 transition hover:bg-muted/35 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <p className="text-sm font-semibold">{campaign?.title ?? 'Campaign'}</p>
+              <p className="text-xs text-muted-foreground">{campaign?.brand ?? 'Brand'}</p>
+            </div>
+            <Badge variant="outline" className={cn('w-fit rounded-full', statusTone(engagement.status))}>{statusLabel(engagement.status)}</Badge>
+          </Link>
         );
       })}
     </div>
@@ -342,18 +388,6 @@ function ReviewList({ creator }: { creator: Creator }) {
           <p className="mt-3 rounded-[10px] border border-border bg-white p-3 text-sm text-muted-foreground">{evaluation.notes}</p>
         </div>
       ))}
-    </div>
-  );
-}
-
-function TimelineItem({ icon, title, detail }: { icon: React.ReactNode; title: string; detail: string }) {
-  return (
-    <div className="flex gap-3 rounded-[12px] border border-border bg-white p-3">
-      <div className="flex size-8 items-center justify-center rounded-full bg-blue-50 text-primary">{icon}</div>
-      <div>
-        <p className="text-sm font-semibold">{title}</p>
-        <p className="text-xs leading-5 text-muted-foreground">{detail}</p>
-      </div>
     </div>
   );
 }

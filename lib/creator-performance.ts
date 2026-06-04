@@ -113,13 +113,25 @@ export const CREATOR_RANKS: CreatorRank[] = [
 export const rankRules = {
   weeklyTargetApprovedPosts: 2,
   bronzeRequirements: {
-    'Bronze I': { consecutiveWeeks: 1, onboardingRequired: true, label: 'Complete onboarding and post 2 approved contents in 1 week.' },
-    'Bronze II': { consecutiveWeeks: 2, onboardingRequired: true, label: 'Post 2 approved contents per week for 2 weeks.' },
-    'Bronze III': { consecutiveWeeks: 4, onboardingRequired: true, label: 'Post 2 approved contents per week for 4 weeks.' },
-    'Bronze IV': { consecutiveWeeks: 8, onboardingRequired: true, label: 'Post 2 approved contents per week for 8 weeks.' },
+    'Bronze I': { approvedPosts: 0, onboardingRequired: true, label: 'Register as a creator and complete onboarding.' },
+    'Bronze II': { approvedPosts: 3, onboardingRequired: true, label: 'Publish 3 AU-related approved content posts.' },
+    'Bronze III': { approvedPosts: 8, days: 30, onboardingRequired: true, label: 'Publish 8 AU-related approved content posts within 30 days.' },
+    'Bronze IV': { approvedPosts: 15, days: 60, activityParticipations: 2, onboardingRequired: true, label: 'Publish 15 AU-related approved content posts within 60 days and participate in 2 AU activities or events.' },
   },
-  silverMinimums: { approvedPosts: 10, averageEngagementRate: 4, approvalRate: 80, label: 'Complete creator training, follow briefs reliably, and keep approval rate above 80%.' },
-  goldMinimums: { approvedPosts: 18, averageEngagementRate: 6, completedCampaigns: 4, label: 'Complete strong campaign assignments and support multiple campaigns.' },
+  silverRequirements: {
+    'Silver I': { trainingSessions: 1, approvedPosts: 2, label: 'Complete 1 creator training session and submit 2 brief-based approved content pieces.' },
+    'Silver II': { approvedPosts: 5, label: 'Successfully complete 5 brief-based submissions with on-time delivery.' },
+    'Silver III': { approvedPosts: 10, approvalRate: 90, revisionRequests: 2, label: 'Achieve a 90% on-time submission rate across 10 brief-based tasks with no more than 2 revision requests per task.' },
+    'Silver IV': { completedCampaigns: 3, approvalRate: 90, label: 'Successfully complete 3 campaign assignments with at least a 90% approval rate.' },
+  },
+  goldRequirements: {
+    'Gold I': { completedCampaigns: 5, label: 'Complete 5 campaign or event assignments successfully.' },
+    'Gold II': { completedCampaigns: 6, approvedPosts: 3, label: 'Manage a multi-deliverable campaign assignment with at least 3 deliverables.' },
+    'Gold III': { completedCampaigns: 7, label: 'Support onboarding or training of at least 3 junior creators.' },
+    'Gold IV': { completedCampaigns: 8, label: 'Support campaign coordination across at least 2 campaigns or events.' },
+  },
+  silverMinimums: { approvedPosts: 10, averageEngagementRate: 4, approvalRate: 80, label: 'Build professionalism through training, brief-following, on-time delivery, and approval quality.' },
+  goldMinimums: { approvedPosts: 18, averageEngagementRate: 6, completedCampaigns: 4, label: 'Execute real AU campaigns and show leadership across creator activity.' },
   platinumMinimums: { approvedPosts: 30, averageEngagementRate: 7.5, approvalRate: 90, label: 'Sustain high-quality delivery, strong approval rate, and trusted creator performance.' },
 } as const;
 
@@ -181,8 +193,12 @@ export function getNextRankRequirement(rank: CreatorRank) {
   if (nextRank in rankRules.bronzeRequirements) {
     return rankRules.bronzeRequirements[nextRank as keyof typeof rankRules.bronzeRequirements].label;
   }
-  if (nextRank.startsWith('Silver')) return rankRules.silverMinimums.label;
-  if (nextRank.startsWith('Gold')) return rankRules.goldMinimums.label;
+  if (nextRank in rankRules.silverRequirements) {
+    return rankRules.silverRequirements[nextRank as keyof typeof rankRules.silverRequirements].label;
+  }
+  if (nextRank in rankRules.goldRequirements) {
+    return rankRules.goldRequirements[nextRank as keyof typeof rankRules.goldRequirements].label;
+  }
   return rankRules.platinumMinimums.label;
 }
 
@@ -245,31 +261,36 @@ export function calculateCreatorRank(submissions: Submission[], fallbackRank: Cr
   const completedOnboarding = creator ? creator.trainingCompleted.length > 0 : true;
   const approvalRate = creator?.approvalRate ?? 0;
   const completedCampaigns = creator?.completedEngagements ?? 0;
+  const trainingSessions = creator?.trainingCompleted.length ?? 0;
 
   let rank: CreatorRank = fallbackRank;
-  if (completedOnboarding && consecutiveWeeks >= 1) rank = 'Bronze I';
-  if (completedOnboarding && consecutiveWeeks >= 2) rank = 'Bronze II';
-  if (completedOnboarding && consecutiveWeeks >= 4) rank = 'Bronze III';
-  if (completedOnboarding && consecutiveWeeks >= 8) rank = 'Bronze IV';
-  if (approved.length >= rankRules.silverMinimums.approvedPosts && avgEngagement >= rankRules.silverMinimums.averageEngagementRate && approvalRate >= rankRules.silverMinimums.approvalRate) rank = 'Silver I';
-  if (approved.length >= 14 && avgEngagement >= 5 && approvalRate >= rankRules.silverMinimums.approvalRate) rank = 'Silver II';
-  if (approved.length >= 16 && avgEngagement >= 5.5 && approvalRate >= rankRules.silverMinimums.approvalRate) rank = 'Silver III';
-  if (approved.length >= 18 && avgEngagement >= 6 && approvalRate >= rankRules.silverMinimums.approvalRate) rank = 'Silver IV';
-  if (approved.length >= rankRules.goldMinimums.approvedPosts && avgEngagement >= rankRules.goldMinimums.averageEngagementRate && completedCampaigns >= rankRules.goldMinimums.completedCampaigns) rank = 'Gold I';
-  if (approved.length >= 22 && avgEngagement >= 6.5 && completedCampaigns >= rankRules.goldMinimums.completedCampaigns) rank = 'Gold II';
-  if (approved.length >= 26 && avgEngagement >= 7 && completedCampaigns >= rankRules.goldMinimums.completedCampaigns) rank = 'Gold III';
-  if (approved.length >= 30 && avgEngagement >= 7.25 && completedCampaigns >= rankRules.goldMinimums.completedCampaigns) rank = 'Gold IV';
+  if (completedOnboarding) rank = maxRank(rank, 'Bronze I');
+  if (completedOnboarding && approved.length >= rankRules.bronzeRequirements['Bronze II'].approvedPosts) rank = maxRank(rank, 'Bronze II');
+  if (completedOnboarding && approved.length >= rankRules.bronzeRequirements['Bronze III'].approvedPosts) rank = maxRank(rank, 'Bronze III');
+  if (
+    completedOnboarding &&
+    approved.length >= rankRules.bronzeRequirements['Bronze IV'].approvedPosts &&
+    completedCampaigns >= rankRules.bronzeRequirements['Bronze IV'].activityParticipations
+  ) rank = maxRank(rank, 'Bronze IV');
+  if (trainingSessions >= rankRules.silverRequirements['Silver I'].trainingSessions && approved.length >= rankRules.silverRequirements['Silver I'].approvedPosts) rank = maxRank(rank, 'Silver I');
+  if (approved.length >= rankRules.silverRequirements['Silver II'].approvedPosts) rank = maxRank(rank, 'Silver II');
+  if (approved.length >= rankRules.silverRequirements['Silver III'].approvedPosts && approvalRate >= rankRules.silverRequirements['Silver III'].approvalRate) rank = maxRank(rank, 'Silver III');
+  if (completedCampaigns >= rankRules.silverRequirements['Silver IV'].completedCampaigns && approvalRate >= rankRules.silverRequirements['Silver IV'].approvalRate) rank = maxRank(rank, 'Silver IV');
+  if (completedCampaigns >= rankRules.goldRequirements['Gold I'].completedCampaigns) rank = maxRank(rank, 'Gold I');
+  if (completedCampaigns >= rankRules.goldRequirements['Gold II'].completedCampaigns && approved.length >= rankRules.goldRequirements['Gold II'].approvedPosts) rank = maxRank(rank, 'Gold II');
+  if (completedCampaigns >= rankRules.goldRequirements['Gold III'].completedCampaigns) rank = maxRank(rank, 'Gold III');
+  if (completedCampaigns >= rankRules.goldRequirements['Gold IV'].completedCampaigns) rank = maxRank(rank, 'Gold IV');
   if (approved.length >= rankRules.platinumMinimums.approvedPosts && avgEngagement >= rankRules.platinumMinimums.averageEngagementRate && approvalRate >= rankRules.platinumMinimums.approvalRate) rank = 'Platinum';
 
   const nextRank = getNextRank(rank);
   const nextProgressTarget = nextRank && nextRank in rankRules.bronzeRequirements
-    ? rankRules.bronzeRequirements[nextRank as keyof typeof rankRules.bronzeRequirements].consecutiveWeeks
+    ? rankRules.bronzeRequirements[nextRank as keyof typeof rankRules.bronzeRequirements].approvedPosts
     : nextRank?.startsWith('Silver')
-      ? rankRules.silverMinimums.approvedPosts
+      ? getSilverProgressTarget(nextRank)
       : nextRank?.startsWith('Gold')
-        ? rankRules.goldMinimums.approvedPosts
+        ? getGoldProgressTarget(nextRank)
         : rankRules.platinumMinimums.approvedPosts;
-  const progressBasis = nextRank && nextRank in rankRules.bronzeRequirements ? consecutiveWeeks : approved.length;
+  const progressBasis = nextRank?.startsWith('Gold') ? completedCampaigns : approved.length;
   const rankProgressPercentage = nextRank ? Math.min(100, Math.round((progressBasis / Math.max(nextProgressTarget, 1)) * 100)) : 100;
 
   return { currentRank: rank, nextRank, rankProgressPercentage, consecutiveWeeks, completedOnboarding };
@@ -425,6 +446,26 @@ function getPromotionHours(rank: CreatorRank) {
   if (rank.startsWith('Silver')) return scholarshipRules.rankPromotionHours.Silver;
   if (rank.startsWith('Bronze')) return scholarshipRules.rankPromotionHours.Bronze;
   return scholarshipRules.rankPromotionHours.Gold;
+}
+
+function maxRank(currentRank: CreatorRank, candidateRank: CreatorRank) {
+  return CREATOR_RANKS.indexOf(candidateRank) > CREATOR_RANKS.indexOf(currentRank) ? candidateRank : currentRank;
+}
+
+function getSilverProgressTarget(rank: CreatorRank) {
+  if (rank === 'Silver I') return rankRules.silverRequirements['Silver I'].approvedPosts;
+  if (rank === 'Silver II') return rankRules.silverRequirements['Silver II'].approvedPosts;
+  if (rank === 'Silver III') return rankRules.silverRequirements['Silver III'].approvedPosts;
+  if (rank === 'Silver IV') return rankRules.silverRequirements['Silver IV'].completedCampaigns;
+  return rankRules.silverMinimums.approvedPosts;
+}
+
+function getGoldProgressTarget(rank: CreatorRank) {
+  if (rank === 'Gold I') return rankRules.goldRequirements['Gold I'].completedCampaigns;
+  if (rank === 'Gold II') return rankRules.goldRequirements['Gold II'].completedCampaigns;
+  if (rank === 'Gold III') return rankRules.goldRequirements['Gold III'].completedCampaigns;
+  if (rank === 'Gold IV') return rankRules.goldRequirements['Gold IV'].completedCampaigns;
+  return rankRules.goldMinimums.completedCampaigns;
 }
 
 function getApprovedContentHoursForRank(rank: CreatorRank) {

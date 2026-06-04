@@ -217,7 +217,7 @@ export default function CreatorDiscovery() {
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="truncate text-sm font-semibold text-foreground">{creator.name}</h3>
                                 {creator.verified && (
-                                <span className="rank-chip bg-blue-50 text-blue-700 border-blue-200">
+                                <span className="rank-chip bg-primary/10 text-primary border-primary/20">
                                     <CheckCircle2 className="size-3" />
                                     Verified creator
                                   </span>
@@ -302,7 +302,7 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
         'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
         active
           ? 'border-primary bg-primary text-white'
-          : 'border-border bg-white text-muted-foreground hover:border-blue-200 hover:text-primary',
+          : 'border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-primary',
       )}
     >
       {children}
@@ -361,8 +361,8 @@ function CreatorPortfolioOverlay({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-slate-950/40 p-4">
-      <div className="relative mx-auto my-6 grid w-full max-w-[980px] transform-gpu overflow-hidden rounded-[16px] border border-border bg-white shadow-xl lg:grid-cols-[330px_minmax(0,1fr)]">
+    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-slate-950/40 p-0 sm:p-4">
+      <div className="relative mx-auto grid min-h-dvh w-full max-w-[980px] transform-gpu overflow-hidden border border-border bg-white shadow-xl sm:my-6 sm:min-h-0 sm:rounded-[16px] lg:grid-cols-[330px_minmax(0,1fr)]">
         <button
           type="button"
           onClick={onClose}
@@ -372,7 +372,7 @@ function CreatorPortfolioOverlay({
           <X className="size-4" />
         </button>
 
-        <aside className="border-b border-border bg-muted/25 p-6 lg:border-b-0 lg:border-r">
+        <aside className="border-b border-border bg-muted/25 p-4 sm:p-6 lg:border-b-0 lg:border-r">
           <div className="overflow-hidden rounded-[12px] border border-border bg-white">
             <div className="aspect-[4/5] bg-[linear-gradient(145deg,#dbeafe,#f8fafc)]">
               {creator.avatar ? (
@@ -420,12 +420,12 @@ function CreatorPortfolioOverlay({
           </div>
         </aside>
 
-        <main className="p-6">
+        <main className="min-w-0 p-4 sm:p-6">
           <header className="border-b border-border pb-5">
             <div className="flex items-start justify-between gap-4 pr-10">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-2xl font-semibold tracking-normal text-foreground">{creator.name}</h2>
+                  <h2 className="text-xl font-semibold tracking-normal text-foreground sm:text-2xl">{creator.name}</h2>
                   {creator.verified && <CheckCircle2 className="size-5 text-primary" />}
                 </div>
                 <p className="mt-1 text-sm font-semibold text-muted-foreground">{monthlyPerformance.currentRank} Campus Creator</p>
@@ -491,7 +491,7 @@ function CreatorPortfolioOverlay({
             <p className="mt-5 max-w-2xl text-sm leading-6 text-muted-foreground">{creator.bio}</p>
           </header>
 
-          <section className="grid gap-3 border-b border-border py-5 md:grid-cols-4">
+          <section className="grid gap-3 border-b border-border py-5 sm:grid-cols-2 xl:grid-cols-4">
             <OverlayStat label="Rank Progress" value={`${monthlyPerformance.rankProgressPercentage}%`} />
             <OverlayStat label="Approved" value={monthlyPerformance.totalContentApproved} />
             <OverlayStat label="Monthly Views" value={formatFollowers(monthlyPerformance.totalViews)} />
@@ -579,7 +579,7 @@ function PlatformProfileCard({ platform }: { platform: Creator['platforms'][numb
       href={platform.url}
       target="_blank"
       rel="noreferrer"
-      className="flex size-11 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-white text-primary transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm"
+      className="flex size-11 cursor-pointer items-center justify-center rounded-[10px] border border-border bg-white text-primary transition hover:-translate-y-0.5 hover:border-primary/20 hover:bg-blue-50 hover:shadow-sm"
       aria-label={`Open ${platform.name} profile for ${platform.handle}`}
     >
       {content}

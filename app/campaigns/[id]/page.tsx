@@ -41,14 +41,14 @@ export default function CampaignDetail() {
 
   if (!campaign) {
     return (
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen ecosystem-shell">
         <Sidebar />
         <main className="flex-1 overflow-auto">
           <div className="p-8 text-center">
             <p className="text-muted-foreground">Campaign not found</p>
           </div>
-        </main>
-      </div>
+      </main>
+    </div>
     );
   }
 
@@ -90,7 +90,7 @@ export default function CampaignDetail() {
           </Link>
 
           <section className="panel mb-6 overflow-hidden">
-            <div className="border-b border-border bg-white px-6 py-6">
+            <div className="border-b border-border bg-white px-4 py-5 sm:px-6 sm:py-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -421,20 +421,20 @@ function AuCreatorCampusInvitation({
                 <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
                   Help showcase student life, campus culture, university activities, and scholarship opportunities through authentic creator content.
                 </p>
-                <div className="mt-5 flex flex-wrap items-center gap-2">
-                  <Button className="bg-primary text-white" onClick={onAccept} disabled={status === 'accepted'}>
+                <div className="mt-5 grid gap-2 sm:flex sm:flex-wrap sm:items-center">
+                  <Button className="w-full bg-primary text-white sm:w-auto" onClick={onAccept} disabled={status === 'accepted'}>
                     Accept Campaign
                   </Button>
-                  <Button asChild variant="outline" className="border-border bg-white">
+                  <Button asChild variant="outline" className="w-full border-border bg-white sm:w-auto">
                     <a href="#campaign-brief">View Full Brief</a>
                   </Button>
-                  <Button asChild variant="outline" className="border-border bg-white">
+                  <Button asChild variant="outline" className="w-full border-border bg-white sm:w-auto">
                     <a href="mailto:creators@rollerkluster.com?subject=AU%20Creator%20Campus%20Program%202026">
                       <MessageSquare className="size-4" />
                       Message Manager
                     </a>
                   </Button>
-                  <Button variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={onDecline} disabled={status === 'declined'}>
+                  <Button variant="ghost" className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto" onClick={onDecline} disabled={status === 'declined'}>
                     Decline
                   </Button>
                 </div>
@@ -443,7 +443,7 @@ function AuCreatorCampusInvitation({
           </section>
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
-            <section className="space-y-6">
+            <section className="min-w-0 space-y-6">
               <InvitationSection title="Campaign Overview">
                 <p>Help showcase student life, campus culture, university activities, and scholarship opportunities through authentic creator content.</p>
                 <p className="mt-3">This campaign aims to increase awareness of student engagement opportunities and highlight the experiences of active student leaders and scholarship recipients.</p>
@@ -502,7 +502,7 @@ function AuCreatorCampusInvitation({
               </InvitationSection>
             </section>
 
-            <aside className="space-y-6">
+            <aside className="min-w-0 space-y-6">
               <InvitationSection title="Timeline">
                 <div className="space-y-4">
                   <TimelineRow label="Invitation Accepted" value="June 3" />

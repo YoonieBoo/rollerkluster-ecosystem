@@ -46,7 +46,7 @@ export default function TrainingHub() {
                   : 'Track onboarding coverage, readiness standards, and creator preparedness across the ecosystem.'}
               </p>
             </div>
-            <Badge variant="outline" className="rounded-full border-blue-200 bg-blue-50 px-3 py-1.5 text-blue-700">
+            <Badge variant="outline" className="rounded-full border-primary/20 bg-blue-50 px-3 py-1.5 text-primary">
               {activeRole === 'creator' ? `${creatorProgress}% complete` : `${ecosystemProgress}% ecosystem coverage`}
             </Badge>
           </header>
