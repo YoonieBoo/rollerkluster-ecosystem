@@ -109,7 +109,7 @@ function SignInScreen() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <label className="inline-flex items-center gap-2 font-medium">
-                <input type="checkbox" className="size-3.5 rounded border-border accent-slate-950" />
+                <input type="checkbox" className="size-3.5 rounded border-border accent-primary" />
                 Remember me
               </label>
               <button type="button" className="font-semibold text-muted-foreground hover:text-foreground" onClick={() => void forgotPassword()}>
@@ -123,12 +123,12 @@ function SignInScreen() {
               </p>
             )}
             {resetSent && !authError && (
-              <p className="rounded-lg border border-primary/20 bg-blue-50 px-3 py-2 text-sm font-medium text-primary">
+              <p className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
                 If an account exists for this email, Supabase will send a reset link.
               </p>
             )}
 
-            <Button type="submit" className="mt-1 h-12 rounded-full bg-slate-950 text-white hover:bg-slate-800" disabled={submitting}>
+            <Button type="submit" className="mt-1 h-12 rounded-full bg-primary text-white hover:bg-primary/90" disabled={submitting}>
               {submitting ? 'Signing in...' : 'Log in'}
             </Button>
             <div className="text-center text-xs text-muted-foreground">
@@ -218,12 +218,12 @@ function SignUpScreen() {
               </p>
             )}
             {success && !authError && (
-              <p className="rounded-lg border border-primary/20 bg-blue-50 px-3 py-2 text-sm font-medium text-primary">
+              <p className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
                 {success}
               </p>
             )}
 
-            <Button type="submit" className="mt-1 h-12 rounded-full bg-slate-950 text-white hover:bg-slate-800" disabled={submitting}>
+            <Button type="submit" className="mt-1 h-12 rounded-full bg-primary text-white hover:bg-primary/90" disabled={submitting}>
               {submitting ? 'Creating account...' : 'Create Account'}
             </Button>
             <div className="text-center text-xs text-muted-foreground">
@@ -263,7 +263,7 @@ function AuthVisualPanel() {
 function AuthFormBrand() {
   return (
     <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-      <span className="flex size-6 items-center justify-center rounded-md bg-slate-950 text-[10px] text-white">RK</span>
+      <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] text-white">RK</span>
       RollerKluster
     </div>
   );
