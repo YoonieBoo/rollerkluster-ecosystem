@@ -15,6 +15,7 @@ type CreatorInvitationStatus = 'pending' | 'accepted' | 'declined';
 
 const invitationStorageKey = 'rollerkluster-invitation-status';
 const proofBucket = 'creator-social-proof';
+const avatarBucket = 'creator-avatars';
 const avatarStoragePrefix = 'rollerkluster-creator-avatar';
 
 type SaveCreatorOnboardingInput = {
@@ -100,6 +101,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     const role = await resolveRole(user);
     await upsertPlatformUser(user, role);
     const creatorProfile = role === 'creator' ? await fetchCreatorProfile(user.id) : null;
+    const creatorAvatarUrl = await resolveCreatorAvatar(user);
     set({
       activeRole: role === 'creator' ? 'creator' : 'admin',
       authHydrated: true,
@@ -107,7 +109,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       sessionEmail: user.email ?? '',
       sessionUser: user,
       creatorProfile,
-      creatorAvatarUrl: readCreatorAvatar(user.id),
+      creatorAvatarUrl,
       authError: '',
       creatorInvitationStatus: readInvitationStatus(),
     });
@@ -129,6 +131,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     const role = user ? await resolveRole(user) : 'brand';
     if (user) await upsertPlatformUser(user, role);
     const creatorProfile = user && role === 'creator' ? await fetchCreatorProfile(user.id) : null;
+    const creatorAvatarUrl = user ? await resolveCreatorAvatar(user) : '';
     set({
       activeRole: role === 'creator' ? 'creator' : 'admin',
       authHydrated: true,
@@ -136,7 +139,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       sessionEmail: user?.email ?? '',
       sessionUser: user ?? null,
       creatorProfile,
-      creatorAvatarUrl: user ? readCreatorAvatar(user.id) : '',
+      creatorAvatarUrl,
       authError: '',
     });
   },
@@ -166,6 +169,7 @@ export const useUiStore = create<UiState>((set, get) => ({
 
     if (data.user) {
       await upsertPlatformUser(data.user, authRole);
+      const creatorAvatarUrl = data.session ? await resolveCreatorAvatar(data.user) : '';
       set({
         activeRole: role,
         authHydrated: true,
@@ -173,7 +177,7 @@ export const useUiStore = create<UiState>((set, get) => ({
         sessionEmail: data.user.email ?? email,
         sessionUser: data.session ? data.user : null,
         creatorProfile: null,
-        creatorAvatarUrl: data.session ? readCreatorAvatar(data.user.id) : '',
+        creatorAvatarUrl,
       });
     }
   },
@@ -201,11 +205,39 @@ export const useUiStore = create<UiState>((set, get) => ({
   },
   saveCreatorAvatar: async (file) => {
     const user = get().sessionUser;
-    if (!user) throw new Error('You must be signed in before uploading a profile photo.');
+    if (!supabase || !user) throw new Error('You must be signed in before uploading a profile photo.');
     if (!file.type.startsWith('image/')) throw new Error('Upload an image file.');
     if (file.size > 5 * 1024 * 1024) throw new Error('Upload a profile photo under 5MB.');
 
-    const avatarUrl = await fileToDataUrl(file);
+    const extension = getFileExtension(file);
+    const avatarPath = `${user.id}/profile.${extension}`;
+    const upload = await supabase.storage.from(avatarBucket).upload(avatarPath, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: file.type,
+    });
+    if (upload.error) {
+      console.error('CREATOR AVATAR UPLOAD FAILED', upload.error);
+      throw new Error(formatSupabaseOnboardingError(upload.error, 'Could not upload profile photo.'));
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(avatarBucket).getPublicUrl(avatarPath);
+    const avatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+    const { error: userUpdateError } = await supabase
+      .from('users')
+      .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+    if (userUpdateError) {
+      console.error('CREATOR AVATAR PROFILE SAVE FAILED', userUpdateError);
+      throw new Error(formatSupabaseOnboardingError(userUpdateError, 'Could not save profile photo.'));
+    }
+
+    const { error: authUpdateError } = await supabase.auth.updateUser({ data: { avatar_url: avatarUrl } });
+    if (authUpdateError) {
+      console.error('CREATOR AVATAR AUTH METADATA SAVE FAILED', authUpdateError);
+    }
+
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(`${avatarStoragePrefix}:${user.id}`, avatarUrl);
     }
@@ -347,6 +379,13 @@ async function resolveRole(user: User): Promise<AuthRole> {
 async function upsertPlatformUser(user: User, role: AuthRole, creatorRank?: string) {
   if (!supabase) return;
   const metadata = user.user_metadata as Record<string, unknown>;
+  const metadataAvatar =
+    typeof metadata.avatar_url === 'string'
+      ? metadata.avatar_url
+      : typeof metadata.picture === 'string'
+        ? metadata.picture
+        : null;
+  const existingAvatar = await fetchPlatformUserAvatar(user.id);
   const row: {
     id: string;
     email: string | undefined;
@@ -360,7 +399,7 @@ async function upsertPlatformUser(user: User, role: AuthRole, creatorRank?: stri
     id: user.id,
     email: user.email,
     full_name: typeof metadata.full_name === 'string' ? metadata.full_name : typeof metadata.name === 'string' ? metadata.name : user.email,
-    avatar_url: typeof metadata.avatar_url === 'string' ? metadata.avatar_url : typeof metadata.picture === 'string' ? metadata.picture : null,
+    avatar_url: metadataAvatar ?? (existingAvatar || null),
     role,
     provider: user.app_metadata.provider ?? 'email',
     updated_at: new Date().toISOString(),
@@ -387,6 +426,36 @@ async function fetchCreatorProfile(userId: string) {
     return null;
   }
   return data ? normalizeCreatorProfileRow(data as CreatorProfileRow) : null;
+}
+
+async function resolveCreatorAvatar(user: User) {
+  const metadata = user.user_metadata as Record<string, unknown>;
+  const metadataAvatar =
+    typeof metadata.avatar_url === 'string'
+      ? metadata.avatar_url
+      : typeof metadata.picture === 'string'
+        ? metadata.picture
+        : '';
+  const storedAvatar = await fetchPlatformUserAvatar(user.id);
+  return storedAvatar || metadataAvatar || readCreatorAvatar(user.id);
+}
+
+async function fetchPlatformUserAvatar(userId: string) {
+  if (!supabase) return '';
+  const { data, error } = await supabase.from('users').select('avatar_url').eq('id', userId).maybeSingle();
+  if (error) return '';
+  return typeof data?.avatar_url === 'string' ? data.avatar_url : '';
+}
+
+function getFileExtension(file: File) {
+  const fromName = file.name.split('.').pop()?.toLowerCase();
+  if (fromName && ['png', 'jpeg', 'jpg', 'webp', 'gif'].includes(fromName)) {
+    return fromName === 'jpg' ? 'jpeg' : fromName;
+  }
+  if (file.type === 'image/png') return 'png';
+  if (file.type === 'image/webp') return 'webp';
+  if (file.type === 'image/gif') return 'gif';
+  return 'jpeg';
 }
 
 function formatSupabaseOnboardingError(error: unknown, fallback: string) {
@@ -421,13 +490,4 @@ function readInvitationStatus(): CreatorInvitationStatus {
 function readCreatorAvatar(userId: string) {
   if (typeof window === 'undefined') return '';
   return window.localStorage.getItem(`${avatarStoragePrefix}:${userId}`) ?? '';
-}
-
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-    reader.onerror = () => reject(new Error('Could not read the selected image.'));
-    reader.readAsDataURL(file);
-  });
 }
