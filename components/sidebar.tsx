@@ -66,8 +66,8 @@ export function Sidebar() {
     <>
       <div className="flex items-center justify-between px-5 py-5">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-white shadow-sm">
-            <span className="text-[13px] font-bold">RK</span>
+          <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-white shadow-sm">
+            <img src="/logo%20pic.PNG" alt="RollerKluster" className="size-full object-cover" />
           </div>
           <div className={cn('min-w-0 transition-opacity', sidebarCollapsed && 'pointer-events-none opacity-0')}>
             <h1 className="truncate text-[14px] font-semibold leading-tight text-sidebar-foreground">RollerKluster</h1>

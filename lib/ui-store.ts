@@ -48,6 +48,7 @@ interface UiState {
   signOut: () => Promise<void>;
   saveCreatorAvatar: (file: File) => Promise<void>;
   saveCreatorOnboarding: (input: SaveCreatorOnboardingInput) => Promise<void>;
+  updateCreatorProfile: (input: Omit<SaveCreatorOnboardingInput, 'proofFile'>) => Promise<void>;
   refreshCreatorProfile: () => Promise<void>;
   setCreatorInvitationStatus: (status: CreatorInvitationStatus) => void;
 }
@@ -270,6 +271,44 @@ export const useUiStore = create<UiState>((set, get) => ({
       creatorProfile: normalizeCreatorProfileRow(data as CreatorProfileRow),
       activeRole: 'creator',
     });
+  },
+  updateCreatorProfile: async (input) => {
+    const user = get().sessionUser;
+    const existingProfile = get().creatorProfile;
+    if (!supabase || !user || !existingProfile) throw new Error('You must be signed in before editing your profile.');
+
+    const creatorRank = calculateStartingRank(input.followerCount);
+    const row: CreatorProfileRow = {
+      user_id: user.id,
+      platform: input.platform,
+      social_handle: input.socialHandle,
+      social_profile_url: input.socialProfileUrl,
+      follower_count: input.followerCount,
+      manual_follower_count: input.followerCount,
+      engagement_rate: typeof input.engagementRate === 'number' ? input.engagementRate : null,
+      proof_image_url: existingProfile.proofImageUrl ?? null,
+      verification_status: existingProfile.verificationStatus,
+      creator_rank: creatorRank,
+      onboarding_completed: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('creator_profiles')
+      .upsert(row, { onConflict: 'user_id' })
+      .select('*')
+      .single();
+    if (error) {
+      console.error('CREATOR PROFILE UPDATE FAILED', error);
+      throw new Error(formatSupabaseOnboardingError(error, 'Could not update creator profile.'));
+    }
+
+    try {
+      await upsertPlatformUser(user, 'creator', creatorRank);
+    } catch (error) {
+      console.error('CREATOR PROFILE USER RANK UPDATE FAILED', error);
+    }
+    set({ creatorProfile: normalizeCreatorProfileRow(data as CreatorProfileRow) });
   },
   refreshCreatorProfile: async () => {
     const user = get().sessionUser;
