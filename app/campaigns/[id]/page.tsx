@@ -15,8 +15,16 @@ import { cn } from '@/lib/utils';
 import { initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { useUiStore } from '@/lib/ui-store';
 import { SUPPORTED_SUBMISSION_PLATFORMS, submissionStatusLabel, type SubmissionPlatform } from '@/lib/creator-performance';
-import type { Campaign, Engagement, Submission } from '@/lib/mock-data';
+import type { Campaign, Creator, Engagement, Submission } from '@/lib/mock-data';
 import { hasSupabaseConfig, isValidUuid } from '@/lib/supabase-data';
+
+function getCampaignFitScore(creator: Creator, campaign: Campaign) {
+  const nicheFit = campaign.targetNiches.includes(creator.niche) ? 35 : 0;
+  const platformFit = creator.platforms.some(platform => campaign.targetPlatforms.includes(platform.name)) ? 35 : 0;
+  const followerFit = creator.platforms.reduce((sum, platform) => sum + platform.followers, 0) >= campaign.minFollowers ? 15 : 0;
+  const readinessFit = Math.min(15, Math.round(creator.reputationScore / 7));
+  return nicheFit + platformFit + followerFit + readinessFit;
+}
 
 export default function CampaignDetail() {
   const { campaigns, creators, engagements, submissions, createEngagement, updateEngagementStatus, addSubmission, reviewSubmission } = useApp();
@@ -58,9 +66,8 @@ export default function CampaignDetail() {
   const campaignSubmissions = submissions.filter(submission => submission.campaignId === campaign.id);
   const suggestedCreators = creators
     .filter(creator => creator.approvalStatus === 'approved')
-    .filter(creator => campaign.targetNiches.includes(creator.niche) || creator.platforms.some(platform => campaign.targetPlatforms.includes(platform.name)))
     .filter(creator => !campaignEngagements.some(engagement => engagement.creatorId === creator.id))
-    .slice(0, 4);
+    .sort((a, b) => getCampaignFitScore(b, campaign) - getCampaignFitScore(a, campaign));
   const creatorEngagement = campaignEngagements.find(engagement => engagement.creatorId === 'creator-2');
   const completion = campaign.status === 'completed' ? 100 : Math.min(92, campaignEngagements.length * 34);
 
@@ -167,7 +174,7 @@ export default function CampaignDetail() {
                 <div className="panel overflow-hidden">
                   <div className="border-b border-border px-5 py-4">
                     <h2 className="section-heading">Creator suggestions</h2>
-                    <p className="section-subtitle">Approved creators matching this brief who are not assigned yet.</p>
+                    <p className="section-subtitle">All signed-up creators who are not assigned yet, sorted by brief fit.</p>
                   </div>
                   <div className="divide-y divide-border">
                     {suggestedCreators.map(creator => (
@@ -176,7 +183,7 @@ export default function CampaignDetail() {
                           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">{initials(creator.name)}</div>
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold">{creator.name}</p>
-                            <p className="truncate text-xs text-muted-foreground">{creator.niche} · {creator.reputationScore} readiness score</p>
+                            <p className="truncate text-xs text-muted-foreground">{creator.niche} · {creator.reputationScore} readiness score · {getCampaignFitScore(creator, campaign)}% fit</p>
                           </div>
                         </Link>
                         <Button size="sm" className="h-8 bg-primary text-xs" onClick={() => createEngagement(campaign.id, creator.id, Math.min(96, creator.reputationScore))}>Create match</Button>

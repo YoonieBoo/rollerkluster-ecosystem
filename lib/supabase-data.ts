@@ -1,4 +1,5 @@
-import type { Campaign, Submission } from './mock-data';
+import { supabase } from './supabase-client';
+import type { Campaign, Creator, Submission } from './mock-data';
 
 type CampaignRow = {
   id: string;
@@ -37,6 +38,28 @@ type CreatorSubmissionRow = {
   reviewed_by: string | null;
 };
 
+type CreatorProfileDirectoryRow = {
+  user_id: string;
+  platform: string;
+  social_handle: string;
+  social_profile_url: string | null;
+  follower_count: number;
+  engagement_rate: number | null;
+  verification_status: string;
+  creator_rank: string;
+  onboarding_completed: boolean;
+  created_at: string | null;
+};
+
+type PlatformUserDirectoryRow = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string | null;
+  created_at: string | null;
+};
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -57,6 +80,39 @@ export async function fetchCreatorSubmissions() {
 export async function fetchCampaigns() {
   const rows = await supabaseRequest<CampaignRow[]>('/rest/v1/campaigns?select=*&order=created_at.desc');
   return rows.map(mapCampaignFromRow);
+}
+
+export async function fetchSignedUpCreators() {
+  if (!supabase) return [];
+
+  const [{ data: profileRows, error: profileError }, { data: userRows, error: usersError }] = await Promise.all([
+    supabase
+      .from('creator_profiles')
+      .select('user_id, platform, social_handle, social_profile_url, follower_count, engagement_rate, verification_status, creator_rank, onboarding_completed, created_at')
+      .eq('onboarding_completed', true)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('users')
+      .select('id, email, full_name, avatar_url, role, created_at')
+      .eq('role', 'creator'),
+  ]);
+  if (profileError) {
+    console.error('CREATOR DIRECTORY LOAD FAILED', profileError);
+  }
+  if (usersError) {
+    console.error('CREATOR DIRECTORY USERS LOAD FAILED', usersError);
+  }
+
+  const profiles = (profileRows ?? []) as CreatorProfileDirectoryRow[];
+  const users = (userRows ?? []) as PlatformUserDirectoryRow[];
+  const usersById = new Map((userRows ?? []).map((user) => [(user as PlatformUserDirectoryRow).id, user as PlatformUserDirectoryRow]));
+  const profiledCreators = profiles.map(profile => mapCreatorProfileToCreator(profile, usersById.get(profile.user_id)));
+  const profiledCreatorIds = new Set(profiledCreators.map(creator => creator.id));
+  const usersWithoutProfiles = users
+    .filter(user => !profiledCreatorIds.has(user.id))
+    .map(mapUserToSignedUpCreator);
+
+  return [...profiledCreators, ...usersWithoutProfiles];
 }
 
 export async function insertCreatorSubmission(submission: Submission) {
@@ -143,6 +199,105 @@ function mapCampaignFromRow(row: CampaignRow): Campaign {
     status: mapCampaignStatus(row.status),
     createdAt: dateOnly(row.created_at) ?? new Date().toISOString().slice(0, 10),
   };
+}
+
+function mapCreatorProfileToCreator(profile: CreatorProfileDirectoryRow, user?: PlatformUserDirectoryRow): Creator {
+  const handle = normalizeHandle(profile.social_handle);
+  const platform = normalizeCreatorPlatform(profile.platform);
+  const followers = profile.follower_count ?? 0;
+  const engagementRate = Number(profile.engagement_rate ?? 0);
+  const score = calculateProfileReadinessScore(followers, engagementRate, profile.verification_status);
+  const displayName = user?.full_name || user?.email || handle.replace(/^@/, '') || 'Signed-up creator';
+
+  return {
+    id: profile.user_id,
+    name: displayName,
+    avatar: user?.avatar_url ?? undefined,
+    bio: `${platform} creator signed up for brand collaborations through RollerKluster.`,
+    niche: 'Creator Campus',
+    platforms: [
+      {
+        name: platform,
+        followers,
+        handle,
+        username: handle.replace(/^@/, ''),
+        url: profile.social_profile_url ?? undefined,
+      },
+    ],
+    engagementRate,
+    verified: profile.verification_status === 'verified',
+    approvalStatus: 'approved',
+    portfolioItems: [],
+    trainingCompleted: profile.onboarding_completed ? ['Creator onboarding'] : [],
+    engagementHistory: [],
+    badge: badgeFromCreatorRank(profile.creator_rank),
+    reputationScore: score,
+    completedEngagements: 0,
+    contentQualityScore: profile.verification_status === 'verified' ? 4.2 : 3.5,
+    approvalRate: profile.verification_status === 'verified' ? 90 : 0,
+    evaluations: [],
+    joinedDate: dateOnly(profile.created_at) ?? new Date().toISOString().slice(0, 10),
+  };
+}
+
+function mapUserToSignedUpCreator(user: PlatformUserDirectoryRow): Creator {
+  const handle = normalizeHandle((user.email ?? user.full_name ?? 'creator').split('@')[0]);
+  const displayName = user.full_name || user.email || 'Signed-up creator';
+
+  return {
+    id: user.id,
+    name: displayName,
+    avatar: user.avatar_url ?? undefined,
+    bio: 'Creator account signed up for brand collaborations through RollerKluster.',
+    niche: 'Creator Campus',
+    platforms: [
+      {
+        name: 'Instagram',
+        followers: 0,
+        handle,
+        username: handle.replace(/^@/, ''),
+      },
+    ],
+    engagementRate: 0,
+    verified: false,
+    approvalStatus: 'approved',
+    portfolioItems: [],
+    trainingCompleted: [],
+    engagementHistory: [],
+    badge: 'Bronze1',
+    reputationScore: 35,
+    completedEngagements: 0,
+    contentQualityScore: 3.5,
+    approvalRate: 0,
+    evaluations: [],
+    joinedDate: dateOnly(user.created_at) ?? new Date().toISOString().slice(0, 10),
+  };
+}
+
+function normalizeHandle(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '@creator';
+  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
+}
+
+function normalizeCreatorPlatform(value: string): Creator['platforms'][number]['name'] {
+  if (value === 'TikTok' || value === 'Instagram' || value === 'YouTube' || value === 'Facebook') return value;
+  return 'Instagram';
+}
+
+function badgeFromCreatorRank(rank: string): Creator['badge'] {
+  if (rank.startsWith('Gold')) return 'Gold';
+  if (rank.startsWith('Silver')) return 'Silver1';
+  if (rank.startsWith('Bronze IV') || rank.startsWith('Bronze III')) return 'Bronze3';
+  if (rank.startsWith('Bronze II')) return 'Bronze2';
+  return 'Bronze1';
+}
+
+function calculateProfileReadinessScore(followers: number, engagementRate: number, verificationStatus: string) {
+  const followerScore = Math.min(35, Math.round(followers / 1500));
+  const engagementScore = Math.min(35, Math.round(engagementRate * 5));
+  const verificationScore = verificationStatus === 'verified' ? 20 : 8;
+  return Math.min(96, Math.max(35, followerScore + engagementScore + verificationScore));
 }
 
 function mapCampaignStatus(status: string): Campaign['status'] {

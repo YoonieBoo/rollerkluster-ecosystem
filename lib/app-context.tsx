@@ -27,6 +27,7 @@ import {
 import {
   fetchCampaigns,
   fetchCreatorSubmissions,
+  fetchSignedUpCreators,
   hasSupabaseConfig,
   insertCreatorSubmission,
   persistCreatorRank,
@@ -106,11 +107,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!hasSupabaseConfig()) return;
 
     let mounted = true;
-    Promise.all([fetchCreatorSubmissions(), fetchCampaigns()])
-      .then(([remoteSubmissions, remoteCampaigns]) => {
+    Promise.all([fetchCreatorSubmissions(), fetchCampaigns(), fetchSignedUpCreators()])
+      .then(([remoteSubmissions, remoteCampaigns, remoteCreators]) => {
         if (!mounted) return;
         setSubmissions(remoteSubmissions);
         setCampaigns(remoteCampaigns);
+        setCreators(current => mergeCreators(current, remoteCreators));
       })
       .catch((error) => {
         console.error(error);
@@ -456,6 +458,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     </AppContext.Provider>
   );
 };
+
+function mergeCreators(current: Creator[], remoteCreators: Creator[]) {
+  if (remoteCreators.length === 0) return current;
+  const remoteIds = new Set(remoteCreators.map(creator => creator.id));
+  return [
+    ...remoteCreators,
+    ...current.filter(creator => !remoteIds.has(creator.id)),
+  ];
+}
 
 export const useApp = () => {
   const context = useContext(AppContext);
