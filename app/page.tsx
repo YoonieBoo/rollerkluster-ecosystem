@@ -32,6 +32,7 @@ import {
 } from '@/lib/creator-performance';
 import type { Campaign } from '@/lib/mock-data';
 import { hasSupabaseConfig, isValidUuid } from '@/lib/supabase-data';
+import { buildCurrentCreator } from '@/lib/current-creator';
 import {
   getCreatorMonthlyPerformance,
   getCreatorMonthlySubmissionsForDisplay,
@@ -240,7 +241,7 @@ export default function Dashboard() {
 
 function CreatorPortal() {
   const { creators, campaigns, engagements, submissions, addSubmission, generateMonthlyReport } = useApp();
-  const { sessionEmail } = useUiStore();
+  const { creatorAvatarUrl, creatorProfile, sessionEmail, sessionUser } = useUiStore();
   const [submissionOpen, setSubmissionOpen] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [submissionForm, setSubmissionForm] = useState({
@@ -250,7 +251,8 @@ function CreatorPortal() {
     contentType: 'Reel',
     note: '',
   });
-  const creator = creators.find(c => c.id === 'creator-2') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
+  const demoCreator = creators.find(c => c.id === 'creator-2') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
+  const creator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl });
   const creatorEngagements = engagements.filter(e => e.creatorId === creator?.id);
   const { month, year } = getMonthYear();
   const creatorSubmissions = creator

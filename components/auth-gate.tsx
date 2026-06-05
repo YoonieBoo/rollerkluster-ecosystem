@@ -365,43 +365,40 @@ function CreatorOnboardingScreen() {
 
   const stepContent = {
     1: (
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[1.1fr_0.9fr] xl:items-center">
-        <div className="min-w-0">
-          <Badge className="rounded-full bg-primary/10 text-primary hover:bg-blue-50">AU Creator Campus</Badge>
-          <h2 className="mt-4 text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">Join the creator ecosystem built for student opportunities.</h2>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">RollerKluster helps student creators receive campaign invitations, submit content, grow rank, build a portfolio, and earn scholarship-hour contributions through real participation.</p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <Benefit icon={<Sparkles className="size-4" />} title="Get discovered" detail="Brands can review your creator profile." />
-            <Benefit icon={<Trophy className="size-4" />} title="Rank up" detail="Progress through AU Creator Campus layers." />
-            <Benefit icon={<GraduationCap className="size-4" />} title="Earn hours" detail="Hours come from approved activity." />
-          </div>
+      <div className="min-w-0">
+        <div className="max-w-2xl">
+          <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">AU Creator Campus</Badge>
+          <h2 className="mt-4 text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">Set up your creator profile in a few minutes.</h2>
+          <p className="mt-4 text-sm leading-6 text-muted-foreground">Create your profile, preview your rank, and enter your creator dashboard.</p>
         </div>
-        <div className="min-w-0 rounded-[16px] border border-blue-100 bg-blue-50 p-4 sm:p-6">
-          <p className="text-sm font-semibold text-blue-900">What happens next</p>
-          <div className="mt-4 space-y-3">
-            {['Preview your starting rank', 'Complete your creator profile', 'Enter your creator dashboard'].map(item => (
-              <div key={item} className="flex min-w-0 items-center gap-3 rounded-[12px] bg-white p-3 text-sm font-semibold text-blue-950">
-                <CheckCircle2 className="size-4 text-primary" />
-                <span className="min-w-0">{item}</span>
-              </div>
-            ))}
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <SimpleBenefit icon={<Sparkles className="size-4" />} title="Get campaign invites" />
+          <SimpleBenefit icon={<Trophy className="size-4" />} title="See your rank" />
+          <SimpleBenefit icon={<GraduationCap className="size-4" />} title="Earn hours later" />
+        </div>
+        <div className="mt-8 border-t border-border pt-5">
+          <p className="text-sm font-semibold text-foreground">Next steps</p>
+          <div className="mt-4 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+            <p><span className="font-semibold text-foreground">1.</span> Preview rank</p>
+            <p><span className="font-semibold text-foreground">2.</span> Add profile details</p>
+            <p><span className="font-semibold text-foreground">3.</span> Open dashboard</p>
           </div>
         </div>
       </div>
     ),
     2: (
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[0.9fr_1.1fr] xl:items-center">
-        <div className="min-w-0 rounded-[18px] border border-blue-100 bg-blue-50 p-5 text-center sm:p-6">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[0.82fr_1.18fr] xl:items-start">
+        <div className="min-w-0 rounded-[18px] border border-primary/10 bg-primary/5 p-5 text-center sm:p-6">
           <div className="mx-auto flex size-20 items-center justify-center rounded-[18px] bg-white text-primary shadow-sm sm:size-24">
             <Trophy className="size-10 sm:size-12" />
           </div>
           <p className="mt-5 text-sm font-semibold uppercase text-primary">Rank preview</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-normal text-blue-950 sm:text-4xl">{suggestedRank}</h2>
-          <p className="mt-2 text-sm text-blue-800">{Number(form.followerCount || 0).toLocaleString()} followers entered</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">{suggestedRank}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{Number(form.followerCount || 0).toLocaleString()} followers entered</p>
         </div>
         <div className="min-w-0 space-y-5">
           <div>
-            <h2 className="text-xl font-semibold tracking-normal sm:text-2xl">Preview your starting rank</h2>
+            <h2 className="text-xl font-semibold tracking-normal sm:text-2xl">Add your social profile</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">Follower count estimates your entry rank only. After joining, you rank up through AU Creator Campus activity.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -416,7 +413,7 @@ function CreatorOnboardingScreen() {
             <OnboardingField label="Username / handle" value={form.socialHandle} onChange={(socialHandle) => setForm(current => ({ ...current, socialHandle }))} placeholder="@yourhandle" />
             <OnboardingField label="Profile URL" value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://instagram.com/yourhandle" />
           </div>
-          <div className="rounded-[14px] border border-border bg-white p-4">
+          <div className="rounded-[14px] border border-primary/10 bg-primary/5 p-4">
             <p className="text-sm font-semibold">What this rank unlocks</p>
             <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
               <p>Brand-side visibility with your starting status.</p>
@@ -454,73 +451,81 @@ function CreatorOnboardingScreen() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-      <section className="mx-auto w-full max-w-[1180px]">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="section-label">Creator onboarding</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-normal text-foreground sm:text-3xl lg:text-4xl">Complete Your Creator Profile</h1>
-            <p className="page-description mt-2">A guided setup for your creator identity, starting rank, and verification.</p>
-          </div>
-          <Button type="button" variant="outline" className="w-fit border-border bg-white" onClick={() => void signOut()}>Sign out</Button>
-        </div>
-
-        <div className="mb-5 rounded-[14px] border border-border bg-white p-3 sm:p-4">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:gap-3 sm:overflow-visible sm:pb-0">
-            {[1, 2, 3].map(item => (
-              <div key={item} className="flex shrink-0 items-center gap-2">
-                <div className={cn('flex size-8 items-center justify-center rounded-full text-xs font-semibold', item <= step ? 'bg-primary text-white' : 'bg-muted text-muted-foreground')}>{item}</div>
-                <span className={cn('text-xs font-semibold sm:text-sm', item === step ? 'text-foreground' : 'text-muted-foreground')}>{['Welcome', 'Rank', 'Profile'][item - 1]}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+      <section className="mx-auto w-full max-w-[1120px]">
+        <div className="mb-5 rounded-[20px] border border-border bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="section-label">Creator onboarding</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">Complete Your Creator Profile</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Set up your creator identity, starting rank, and portfolio details before entering RollerKluster.</p>
+            </div>
+            <Button type="button" variant="outline" className="w-fit shrink-0 border-border bg-white" onClick={() => void signOut()}>Sign out</Button>
           </div>
         </div>
 
-        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-6">
-          <form className="panel min-w-0 p-4 sm:p-6" onSubmit={(event) => event.preventDefault()}>
-            {stepContent}
-            {error && <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Button type="button" variant="outline" className="w-full border-border bg-white sm:w-auto" disabled={step === 1 || saving} onClick={() => setStep(current => Math.max(1, current - 1))}>
-                <ArrowLeft className="size-4" />
-                Back
-              </Button>
-              {step < totalSteps ? (
-                <Button type="button" className="w-full bg-primary text-white sm:w-auto" onClick={goNext}>
-                  Continue
-                  <ArrowRight className="size-4" />
-                </Button>
-              ) : (
-                <Button type="button" className="w-full bg-primary text-white sm:w-auto" disabled={saving} onClick={() => void submit()}>
-                  {saving ? 'Saving profile...' : 'Enter Creator Dashboard'}
-                </Button>
-              )}
-            </div>
-          </form>
-
-          <aside className="min-w-0 space-y-4">
+        <div className="grid min-w-0 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
             <div className="panel p-5">
-              <h2 className="section-heading">Creator checklist</h2>
-              <div className="mt-4 space-y-3">
-                <ChecklistItem done={step > 1} label="Welcome reviewed" />
-                <ChecklistItem done={Boolean(form.followerCount)} label="Starting rank previewed" />
-                <ChecklistItem done={Boolean(form.creatorName && form.faculty && form.bio)} label="Profile details ready" />
+              <p className="text-sm font-semibold text-foreground">Setup progress</p>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
               </div>
-            </div>
-            <div className="panel p-5">
-              <h2 className="section-heading">Rank benefits</h2>
-              <p className="section-subtitle">Your starting rank helps brands understand your creator reach. Future rank growth comes from AU Creator Campus activity.</p>
-            </div>
-            <div className="panel p-5">
-              <h2 className="section-heading">Scholarship hours</h2>
-              <p className="section-subtitle">Scholarship hours are earned later through approved content, consistency, campaign participation, and leadership contribution.</p>
+              <div className="mt-5 space-y-3">
+                <StepNavItem active={step === 1} done={step > 1} number={1} title="Welcome" detail="Understand what happens next." />
+                <StepNavItem active={step === 2} done={step > 2} number={2} title="Rank" detail="Preview your starting rank." />
+                <StepNavItem active={step === 3} done={false} number={3} title="Profile" detail="Complete your creator details." />
+              </div>
             </div>
           </aside>
+
+          <form className="panel min-w-0 overflow-hidden" onSubmit={(event) => event.preventDefault()}>
+            <div className="border-b border-border px-5 py-4 sm:px-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Step {step} of {totalSteps}</p>
+                  <h2 className="mt-1 text-xl font-semibold text-foreground">{['Welcome to RollerKluster', 'Preview your starting rank', 'Complete your creator profile'][step - 1]}</h2>
+                </div>
+                <Badge variant="secondary" className="w-fit rounded-full">{progress}% complete</Badge>
+              </div>
+            </div>
+            <div className="p-5 sm:p-6">
+              {stepContent}
+              {error && <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
+              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <Button type="button" variant="outline" className="w-full border-border bg-white sm:w-auto" disabled={step === 1 || saving} onClick={() => setStep(current => Math.max(1, current - 1))}>
+                  <ArrowLeft className="size-4" />
+                  Back
+                </Button>
+                {step < totalSteps ? (
+                  <Button type="button" className="w-full bg-primary text-white sm:w-auto" onClick={goNext}>
+                    Continue
+                    <ArrowRight className="size-4" />
+                  </Button>
+                ) : (
+                  <Button type="button" className="w-full bg-primary text-white sm:w-auto" disabled={saving} onClick={() => void submit()}>
+                    {saving ? 'Saving profile...' : 'Enter Creator Dashboard'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </form>
         </div>
       </section>
     </main>
+  );
+}
+
+function StepNavItem({ active, done, number, title, detail }: { active: boolean; done: boolean; number: number; title: string; detail: string }) {
+  return (
+    <div className={cn('flex gap-3 rounded-[14px] border p-3 transition', active ? 'border-primary/20 bg-primary/5' : 'border-transparent bg-transparent')}>
+      <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold', done || active ? 'bg-primary text-white' : 'bg-muted text-muted-foreground')}>
+        {done ? <CheckCircle2 className="size-4" /> : number}
+      </div>
+      <div className="min-w-0">
+        <p className={cn('text-sm font-semibold', active ? 'text-foreground' : 'text-muted-foreground')}>{title}</p>
+        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{detail}</p>
+      </div>
+    </div>
   );
 }
 
@@ -545,23 +550,11 @@ function OnboardingField({
   );
 }
 
-function Benefit({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
+function SimpleBenefit({ icon, title }: { icon: ReactNode; title: string }) {
   return (
-    <div className="rounded-[14px] border border-border bg-white p-4">
-      <div className="mb-3 flex size-9 items-center justify-center rounded-[10px] bg-secondary text-primary">{icon}</div>
+    <div className="flex items-center gap-3">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">{icon}</div>
       <p className="text-sm font-semibold text-foreground">{title}</p>
-      <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
-    </div>
-  );
-}
-
-function ChecklistItem({ done, label }: { done: boolean; label: string }) {
-  return (
-    <div className="flex items-center gap-3 text-sm">
-      <div className={cn('flex size-6 items-center justify-center rounded-full border', done ? 'border-primary/20 bg-blue-50 text-primary' : 'border-border bg-white text-muted-foreground')}>
-        <CheckCircle2 className="size-3.5" />
-      </div>
-      <span className={cn('font-medium', done ? 'text-foreground' : 'text-muted-foreground')}>{label}</span>
     </div>
   );
 }

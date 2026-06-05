@@ -8,11 +8,13 @@ import { useApp } from '@/lib/app-context';
 import { useUiStore } from '@/lib/ui-store';
 import { getMonthYear, getNextRank, type CreatorRank } from '@/lib/creator-performance';
 import { getCreatorMonthlyPerformance } from '@/lib/creator-performance-source';
+import { buildCurrentCreator } from '@/lib/current-creator';
 
 export function RightDashboardSidebar() {
-  const { activeRole, creatorProfile, creatorInvitationStatus } = useUiStore();
+  const { activeRole, creatorAvatarUrl, creatorProfile, creatorInvitationStatus, sessionEmail, sessionUser } = useUiStore();
   const { creators, campaigns, engagements, submissions } = useApp();
-  const creator = creators.find(item => item.id === 'creator-2') ?? creators.find(item => item.approvalStatus === 'approved') ?? creators[0];
+  const demoCreator = creators.find(item => item.id === 'creator-2') ?? creators.find(item => item.approvalStatus === 'approved') ?? creators[0];
+  const creator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl });
   const { month, year } = getMonthYear();
   const performance = creator ? getCreatorMonthlyPerformance(creator, submissions, campaigns, month, year) : null;
   const currentRank = creatorProfile?.creatorRank ?? performance?.currentRank ?? 'Bronze I';

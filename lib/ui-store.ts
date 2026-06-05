@@ -15,6 +15,7 @@ type CreatorInvitationStatus = 'pending' | 'accepted' | 'declined';
 
 const invitationStorageKey = 'rollerkluster-invitation-status';
 const proofBucket = 'creator-social-proof';
+const avatarStoragePrefix = 'rollerkluster-creator-avatar';
 
 type SaveCreatorOnboardingInput = {
   platform: OnboardingPlatform;
@@ -34,6 +35,7 @@ interface UiState {
   sessionEmail: string;
   sessionUser: User | null;
   creatorProfile: CreatorProfileRecord | null;
+  creatorAvatarUrl: string;
   authError: string;
   creatorInvitationStatus: CreatorInvitationStatus;
   toggleSidebar: () => void;
@@ -44,6 +46,7 @@ interface UiState {
   signUpWithPassword: (input: { fullName: string; email: string; password: string; role: ActiveRole }) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  saveCreatorAvatar: (file: File) => Promise<void>;
   saveCreatorOnboarding: (input: SaveCreatorOnboardingInput) => Promise<void>;
   refreshCreatorProfile: () => Promise<void>;
   setCreatorInvitationStatus: (status: CreatorInvitationStatus) => void;
@@ -58,6 +61,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   sessionEmail: '',
   sessionUser: null,
   creatorProfile: null,
+  creatorAvatarUrl: '',
   authError: '',
   creatorInvitationStatus: 'pending',
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
@@ -87,6 +91,7 @@ export const useUiStore = create<UiState>((set, get) => ({
         sessionEmail: '',
         sessionUser: null,
         creatorProfile: null,
+        creatorAvatarUrl: '',
       });
       return;
     }
@@ -101,6 +106,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       sessionEmail: user.email ?? '',
       sessionUser: user,
       creatorProfile,
+      creatorAvatarUrl: readCreatorAvatar(user.id),
       authError: '',
       creatorInvitationStatus: readInvitationStatus(),
     });
@@ -129,6 +135,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       sessionEmail: user?.email ?? '',
       sessionUser: user ?? null,
       creatorProfile,
+      creatorAvatarUrl: user ? readCreatorAvatar(user.id) : '',
       authError: '',
     });
   },
@@ -165,6 +172,7 @@ export const useUiStore = create<UiState>((set, get) => ({
         sessionEmail: data.user.email ?? email,
         sessionUser: data.session ? data.user : null,
         creatorProfile: null,
+        creatorAvatarUrl: data.session ? readCreatorAvatar(data.user.id) : '',
       });
     }
   },
@@ -186,8 +194,21 @@ export const useUiStore = create<UiState>((set, get) => ({
       sessionEmail: '',
       sessionUser: null,
       creatorProfile: null,
+      creatorAvatarUrl: '',
       creatorInvitationStatus: 'pending',
     });
+  },
+  saveCreatorAvatar: async (file) => {
+    const user = get().sessionUser;
+    if (!user) throw new Error('You must be signed in before uploading a profile photo.');
+    if (!file.type.startsWith('image/')) throw new Error('Upload an image file.');
+    if (file.size > 5 * 1024 * 1024) throw new Error('Upload a profile photo under 5MB.');
+
+    const avatarUrl = await fileToDataUrl(file);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(`${avatarStoragePrefix}:${user.id}`, avatarUrl);
+    }
+    set({ creatorAvatarUrl: avatarUrl });
   },
   saveCreatorOnboarding: async (input) => {
     const user = get().sessionUser;
@@ -356,4 +377,18 @@ function readInvitationStatus(): CreatorInvitationStatus {
   const stored = window.localStorage.getItem(invitationStorageKey);
   if (stored === 'accepted' || stored === 'declined') return stored;
   return 'pending';
+}
+
+function readCreatorAvatar(userId: string) {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem(`${avatarStoragePrefix}:${userId}`) ?? '';
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('Could not read the selected image.'));
+    reader.readAsDataURL(file);
+  });
 }

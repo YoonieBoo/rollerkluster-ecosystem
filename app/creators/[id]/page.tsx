@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Sidebar } from '@/components/sidebar';
 import { useApp } from '@/lib/app-context';
 import { useParams } from 'next/navigation';
@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Briefcase, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, Sparkles, Star, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, Camera, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, Sparkles, Star, Users } from 'lucide-react';
 import { formatCompact, initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { cn } from '@/lib/utils';
 import { getMonthYear, isSubmissionApproved, submissionStatusLabel } from '@/lib/creator-performance';
@@ -16,17 +16,25 @@ import type { Creator, CreatorEvaluation, Submission } from '@/lib/mock-data';
 import { RankBadge } from '@/components/rank-badge';
 import { getCreatorMonthlyPerformance, getCreatorMonthlySubmissionsForDisplay } from '@/lib/creator-performance-source';
 import { useUiStore } from '@/lib/ui-store';
+import { buildCurrentCreator } from '@/lib/current-creator';
 
 export default function CreatorProfile() {
   const { creators, engagements, campaigns, submissions } = useApp();
-  const { activeRole, creatorInvitationStatus, creatorProfile } = useUiStore();
+  const { activeRole, creatorAvatarUrl, creatorInvitationStatus, creatorProfile, saveCreatorAvatar, sessionEmail, sessionUser } = useUiStore();
   const params = useParams();
   const creatorId = params.id as string;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarError, setAvatarError] = useState('');
 
-  const creator = creators.find(c => c.id === creatorId);
-  const creatorEngagements = engagements.filter(e => e.creatorId === creatorId);
+  const demoCreator = creators.find(c => c.id === 'creator-2') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
+  const storedCreator = creators.find(c => c.id === creatorId);
+  const creator = activeRole === 'creator' && creatorProfile && creatorId === creatorProfile.userId
+    ? buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl })
+    : storedCreator;
+  const resolvedCreatorId = creator?.id ?? creatorId;
+  const creatorEngagements = engagements.filter(e => e.creatorId === resolvedCreatorId);
   const { month, year } = getMonthYear();
-  const creatorSubmissions = getCreatorMonthlySubmissionsForDisplay(creatorId, submissions, month, year);
+  const creatorSubmissions = getCreatorMonthlySubmissionsForDisplay(resolvedCreatorId, submissions, month, year);
   const approvedSubmissions = creatorSubmissions.filter(isSubmissionApproved);
 
   const totalFollowers = useMemo(
@@ -40,6 +48,17 @@ export default function CreatorProfile() {
   const contentStyles = ['Campus storytelling', 'Short-form video', 'Student lifestyle', 'Brand-safe captions'];
   const brandFitTags = [creator?.niche ?? 'Creator', 'Campus culture', 'Scholarship programs', 'Student engagement', 'University events'].filter(Boolean);
   const acceptedCampusInvitation = creator?.id === 'creator-2' && creatorInvitationStatus === 'accepted';
+  const canEditOwnProfile = activeRole === 'creator' && creatorProfile && creator?.id === creatorProfile.userId;
+
+  const uploadAvatar = async (file?: File) => {
+    if (!file) return;
+    setAvatarError('');
+    try {
+      await saveCreatorAvatar(file);
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : 'Could not upload profile photo.');
+    }
+  };
 
   if (!creator) {
     return (
@@ -83,8 +102,24 @@ export default function CreatorProfile() {
                   <div className="absolute bottom-4 left-4">
                     <RankBadge rank={displayRank} className="bg-white/95" />
                   </div>
+                  {canEditOwnProfile && (
+                    <div className="absolute bottom-4 right-4">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        className="hidden"
+                        onChange={(event) => void uploadAvatar(event.target.files?.[0])}
+                      />
+                      <Button type="button" size="sm" className="h-9 bg-white text-foreground hover:bg-white/90" onClick={() => fileInputRef.current?.click()}>
+                        <Camera className="size-4" />
+                        Edit photo
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-5 p-5">
+                  {avatarError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{avatarError}</p>}
                   <div>
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Category</p>
                     <p className="mt-1 text-sm font-semibold">{creator.niche}</p>

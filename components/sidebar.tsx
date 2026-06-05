@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { useApp } from '@/lib/app-context';
+import { buildCurrentCreator, getSessionDisplayName } from '@/lib/current-creator';
 
 const menuItems = [
   { href: '/', label: 'Home', icon: Home, group: 'Operate' },
@@ -41,14 +42,19 @@ const creatorMenuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { sidebarCollapsed, toggleSidebar, activeRole, sessionEmail, signOut } = useUiStore();
+  const { sidebarCollapsed, toggleSidebar, activeRole, sessionEmail, sessionUser, creatorProfile, signOut } = useUiStore();
   const { creators } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const visibleItems = activeRole === 'admin' ? menuItems : creatorMenuItems;
+  const demoCreator = creators.find(creator => creator.id === 'creator-2') ?? creators.find(creator => creator.approvalStatus === 'approved') ?? creators[0];
+  const activeCreator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail });
+  const resolvedCreatorMenuItems = creatorMenuItems.map(item =>
+    item.href === '/creators/creator-2' && activeCreator ? { ...item, href: `/creators/${activeCreator.id}` } : item,
+  );
+  const visibleItems = activeRole === 'admin' ? menuItems : resolvedCreatorMenuItems;
   const groups = activeRole === 'admin' ? ['Operate', 'Review', 'Account'] : ['Creator portal', 'Support'];
   const roleLabel = activeRole === 'admin' ? 'Brand Side' : 'Creator Side';
   const roleDescription = activeRole === 'admin' ? 'For brands and campaign owners' : 'For student creators';
-  const activeCreatorName = creators.find(creator => creator.id === 'creator-2')?.name ?? sessionEmail;
+  const activeCreatorName = activeCreator?.name ?? getSessionDisplayName(sessionUser, sessionEmail);
 
   const sidebarBody = (
     <>
