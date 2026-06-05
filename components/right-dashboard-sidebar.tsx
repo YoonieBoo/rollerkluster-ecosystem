@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, UserCircle } from 'lucide-react';
+import { UserCircle } from 'lucide-react';
 import { RankBadgeIcon } from '@/components/rank-badge';
 import { initials } from '@/lib/platform-utils';
 import { useApp } from '@/lib/app-context';
@@ -11,7 +11,7 @@ import { getCreatorMonthlyPerformance } from '@/lib/creator-performance-source';
 import { buildCurrentCreator } from '@/lib/current-creator';
 
 export function RightDashboardSidebar() {
-  const { activeRole, creatorAvatarUrl, creatorProfile, creatorInvitationStatus, sessionEmail, sessionUser } = useUiStore();
+  const { activeRole, creatorAvatarUrl, creatorProfile, sessionEmail, sessionUser } = useUiStore();
   const { creators, campaigns, engagements, submissions } = useApp();
   const demoCreator = creators.find(item => item.id === 'creator-2') ?? creators.find(item => item.approvalStatus === 'approved') ?? creators[0];
   const creator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl });
@@ -22,6 +22,14 @@ export function RightDashboardSidebar() {
   const rankProgress = Math.min(100, Math.max(0, performance?.rankProgressPercentage ?? 0));
   const totalFollowers = creatorProfile?.followerCount ?? creator?.platforms.reduce((sum, platform) => sum + platform.followers, 0) ?? 0;
   const followerDisplay = totalFollowers >= 1000 ? `${Math.round(totalFollowers / 1000)}K` : totalFollowers.toLocaleString();
+  const creatorInvitations = creator
+    ? engagements
+        .filter(item =>
+          item.creatorId === creator.id &&
+          (item.status === 'matched' || item.status === 'in_discussion' || item.status === 'accepted'),
+        )
+        .slice(0, 3)
+    : [];
 
   if (activeRole === 'admin') {
     const approvedCreators = creators.filter(item => item.approvalStatus === 'approved');
@@ -112,17 +120,21 @@ export function RightDashboardSidebar() {
         )}
       </SidebarCard>
 
-      <SidebarCard title="Campaign Invitations">
-        <Link href="/campaigns/au-creator-campus-2026" className="block rounded-xl border border-blue-100 bg-blue-50 p-3 transition hover:border-primary/30">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-blue-950">AU Creator Campus Program 2026</p>
-              <p className="mt-1 text-xs text-blue-800">{creatorInvitationStatus === 'accepted' ? 'Accepted' : 'Invitation Pending'}</p>
-            </div>
-            <Bell className="size-4 shrink-0 text-primary" />
+      {creatorInvitations.length > 0 && (
+        <SidebarCard title="Campaign Invitations">
+          <div className="space-y-3">
+            {creatorInvitations.map(item => {
+              const campaign = campaigns.find(campaignItem => campaignItem.id === item.campaignId);
+              return (
+                <Link key={item.id} href={`/campaigns/${campaign?.id ?? item.campaignId}`} className="block rounded-xl border border-primary/10 bg-primary/5 p-3 transition hover:border-primary/30">
+                  <p className="text-sm font-semibold text-foreground">{campaign?.title ?? 'Campaign invitation'}</p>
+                  <p className="mt-1 text-xs text-primary">{item.status === 'accepted' ? 'Accepted' : 'Invitation Pending'}</p>
+                </Link>
+              );
+            })}
           </div>
-        </Link>
-      </SidebarCard>
+        </SidebarCard>
+      )}
     </aside>
   );
 }

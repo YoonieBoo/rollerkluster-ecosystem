@@ -43,10 +43,16 @@ const creatorMenuItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar, activeRole, sessionEmail, sessionUser, creatorProfile, signOut } = useUiStore();
-  const { creators } = useApp();
+  const { creators, engagements } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const demoCreator = creators.find(creator => creator.id === 'creator-2') ?? creators.find(creator => creator.approvalStatus === 'approved') ?? creators[0];
   const activeCreator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail });
+  const creatorInviteCount = activeRole === 'creator' && activeCreator
+    ? engagements.filter(engagement =>
+        engagement.creatorId === activeCreator.id &&
+        (engagement.status === 'matched' || engagement.status === 'in_discussion' || engagement.status === 'accepted'),
+      ).length
+    : 0;
   const resolvedCreatorMenuItems = creatorMenuItems.map(item =>
     item.href === '/creators/creator-2' && activeCreator ? { ...item, href: `/creators/${activeCreator.id}` } : item,
   );
@@ -107,8 +113,13 @@ export function Sidebar() {
                     <div className={cn('flex size-6 items-center justify-center rounded-md', isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/55')}>
                       <Icon className="size-[17px]" />
                     </div>
-                    <span className={cn('truncate text-[13px] leading-none transition-opacity', sidebarCollapsed && 'hidden')}>
-                      {item.label}
+                    <span className={cn('flex min-w-0 flex-1 items-center gap-2 transition-opacity', sidebarCollapsed && 'hidden')}>
+                      <span className="truncate text-[13px] leading-none">{item.label}</span>
+                      {activeRole === 'creator' && item.href === '/notifications' && creatorInviteCount > 0 && (
+                        <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                          {creatorInviteCount}
+                        </span>
+                      )}
                     </span>
                   </Link>
                 );

@@ -6,9 +6,7 @@ import { Sidebar } from '@/components/sidebar';
 import { useApp } from '@/lib/app-context';
 import { Badge } from '@/components/ui/badge';
 import { useUiStore } from '@/lib/ui-store';
-import { getMonthYear, formatMonthYear } from '@/lib/creator-performance';
-import { openCreatorReportDocument } from '@/lib/creator-report-document';
-import { getCreatorMonthlySubmissionsForDisplay } from '@/lib/creator-performance-source';
+import { buildCurrentCreator } from '@/lib/current-creator';
 
 type InboxItem = {
   id: string;
@@ -20,8 +18,8 @@ type InboxItem = {
 };
 
 export default function NotificationsPage() {
-  const { creators, campaigns, engagements, submissions, generateMonthlyReport } = useApp();
-  const { activeRole, creatorInvitationStatus } = useUiStore();
+  const { creators, campaigns, engagements } = useApp();
+  const { activeRole, creatorAvatarUrl, creatorProfile, sessionEmail, sessionUser } = useUiStore();
   const [readIds, setReadIds] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set();
 
@@ -34,12 +32,9 @@ export default function NotificationsPage() {
   const pending = creators.filter(c => c.approvalStatus === 'pending');
   const openCampaigns = campaigns.filter(c => c.status !== 'completed');
   const latest = engagements.slice().reverse();
-  const creator = creators.find(c => c.id === 'creator-2') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
+  const demoCreator = creators.find(c => c.id === 'creator-2') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
+  const creator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl });
   const creatorEngagements = engagements.filter(engagement => engagement.creatorId === creator?.id);
-  const { month, year } = getMonthYear();
-  const creatorSubmissions = creator
-    ? getCreatorMonthlySubmissionsForDisplay(creator.id, submissions, month, year)
-    : [];
 
   const markRead = (id: string) => {
     setReadIds(current => {
@@ -74,17 +69,8 @@ export default function NotificationsPage() {
   ].slice(0, 12);
 
   const creatorNotifications: InboxItem[] = [
-    ...(creatorInvitationStatus !== 'declined'
-      ? [{
-          id: 'invitation-au-creator-campus-2026',
-          title: 'AU Creator Campus Program 2026 invited you to participate.',
-          meta: 'Assumption University Student Affairs Office · Open invitation',
-          tone: 'info' as const,
-          href: '/campaigns/au-creator-campus-2026',
-        }]
-      : []),
     ...creatorEngagements
-      .filter(engagement => engagement.status === 'matched' || engagement.status === 'in_discussion')
+      .filter(engagement => engagement.status === 'matched' || engagement.status === 'in_discussion' || engagement.status === 'accepted')
       .map(engagement => {
         const campaign = campaigns.find(campaign => campaign.id === engagement.campaignId);
         const campaignTitle = campaign?.title ?? 'A campaign';
@@ -96,86 +82,13 @@ export default function NotificationsPage() {
           href: `/campaigns/${engagement.campaignId}`,
         };
       }),
-    ...creatorEngagements
-      .filter(engagement => engagement.status === 'active')
-      .map(engagement => {
-        const campaign = campaigns.find(campaign => campaign.id === engagement.campaignId);
-        return {
-          id: `brief-updated-${engagement.id}`,
-          title: `${campaign?.title ?? 'Campaign'} brief was updated.`,
-          meta: 'Review the latest direction before creating content.',
-          tone: 'info' as const,
-          href: `/campaigns/${engagement.campaignId}`,
-        };
-      }),
-    ...creatorSubmissions.map(submission => {
-      const campaign = campaigns.find(campaign => campaign.id === submission.campaignId);
-      const campaignName = campaign?.title ?? 'Campaign';
-      const platform = submission.platform ?? 'content';
-
-      if (submission.status === 'approved') {
-        return {
-          id: `submission-approved-${submission.id}`,
-          title: `Your ${platform} content was approved.`,
-          meta: `${campaignName} · Open your submission report`,
-          tone: 'success' as const,
-          href: `/submissions/${submission.id}`,
-        };
-      }
-
-      if (submission.status === 'needs_changes' || submission.status === 'changes_requested') {
-        return {
-          id: `submission-changes-${submission.id}`,
-          title: `Changes requested for your ${platform} content.`,
-          meta: submission.staffFeedback ?? submission.reviewNotes ?? `${campaignName} · View feedback`,
-          tone: 'warning' as const,
-          href: `/submissions/${submission.id}`,
-        };
-      }
-
-      if (submission.status === 'rejected') {
-        return {
-          id: `submission-rejected-${submission.id}`,
-          title: `Your ${platform} content was not approved.`,
-          meta: submission.rejectedReason ?? submission.staffFeedback ?? `${campaignName} · View feedback`,
-          tone: 'warning' as const,
-          href: `/submissions/${submission.id}`,
-        };
-      }
-
-      return {
-        id: `submission-pending-${submission.id}`,
-        title: `Your ${platform} content is pending review.`,
-        meta: `${campaignName} · We will notify you when feedback is ready`,
-        tone: 'info' as const,
-        href: `/submissions/${submission.id}`,
-      };
-    }),
-    ...(creatorSubmissions.some(submission => submission.status === 'approved') && creator
-      ? [{
-          id: `monthly-report-${creator.id}-${year}-${month}`,
-          title: 'Your monthly creator report is ready.',
-          meta: `${formatMonthYear(month, year)} · Open report`,
-          tone: 'success' as const,
-          onClick: () => openCreatorReportDocument(creator.name, generateMonthlyReport(creator.id, month, year), campaigns, submissions),
-        }]
-      : []),
-    ...(creator && creator.badge && creator.badge !== 'Bronze1'
-      ? [{
-          id: `rank-${creator.id}-${creator.badge}`,
-          title: `Congratulations! You advanced to ${formatRankName(creator.badge)}.`,
-          meta: 'View your rank progress.',
-          tone: 'success' as const,
-          href: '/leaderboard',
-        }]
-      : []),
   ].slice(0, 12);
 
   const notifications = activeRole === 'creator' ? creatorNotifications : brandNotifications;
-  const heading = activeRole === 'creator' ? 'Creator Inbox' : 'Brand Inbox';
-  const eyebrow = activeRole === 'creator' ? 'Creator messages' : 'Brand alerts';
+  const heading = activeRole === 'creator' ? 'Invites' : 'Brand Inbox';
+  const eyebrow = activeRole === 'creator' ? 'Creator invitations' : 'Brand alerts';
   const subtitle = activeRole === 'creator'
-    ? 'Campaign invitations, submission updates, feedback, and rank progress.'
+    ? 'Campaign invitations from brands and campaign owners.'
     : 'Creator applications, campaign match movement, and collaboration status changes.';
 
   return (
@@ -192,7 +105,7 @@ export default function NotificationsPage() {
           <div className="panel overflow-hidden">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
               <h2 className="text-base font-semibold">Today</h2>
-              <Badge variant="secondary" className="rounded-full">{notifications.length} updates</Badge>
+              <Badge variant="secondary" className="rounded-full">{notifications.length} {activeRole === 'creator' ? 'invites' : 'updates'}</Badge>
             </div>
             <div className="divide-y divide-border">
               {notifications.map((item) => (
@@ -205,7 +118,7 @@ export default function NotificationsPage() {
               ))}
               {notifications.length === 0 && (
                 <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-                  No messages right now.
+                  {activeRole === 'creator' ? 'No campaign invitations right now.' : 'No messages right now.'}
                 </div>
               )}
             </div>
@@ -252,16 +165,4 @@ function InboxRow({ item, read, onRead }: { item: InboxItem; read: boolean; onRe
       {content}
     </button>
   );
-}
-
-function formatRankName(rank: string) {
-  const legacyRanks: Record<string, string> = {
-    Bronze1: 'Bronze I',
-    Bronze2: 'Bronze II',
-    Bronze3: 'Bronze III',
-    Silver1: 'Silver I',
-    Silver2: 'Silver II',
-    TopPerformer: 'Gold I',
-  };
-  return legacyRanks[rank] ?? rank;
 }
