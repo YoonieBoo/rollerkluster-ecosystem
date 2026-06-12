@@ -23,7 +23,7 @@ import { useApp } from '@/lib/app-context';
 import { buildCurrentCreator, getSessionDisplayName } from '@/lib/current-creator';
 
 const menuItems = [
-  { href: '/', label: 'Home', icon: Home, group: 'Operate' },
+  { href: '/dashboard', label: 'Home', icon: Home, group: 'Operate' },
   { href: '/creators', label: 'Discover creators', icon: Compass, group: 'Operate' },
   { href: '/campaigns', label: 'Campaigns', icon: Briefcase, group: 'Operate' },
   { href: '/admin', label: 'Applications', icon: ShieldCheck, group: 'Operate' },
@@ -35,7 +35,7 @@ const menuItems = [
 ];
 
 const creatorMenuItems = [
-  { href: '/', label: 'Home', icon: Home, group: 'Creator portal' },
+  { href: '/dashboard', label: 'Home', icon: Home, group: 'Creator portal' },
   { href: '/creators/creator-2', label: 'My profile', icon: UserCircle, group: 'Creator portal' },
   { href: '/notifications', label: 'Invites', icon: Bell, group: 'Support' },
 ];
@@ -94,7 +94,7 @@ export function Sidebar() {
             <div className="space-y-1">
               {(activeRole === 'admin' ? visibleItems.filter((item) => (item.group ?? 'Account') === group) : visibleItems).map((item) => {
                 const Icon = item.icon;
-                const isActive = item.href === '/' ? pathname === item.href : pathname.startsWith(item.href);
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
                 return (
                   <Link

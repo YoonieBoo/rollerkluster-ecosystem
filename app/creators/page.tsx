@@ -15,6 +15,8 @@ import { RankBadgeIcon } from '@/components/rank-badge';
 import type { Campaign, Creator, Engagement, Submission } from '@/lib/mock-data';
 import { getMonthYear, isSubmissionApproved } from '@/lib/creator-performance';
 import { getCreatorMonthlyPerformance, getCreatorMonthlySubmissionsForDisplay } from '@/lib/creator-performance-source';
+import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase-client';
 
 const rankStyles: Record<string, string> = {
   TopPerformer: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -59,7 +61,60 @@ export default function CreatorDiscovery() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
 
-  const approvedCreators = creators.filter(c => c.approvalStatus === 'approved');
+  const [supabaseCreators, setSupabaseCreators] = useState<Creator[]>([]);
+
+useEffect(() => {
+  async function loadSignedUpCreators() {
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from('creator_profiles')
+      .select('*')
+      .eq('onboarding_completed', true);
+
+    if (error) {
+      console.error('Failed to load signed-up creators', error);
+      return;
+    }
+
+    const mappedCreators: Creator[] = (data ?? []).map((profile) => ({
+      id: profile.user_id,
+      name: profile.social_handle || 'Creator',
+      bio: 'Campus creator building a verified RollerKluster profile.',
+      niche: 'Campus Lifestyle',
+      platforms: [
+        {
+          name: profile.platform,
+          followers: profile.follower_count ?? 0,
+          handle: profile.social_handle || '@creator',
+          username: profile.social_handle?.replace(/^@/, '') || 'creator',
+          url: profile.social_profile_url || undefined,
+        },
+      ],
+      engagementRate: profile.engagement_rate ?? 0,
+      verified: profile.verification_status === 'verified',
+      approvalStatus: 'approved',
+      badge: profile.creator_rank || 'Bronze1',
+      avatar: undefined,
+      portfolioItems: [],
+      trainingCompleted: [],
+      engagementHistory: [],
+      reputationScore: profile.follower_count ? Math.min(100, Math.round(profile.follower_count / 5000)) : 0,
+      completedEngagements: 0,
+      contentQualityScore: 0,
+      approvalRate: 0,
+      evaluations: [],
+      joinedDate: profile.created_at ?? new Date().toISOString(),
+    }));
+
+    setSupabaseCreators(mappedCreators);
+  }
+
+  loadSignedUpCreators();
+}, []);
+
+  const allCreators = supabaseCreators.length > 0 ? supabaseCreators : creators;
+const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved');
   const selectedCreator = approvedCreators.find(creator => creator.id === selectedCreatorId);
   const niches = Array.from(new Set(approvedCreators.map(c => c.niche)));
   const platforms = Array.from(new Set(approvedCreators.flatMap(c => c.platforms.map(p => p.name))));

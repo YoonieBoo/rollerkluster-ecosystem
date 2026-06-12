@@ -218,7 +218,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     });
     if (upload.error) {
       console.error('CREATOR AVATAR UPLOAD FAILED', upload.error);
-      throw new Error(formatSupabaseOnboardingError(upload.error, 'Could not upload profile photo.'));
+      throw new Error(formatSupabaseOnboardingError(upload.error, 'Could not upload profile photo.', avatarBucket));
     }
 
     const { data: publicUrlData } = supabase.storage.from(avatarBucket).getPublicUrl(avatarPath);
@@ -265,7 +265,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       });
       if (upload.error) {
         console.error('CREATOR ONBOARDING PROOF UPLOAD FAILED', upload.error);
-        throw new Error(formatSupabaseOnboardingError(upload.error, 'Could not upload social proof image.'));
+        throw new Error(formatSupabaseOnboardingError(upload.error, 'Could not upload social proof image.', proofBucket));
       }
     }
 
@@ -458,7 +458,7 @@ function getFileExtension(file: File) {
   return 'jpeg';
 }
 
-function formatSupabaseOnboardingError(error: unknown, fallback: string) {
+function formatSupabaseOnboardingError(error: unknown, fallback: string, storageBucket?: string) {
   const details = error as { code?: string; message?: string; statusCode?: string | number };
   const message = details.message ?? fallback;
   const code = details.code ?? details.statusCode;
@@ -471,6 +471,9 @@ function formatSupabaseOnboardingError(error: unknown, fallback: string) {
     return 'Creator onboarding could not be saved because Supabase row-level security blocked the request. Check creator_profiles RLS policies.';
   }
   if (normalizedMessage.includes('bucket') || normalizedMessage.includes('storage')) {
+    if (storageBucket === avatarBucket) {
+      return 'Profile photo upload failed. Confirm the creator-avatars storage bucket exists and its policies are enabled.';
+    }
     return 'Social proof upload failed. Confirm the creator-social-proof storage bucket exists and its policies are enabled.';
   }
   return message || fallback;

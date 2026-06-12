@@ -19,16 +19,26 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const { authHydrated, hydrateAuth, isAuthenticated, activeRole, creatorProfile } = useUiStore();
   const pathname = usePathname();
   const router = useRouter();
+  const isAuthEntryRoute = pathname === '/' || pathname === '/login' || pathname === '/signup';
 
   useEffect(() => {
     void hydrateAuth();
   }, [hydrateAuth]);
 
   useEffect(() => {
-    if (authHydrated && isAuthenticated && pathname === '/signup' && !(activeRole === 'creator' && !creatorProfile?.onboardingCompleted)) {
-      router.replace('/');
+    if (!authHydrated) return;
+    if (!isAuthenticated && !isAuthEntryRoute) {
+      router.replace('/login');
+      return;
     }
-  }, [activeRole, authHydrated, creatorProfile?.onboardingCompleted, isAuthenticated, pathname, router]);
+    if (
+      isAuthenticated &&
+      isAuthEntryRoute &&
+      !(activeRole === 'creator' && !creatorProfile?.onboardingCompleted)
+    ) {
+      router.replace('/dashboard');
+    }
+  }, [activeRole, authHydrated, creatorProfile?.onboardingCompleted, isAuthenticated, isAuthEntryRoute, pathname, router]);
 
   if (!authHydrated) {
     return (
@@ -42,14 +52,21 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (!isAuthenticated) {
     if (pathname === '/signup') return <SignUpScreen />;
-    return <SignInScreen />;
+    if (pathname === '/' || pathname === '/login') return <SignInScreen />;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="rounded-xl border border-border bg-white px-5 py-4 text-sm font-semibold text-muted-foreground shadow-sm">
+          Opening login
+        </div>
+      </div>
+    );
   }
 
   if (activeRole === 'creator' && !creatorProfile?.onboardingCompleted) {
     return <CreatorOnboardingScreen />;
   }
 
-  if (pathname === '/signup') {
+  if (isAuthEntryRoute) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="rounded-xl border border-border bg-white px-5 py-4 text-sm font-semibold text-muted-foreground shadow-sm">
@@ -135,8 +152,8 @@ function SignInScreen() {
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="font-semibold text-foreground hover:text-primary">Sign Up</Link>
             </div>
-            <Link href="/" className="text-center text-xs font-semibold text-muted-foreground hover:text-foreground">Back to Home</Link>
           </form>
+          <BackToWebsiteLink />
         </div>
       </div>
     </AuthShell>
@@ -155,6 +172,17 @@ function SignUpScreen() {
   const [localError, setLocalError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const role = new URLSearchParams(window.location.search).get('role');
+    if (role === 'brand' || role === 'admin') {
+      setForm(current => ({ ...current, role: 'admin' }));
+    }
+    if (role === 'creator') {
+      setForm(current => ({ ...current, role: 'creator' }));
+    }
+  }, []);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -228,12 +256,24 @@ function SignUpScreen() {
             </Button>
             <div className="text-center text-xs text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/" className="font-semibold text-foreground hover:text-primary">Log in</Link>
+              <Link href="/login" className="font-semibold text-foreground hover:text-primary">Log in</Link>
             </div>
           </form>
+          <BackToWebsiteLink />
         </div>
       </div>
     </AuthShell>
+  );
+}
+
+function BackToWebsiteLink() {
+  return (
+    <a
+      href="https://rollerkluster.com/"
+      className="mt-5 block text-center text-xs font-semibold text-muted-foreground hover:text-foreground"
+    >
+      Back to RollerKluster website
+    </a>
   );
 }
 
