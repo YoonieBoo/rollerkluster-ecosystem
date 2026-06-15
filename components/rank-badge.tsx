@@ -16,9 +16,9 @@ const rankColors: Record<RankFamily, { outer: string; mid: string; inner: string
   silver: {
     outer: '#475569',
     mid: '#94a3b8',
-    inner: '#dbeafe',
+    inner: '#f7ecfb',
     accent: '#f8fafc',
-    glow: '#bfdbfe',
+    glow: '#dcb1ef',
   },
   gold: {
     outer: '#92400e',

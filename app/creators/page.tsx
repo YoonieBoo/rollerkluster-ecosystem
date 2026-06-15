@@ -446,7 +446,7 @@ function CreatorPortfolioOverlay({
 
         <aside className="border-b border-border bg-muted/25 p-4 sm:p-6 lg:border-b-0 lg:border-r">
           <div className="overflow-hidden rounded-[12px] border border-border bg-white">
-            <div className="aspect-[4/5] bg-[linear-gradient(145deg,#dbeafe,#f8fafc)]">
+            <div className="aspect-[4/5] bg-[linear-gradient(145deg,#f7ecfb,#f8fafc)]">
               {creator.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={creator.avatar} alt={creator.name} className="size-full object-cover" />

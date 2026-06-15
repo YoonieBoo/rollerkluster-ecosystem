@@ -60,7 +60,7 @@ function buildCreatorReportDocument(
             display: grid;
             grid-template-columns: 1fr auto;
             gap: 24px;
-            border-bottom: 3px solid #0F52BA;
+            border-bottom: 3px solid #C377E4;
             padding-bottom: 20px;
             margin-bottom: 22px;
           }
@@ -79,7 +79,7 @@ function buildCreatorReportDocument(
             align-items: center;
             justify-content: center;
             border-radius: 8px;
-            background: #0F52BA;
+            background: #C377E4;
             color: #ffffff;
             font-size: 12px;
             font-weight: 800;
@@ -162,7 +162,7 @@ function buildCreatorReportDocument(
           }
           .feedback {
             margin-top: 10px;
-            border-left: 3px solid #0F52BA;
+            border-left: 3px solid #C377E4;
             padding: 8px 0 8px 12px;
             color: #334155;
           }

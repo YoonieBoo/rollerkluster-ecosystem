@@ -86,7 +86,7 @@ export default function CreatorProfile() {
             <aside className="space-y-5">
               <section className="panel overflow-hidden">
                 <div className="relative bg-muted">
-                  <div className="aspect-[4/5] w-full bg-[linear-gradient(145deg,#dbeafe,#f8fafc)]">
+                  <div className="aspect-[4/5] w-full bg-[linear-gradient(145deg,#f7ecfb,#f8fafc)]">
                     {creator.avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={creator.avatar} alt={creator.name} className="size-full object-cover" />

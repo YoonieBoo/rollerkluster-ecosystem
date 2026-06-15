@@ -85,7 +85,7 @@ export default function AnalyticsPage() {
                     <YAxis tickLine={false} axisLine={false} />
                     <Tooltip />
                     <Area type="monotone" dataKey="completion" stroke="#4f46e5" fill="#c7d2fe" />
-                    <Area type="monotone" dataKey="matches" stroke="#0F52BA" fill="#dbeafe" />
+                    <Area type="monotone" dataKey="matches" stroke="#C377E4" fill="#f7ecfb" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
