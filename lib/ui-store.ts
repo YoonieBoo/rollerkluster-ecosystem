@@ -482,8 +482,11 @@ function formatSupabaseOnboardingError(error: unknown, fallback: string, storage
   const code = details.code ?? details.statusCode;
   const normalizedMessage = message.toLowerCase();
 
-  if (code === '42P01' || normalizedMessage.includes('creator_profiles') || normalizedMessage.includes('could not find the table')) {
+  if (code === '42P01' || normalizedMessage.includes('could not find the table')) {
     return 'Creator onboarding table is missing. Run the creator_profiles Supabase migration, then try again.';
+  }
+  if (code === 'PGRST204' || normalizedMessage.includes('schema cache') || normalizedMessage.includes('column')) {
+    return 'Creator onboarding fields are missing in Supabase. Run the latest creator_profiles migration, then try again.';
   }
   if (code === '42501' || normalizedMessage.includes('row-level security')) {
     return 'Creator onboarding could not be saved because Supabase row-level security blocked the request. Check creator_profiles RLS policies.';
