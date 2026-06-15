@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -339,6 +339,8 @@ function AuthField({
 
 function CreatorOnboardingScreen() {
   const { saveCreatorOnboarding } = useUiStore();
+  const searchParams = useSearchParams();
+  const hasAppliedSignupParams = useRef(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     platform: 'Instagram' as OnboardingPlatform,
@@ -358,6 +360,26 @@ function CreatorOnboardingScreen() {
   const [saving, setSaving] = useState(false);
   const suggestedRank = useMemo(() => calculateStartingRank(Number(form.followerCount) || 0), [form.followerCount]);
   const totalSteps = 2;
+
+  useEffect(() => {
+    if (hasAppliedSignupParams.current) return;
+
+    const platform = normalizeOnboardingPlatform(searchParams.get('platform'));
+    const followers = searchParams.get('followers')?.trim() ?? '';
+    const handle = searchParams.get('handle')?.trim() ?? '';
+    const profileUrl = searchParams.get('profileUrl')?.trim() ?? '';
+
+    if (!platform && !followers && !handle && !profileUrl) return;
+
+    hasAppliedSignupParams.current = true;
+    setForm(current => ({
+      ...current,
+      platform: platform ?? current.platform,
+      followerCount: current.followerCount || followers,
+      socialHandle: current.socialHandle || handle,
+      socialProfileUrl: current.socialProfileUrl || profileUrl,
+    }));
+  }, [searchParams]);
 
   const validateStep = () => {
     setError('');
@@ -565,6 +587,12 @@ function CreatorOnboardingScreen() {
       </section>
     </main>
   );
+}
+
+function normalizeOnboardingPlatform(value: string | null): OnboardingPlatform | null {
+  if (!value) return null;
+  const normalizedValue = value.trim().toLowerCase();
+  return onboardingPlatforms.find(platform => platform.toLowerCase() === normalizedValue) ?? null;
 }
 
 function OnboardingField({
