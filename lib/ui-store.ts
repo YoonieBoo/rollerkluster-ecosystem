@@ -25,6 +25,12 @@ type SaveCreatorOnboardingInput = {
   followerCount: number;
   engagementRate?: number;
   proofFile?: File;
+  creatorName?: string;
+  university?: string;
+  faculty?: string;
+  bio?: string;
+  contentCategories?: string[];
+  isScholarshipStudent?: boolean;
 };
 
 interface UiState {
@@ -272,6 +278,12 @@ export const useUiStore = create<UiState>((set, get) => ({
     const creatorRank = calculateStartingRank(input.followerCount);
     const row: CreatorProfileRow = {
       user_id: user.id,
+      creator_name: input.creatorName ?? null,
+      university: input.university ?? null,
+      faculty: input.faculty ?? null,
+      bio: input.bio ?? null,
+      content_categories: input.contentCategories ?? [],
+      is_scholarship_student: input.isScholarshipStudent ?? false,
       platform: input.platform,
       social_handle: input.socialHandle,
       social_profile_url: input.socialProfileUrl,
@@ -312,6 +324,12 @@ export const useUiStore = create<UiState>((set, get) => ({
     const creatorRank = calculateStartingRank(input.followerCount);
     const row: CreatorProfileRow = {
       user_id: user.id,
+      creator_name: existingProfile.creatorName ?? null,
+      university: existingProfile.university ?? null,
+      faculty: existingProfile.faculty ?? null,
+      bio: existingProfile.bio ?? null,
+      content_categories: existingProfile.contentCategories,
+      is_scholarship_student: existingProfile.isScholarshipStudent,
       platform: input.platform,
       social_handle: input.socialHandle,
       social_profile_url: input.socialProfileUrl,

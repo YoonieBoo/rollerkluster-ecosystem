@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUiStore } from '@/lib/ui-store';
-import { calculateStartingRank, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
+import { calculateStartingRank, onboardingContentCategories, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
+import { cn } from '@/lib/utils';
 
 type SignInRole = 'admin' | 'creator';
 
@@ -347,7 +348,8 @@ function CreatorOnboardingScreen() {
     university: 'Assumption University',
     faculty: '',
     bio: '',
-    categories: '',
+    categories: [] as string[],
+    isScholarshipStudent: false,
   });
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [error, setError] = useState('');
@@ -362,6 +364,7 @@ function CreatorOnboardingScreen() {
       if (!proofFile) return `Upload a screenshot of your ${form.platform} profile.`;
     }
     if (step === 2 && (!form.creatorName.trim() || !form.faculty.trim() || !form.bio.trim())) return 'Add your creator name, faculty, and short bio.';
+    if (step === 2 && form.categories.length === 0) return 'Choose at least one content category.';
     return '';
   };
 
@@ -394,6 +397,12 @@ function CreatorOnboardingScreen() {
         followerCount,
         engagementRate: typeof engagementRate === 'number' && !Number.isNaN(engagementRate) ? engagementRate : undefined,
         proofFile: proofFile ?? undefined,
+        creatorName: form.creatorName.trim(),
+        university: form.university.trim(),
+        faculty: form.faculty.trim(),
+        bio: form.bio.trim(),
+        contentCategories: form.categories,
+        isScholarshipStudent: form.isScholarshipStudent,
       });
     } catch (onboardingError) {
       console.error('CREATOR ONBOARDING FORM SUBMIT FAILED', onboardingError);
@@ -457,7 +466,53 @@ function CreatorOnboardingScreen() {
           <OnboardingField label="Creator name" value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Yoonie" />
           <OnboardingField label="University" value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder="Assumption University" />
           <OnboardingField label="Faculty" value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" />
-          <OnboardingField label="Content categories" value={form.categories} onChange={(categories) => setForm(current => ({ ...current, categories }))} placeholder="Campus life, fashion, events" />
+          <div className="grid gap-2 sm:col-span-2">
+            <span className="text-sm font-semibold text-foreground">Content categories</span>
+            <div className="flex flex-wrap gap-2">
+              {onboardingContentCategories.map(category => {
+                const selected = form.categories.includes(category);
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setForm(current => ({
+                      ...current,
+                      categories: selected
+                        ? current.categories.filter(item => item !== category)
+                        : [...current.categories, category],
+                    }))}
+                    className={cn(
+                      'rounded-full border px-3 py-1.5 text-sm font-semibold transition',
+                      selected ? 'border-primary bg-primary text-white' : 'border-border bg-white text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                    )}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <span className="text-sm font-semibold text-foreground">Are you a scholarship student?</span>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'No', value: false },
+                { label: 'Yes', value: true },
+              ].map(option => (
+                <button
+                  key={option.label}
+                  type="button"
+                  onClick={() => setForm(current => ({ ...current, isScholarshipStudent: option.value }))}
+                  className={cn(
+                    'rounded-full border px-4 py-2 text-sm font-semibold transition',
+                    form.isScholarshipStudent === option.value ? 'border-primary bg-primary text-white' : 'border-border bg-white text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <label className="grid gap-2">
           <span className="text-sm font-semibold text-foreground">Short bio</span>

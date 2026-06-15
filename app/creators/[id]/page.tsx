@@ -46,7 +46,11 @@ export default function CreatorProfile() {
   const primaryPlatform = creator?.platforms[0];
   const creatorTitle = `${displayRank} Campus Creator`;
   const contentStyles = ['Campus storytelling', 'Short-form video', 'Student lifestyle', 'Brand-safe captions'];
-  const brandFitTags = [creator?.niche ?? 'Creator', 'Campus culture', 'Scholarship programs', 'Student engagement', 'University events'].filter(Boolean);
+  const profileTags = [
+    ...(creator?.contentCategories?.length ? creator.contentCategories : [creator?.niche ?? 'Campus life']),
+    ...(creator?.isScholarshipStudent ? ['Scholarship student'] : []),
+  ].filter(Boolean);
+  const brandFitTags = profileTags.length > 0 ? profileTags : ['Campus culture', 'Student engagement', 'University events'];
   const acceptedCampusInvitation = creator?.id === 'creator-2' && creatorInvitationStatus === 'accepted';
   const canEditOwnProfile = activeRole === 'creator' && creatorProfile && creator?.id === creatorProfile.userId;
 
@@ -179,6 +183,11 @@ export default function CreatorProfile() {
                     </div>
                     <p className="mt-1 text-sm font-semibold text-primary">{creatorTitle}</p>
                     <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">{creator.bio}</p>
+                    {profileTags.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {profileTags.map(tag => <Badge key={tag} variant="secondary" className="rounded-full">{tag}</Badge>)}
+                      </div>
+                    )}
                   </div>
                   {activeRole === 'admin' && (
                     <div className="flex shrink-0 flex-row flex-nowrap items-center gap-2">

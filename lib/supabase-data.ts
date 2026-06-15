@@ -40,6 +40,12 @@ type CreatorSubmissionRow = {
 
 type CreatorProfileDirectoryRow = {
   user_id: string;
+  creator_name: string | null;
+  university: string | null;
+  faculty: string | null;
+  bio: string | null;
+  content_categories: string[] | null;
+  is_scholarship_student: boolean | null;
   platform: string;
   social_handle: string;
   social_profile_url: string | null;
@@ -88,7 +94,7 @@ export async function fetchSignedUpCreators() {
   const [{ data: profileRows, error: profileError }, { data: userRows, error: usersError }] = await Promise.all([
     supabase
       .from('creator_profiles')
-      .select('user_id, platform, social_handle, social_profile_url, follower_count, engagement_rate, verification_status, creator_rank, onboarding_completed, created_at')
+      .select('user_id, creator_name, university, faculty, bio, content_categories, is_scholarship_student, platform, social_handle, social_profile_url, follower_count, engagement_rate, verification_status, creator_rank, onboarding_completed, created_at')
       .eq('onboarding_completed', true)
       .order('created_at', { ascending: false }),
     supabase
@@ -207,14 +213,17 @@ function mapCreatorProfileToCreator(profile: CreatorProfileDirectoryRow, user?: 
   const followers = profile.follower_count ?? 0;
   const engagementRate = Number(profile.engagement_rate ?? 0);
   const score = calculateProfileReadinessScore(followers, engagementRate, profile.verification_status);
-  const displayName = user?.full_name || user?.email || handle.replace(/^@/, '') || 'Signed-up creator';
+  const displayName = profile.creator_name || user?.full_name || user?.email || handle.replace(/^@/, '') || 'Signed-up creator';
+  const contentCategories = profile.content_categories?.filter(Boolean) ?? ['Campus life'];
 
   return {
     id: profile.user_id,
     name: displayName,
     avatar: user?.avatar_url ?? undefined,
-    bio: `${platform} creator signed up for brand collaborations through RollerKluster.`,
-    niche: 'Creator Campus',
+    bio: profile.bio || `${platform} creator signed up for brand collaborations through RollerKluster.`,
+    niche: contentCategories[0] ?? 'Creator Campus',
+    contentCategories,
+    isScholarshipStudent: profile.is_scholarship_student ?? false,
     platforms: [
       {
         name: platform,
@@ -250,6 +259,8 @@ function mapUserToSignedUpCreator(user: PlatformUserDirectoryRow): Creator {
     avatar: user.avatar_url ?? undefined,
     bio: 'Creator account signed up for brand collaborations through RollerKluster.',
     niche: 'Creator Campus',
+    contentCategories: ['Campus life'],
+    isScholarshipStudent: false,
     platforms: [
       {
         name: 'Instagram',

@@ -5,6 +5,8 @@ export interface Creator {
   name: string;
   bio: string;
   niche: string;
+  contentCategories?: string[];
+  isScholarshipStudent?: boolean;
   platforms: {
     name: 'TikTok' | 'Instagram' | 'YouTube' | 'Twitter' | 'X' | 'Twitch' | 'Facebook' | 'LinkedIn';
     followers: number;

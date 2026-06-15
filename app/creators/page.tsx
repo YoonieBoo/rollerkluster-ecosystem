@@ -91,9 +91,11 @@ useEffect(() => {
 
     const mappedCreators: Creator[] = (data ?? []).map((profile) => ({
       id: profile.user_id,
-      name: profile.social_handle || 'Creator',
-      bio: 'Campus creator building a verified RollerKluster profile.',
-      niche: 'Campus Lifestyle',
+      name: profile.creator_name || profile.social_handle || 'Creator',
+      bio: profile.bio || 'Campus creator building a verified RollerKluster profile.',
+      niche: profile.content_categories?.[0] || 'Campus Lifestyle',
+      contentCategories: profile.content_categories?.filter(Boolean) ?? ['Campus life'],
+      isScholarshipStudent: profile.is_scholarship_student ?? false,
       platforms: [
         {
           name: profile.platform,

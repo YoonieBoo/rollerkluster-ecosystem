@@ -27,12 +27,17 @@ export function buildCurrentCreator({
   const name = getSessionDisplayName(sessionUser, sessionEmail);
   const platformName = creatorProfile.platform as Creator['platforms'][number]['name'];
   const engagementRate = creatorProfile.engagementRate ?? demoCreator?.engagementRate ?? 0;
+  const contentCategories = creatorProfile.contentCategories.length > 0
+    ? creatorProfile.contentCategories
+    : demoCreator?.contentCategories ?? ['Campus life'];
 
   return {
     id: creatorProfile.userId,
-    name,
-    bio: demoCreator?.bio ?? 'Campus creator building a verified RollerKluster profile.',
-    niche: demoCreator?.niche ?? 'Campus Lifestyle',
+    name: creatorProfile.creatorName || name,
+    bio: creatorProfile.bio || demoCreator?.bio || 'Campus creator building a verified RollerKluster profile.',
+    niche: contentCategories[0] ?? demoCreator?.niche ?? 'Campus Lifestyle',
+    contentCategories,
+    isScholarshipStudent: creatorProfile.isScholarshipStudent,
     platforms: [
       {
         name: platformName,

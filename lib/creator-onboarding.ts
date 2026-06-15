@@ -5,10 +5,29 @@ export type OnboardingPlatform = (typeof onboardingPlatforms)[number];
 
 export type VerificationStatus = 'pending_review' | 'verified' | 'rejected';
 
+export const onboardingContentCategories = [
+  'Campus life',
+  'Fashion',
+  'Food',
+  'Beauty',
+  'Sports',
+  'Events',
+  'Study tips',
+  'Student wellness',
+  'Technology',
+  'Travel',
+] as const;
+
 export interface CreatorProfileRecord {
   id?: string;
   userId: string;
   role: 'creator';
+  creatorName?: string;
+  university?: string;
+  faculty?: string;
+  bio?: string;
+  contentCategories: string[];
+  isScholarshipStudent: boolean;
   platform: OnboardingPlatform;
   socialHandle: string;
   socialProfileUrl: string;
@@ -42,6 +61,12 @@ export function normalizeCreatorProfileRow(row: CreatorProfileRow): CreatorProfi
     id: row.id,
     userId: row.user_id,
     role: 'creator',
+    creatorName: row.creator_name ?? undefined,
+    university: row.university ?? undefined,
+    faculty: row.faculty ?? undefined,
+    bio: row.bio ?? undefined,
+    contentCategories: row.content_categories ?? [],
+    isScholarshipStudent: row.is_scholarship_student ?? false,
     platform: row.platform as OnboardingPlatform,
     socialHandle: row.social_handle,
     socialProfileUrl: row.social_profile_url,
@@ -60,6 +85,12 @@ export type CreatorProfileRow = {
   id?: string;
   user_id: string;
   role?: string;
+  creator_name?: string | null;
+  university?: string | null;
+  faculty?: string | null;
+  bio?: string | null;
+  content_categories?: string[] | null;
+  is_scholarship_student?: boolean | null;
   platform: string;
   social_handle: string;
   social_profile_url: string;
