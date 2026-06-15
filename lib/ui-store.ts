@@ -50,7 +50,7 @@ interface UiState {
   setActiveRole: (role: ActiveRole) => void;
   hydrateAuth: () => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
-  signUpWithPassword: (input: { fullName: string; email: string; password: string; role: ActiveRole }) => Promise<void>;
+  signUpWithPassword: (input: { fullName: string; email: string; password: string; role: ActiveRole }) => Promise<boolean>;
   sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   saveCreatorAvatar: (file: File) => Promise<void>;
@@ -152,7 +152,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   signUpWithPassword: async ({ fullName, email, password, role }) => {
     if (!supabase) {
       set({ authError: 'Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.' });
-      return;
+      return false;
     }
 
     set({ authError: '' });
@@ -170,7 +170,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     });
     if (error) {
       set({ authError: error.message });
-      return;
+      return false;
     }
 
     if (data.user) {
@@ -186,6 +186,7 @@ export const useUiStore = create<UiState>((set, get) => ({
         creatorAvatarUrl,
       });
     }
+    return true;
   },
   sendPasswordReset: async (email) => {
     if (!supabase) {
@@ -406,23 +407,25 @@ async function upsertPlatformUser(user: User, role: AuthRole, creatorRank?: stri
   const existingAvatar = await fetchPlatformUserAvatar(user.id);
   const row: {
     id: string;
+    name: string;
     email: string | undefined;
     full_name: unknown;
     avatar_url: string | null;
     role: AuthRole;
     provider: unknown;
     updated_at: string;
-    creator_rank?: string;
+    creator_rank: string;
   } = {
     id: user.id,
+    name: typeof metadata.full_name === 'string' ? metadata.full_name : typeof metadata.name === 'string' ? metadata.name : user.email ?? 'User',
     email: user.email,
     full_name: typeof metadata.full_name === 'string' ? metadata.full_name : typeof metadata.name === 'string' ? metadata.name : user.email,
     avatar_url: metadataAvatar ?? (existingAvatar || null),
     role,
     provider: user.app_metadata.provider ?? 'email',
     updated_at: new Date().toISOString(),
+    creator_rank: creatorRank ?? 'Bronze I',
   };
-  if (creatorRank) row.creator_rank = creatorRank;
   await supabase.from('users').upsert(row, { onConflict: 'id' });
 }
 

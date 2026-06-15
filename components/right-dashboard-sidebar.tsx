@@ -106,8 +106,6 @@ export function RightDashboardSidebar() {
           <ProfileInfoRow label="Category" value={creator?.niche ?? 'Campus Lifestyle'} />
           <ProfileInfoRow label="University" value="Assumption University" />
           <ProfileInfoRow label="Followers" value={followerDisplay} />
-          <ProfileInfoRow label="Engagement Rate" value={`${performance?.averageEngagementRate ?? creator?.engagementRate ?? 7.13}%`} />
-          <ProfileInfoRow label="Content Style" value="Campus storytelling, Short-form video" />
         </div>
         {creator?.platforms && creator.platforms.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">

@@ -201,14 +201,16 @@ function SignUpScreen() {
     }
 
     setSubmitting(true);
-    await signUpWithPassword({
+    const signedUp = await signUpWithPassword({
       fullName: form.fullName.trim(),
       email: form.email.trim(),
       password: form.password,
       role: form.role,
     });
     setSubmitting(false);
-    setSuccess('Account created. If email confirmation is enabled, check your inbox before signing in.');
+    if (signedUp) {
+      setSuccess('Account created. If email confirmation is enabled, check your inbox before signing in.');
+    }
   };
 
   return (
