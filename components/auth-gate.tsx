@@ -4,14 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, CheckCircle2, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { useUiStore } from '@/lib/ui-store';
 import { calculateStartingRank, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
-import { cn } from '@/lib/utils';
 
 type SignInRole = 'admin' | 'creator';
 
@@ -337,7 +335,7 @@ function AuthField({
 }
 
 function CreatorOnboardingScreen() {
-  const { saveCreatorOnboarding, signOut } = useUiStore();
+  const { saveCreatorOnboarding } = useUiStore();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     platform: 'Instagram' as OnboardingPlatform,
@@ -355,7 +353,6 @@ function CreatorOnboardingScreen() {
   const [saving, setSaving] = useState(false);
   const suggestedRank = useMemo(() => calculateStartingRank(Number(form.followerCount) || 0), [form.followerCount]);
   const totalSteps = 2;
-  const progress = Math.round((step / totalSteps) * 100);
 
   const validateStep = () => {
     setError('');
@@ -431,14 +428,6 @@ function CreatorOnboardingScreen() {
             <OnboardingField label="Username / handle" value={form.socialHandle} onChange={(socialHandle) => setForm(current => ({ ...current, socialHandle }))} placeholder="@yourhandle" />
             <OnboardingField label="Profile URL" value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://instagram.com/yourhandle" />
           </div>
-          <div className="rounded-[14px] border border-primary/10 bg-primary/5 p-4">
-            <p className="text-sm font-semibold">What this rank unlocks</p>
-            <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
-              <p>Brand-side visibility with your starting status.</p>
-              <p>A creator profile brands can review for fit.</p>
-              <p>A clear path toward the next AU Creator Campus milestone.</p>
-            </div>
-          </div>
         </div>
       </div>
     ),
@@ -470,79 +459,38 @@ function CreatorOnboardingScreen() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-background px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
       <section className="mx-auto w-full max-w-[1120px]">
-        <div className="mb-5 rounded-[20px] border border-border bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <p className="section-label">Creator onboarding</p>
-              <h1 className="mt-2 text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">Complete Your Creator Profile</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Set up your creator identity, starting rank, and portfolio details before entering RollerKluster.</p>
+        <form className="panel min-w-0 overflow-hidden" onSubmit={(event) => event.preventDefault()}>
+          <div className="border-b border-border px-5 py-4 sm:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Step {step} of {totalSteps}</p>
+                <h2 className="mt-1 text-xl font-semibold text-foreground">{['Preview your starting rank', 'Complete your creator profile'][step - 1]}</h2>
+              </div>
             </div>
-            <Button type="button" variant="outline" className="w-fit shrink-0 border-border bg-white" onClick={() => void signOut()}>Sign out</Button>
           </div>
-        </div>
-
-        <div className="grid min-w-0 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-            <div className="panel p-5">
-              <p className="text-sm font-semibold text-foreground">Setup progress</p>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-              </div>
-              <div className="mt-5 space-y-3">
-                <StepNavItem active={step === 1} done={step > 1} number={1} title="Rank" detail="Preview your starting rank." />
-                <StepNavItem active={step === 2} done={false} number={2} title="Profile" detail="Complete your creator details." />
-              </div>
-            </div>
-          </aside>
-
-          <form className="panel min-w-0 overflow-hidden" onSubmit={(event) => event.preventDefault()}>
-            <div className="border-b border-border px-5 py-4 sm:px-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">Step {step} of {totalSteps}</p>
-                  <h2 className="mt-1 text-xl font-semibold text-foreground">{['Preview your starting rank', 'Complete your creator profile'][step - 1]}</h2>
-                </div>
-                <Badge variant="secondary" className="w-fit rounded-full">{progress}% complete</Badge>
-              </div>
-            </div>
-            <div className="p-5 sm:p-6">
-              {stepContent}
-              {error && <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
-              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <Button type="button" variant="outline" className="w-full border-border bg-white sm:w-auto" disabled={step === 1 || saving} onClick={() => setStep(current => Math.max(1, current - 1))}>
-                  <ArrowLeft className="size-4" />
-                  Back
+          <div className="p-5 sm:p-6">
+            {stepContent}
+            {error && <p className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <Button type="button" variant="outline" className="w-full border-border bg-white sm:w-auto" disabled={step === 1 || saving} onClick={() => setStep(current => Math.max(1, current - 1))}>
+                <ArrowLeft className="size-4" />
+                Back
+              </Button>
+              {step < totalSteps ? (
+                <Button type="button" className="w-full bg-primary text-white sm:w-auto" onClick={goNext}>
+                  Continue
+                  <ArrowRight className="size-4" />
                 </Button>
-                {step < totalSteps ? (
-                  <Button type="button" className="w-full bg-primary text-white sm:w-auto" onClick={goNext}>
-                    Continue
-                    <ArrowRight className="size-4" />
-                  </Button>
-                ) : (
-                  <Button type="button" className="w-full bg-primary text-white sm:w-auto" disabled={saving} onClick={() => void submit()}>
-                    {saving ? 'Saving profile...' : 'Enter Creator Dashboard'}
-                  </Button>
-                )}
-              </div>
+              ) : (
+                <Button type="button" className="w-full bg-primary text-white sm:w-auto" disabled={saving} onClick={() => void submit()}>
+                  {saving ? 'Saving profile...' : 'Enter Creator Dashboard'}
+                </Button>
+              )}
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </section>
     </main>
-  );
-}
-
-function StepNavItem({ active, done, number, title, detail }: { active: boolean; done: boolean; number: number; title: string; detail: string }) {
-  return (
-    <div className={cn('flex gap-3 rounded-[14px] border p-3 transition', active ? 'border-primary/20 bg-primary/5' : 'border-transparent bg-transparent')}>
-      <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold', done || active ? 'bg-primary text-white' : 'bg-muted text-muted-foreground')}>
-        {done ? <CheckCircle2 className="size-4" /> : number}
-      </div>
-      <div className="min-w-0">
-        <p className={cn('text-sm font-semibold', active ? 'text-foreground' : 'text-muted-foreground')}>{title}</p>
-        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{detail}</p>
-      </div>
-    </div>
   );
 }
 
