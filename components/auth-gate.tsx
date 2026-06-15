@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, CheckCircle2, GraduationCap, Sparkles, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -354,15 +354,15 @@ function CreatorOnboardingScreen() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const suggestedRank = useMemo(() => calculateStartingRank(Number(form.followerCount) || 0), [form.followerCount]);
-  const totalSteps = 3;
+  const totalSteps = 2;
   const progress = Math.round((step / totalSteps) * 100);
 
   const validateStep = () => {
     setError('');
-    if (step === 2) {
+    if (step === 1) {
       if (!form.followerCount.trim() || Number.isNaN(Number(form.followerCount))) return 'Add your follower count so we can estimate your starting rank.';
     }
-    if (step === 3 && (!form.creatorName.trim() || !form.faculty.trim() || !form.bio.trim())) return 'Add your creator name, faculty, and short bio.';
+    if (step === 2 && (!form.creatorName.trim() || !form.faculty.trim() || !form.bio.trim())) return 'Add your creator name, faculty, and short bio.';
     return '';
   };
 
@@ -405,28 +405,6 @@ function CreatorOnboardingScreen() {
 
   const stepContent = {
     1: (
-      <div className="min-w-0">
-        <div className="max-w-2xl">
-          <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">AU Creator Campus</Badge>
-          <h2 className="mt-4 text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">Set up your creator profile in a few minutes.</h2>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">Create your profile, preview your rank, and enter your creator dashboard.</p>
-        </div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <SimpleBenefit icon={<Sparkles className="size-4" />} title="Get campaign invites" />
-          <SimpleBenefit icon={<Trophy className="size-4" />} title="See your rank" />
-          <SimpleBenefit icon={<GraduationCap className="size-4" />} title="Earn hours later" />
-        </div>
-        <div className="mt-8 border-t border-border pt-5">
-          <p className="text-sm font-semibold text-foreground">Next steps</p>
-          <div className="mt-4 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
-            <p><span className="font-semibold text-foreground">1.</span> Preview rank</p>
-            <p><span className="font-semibold text-foreground">2.</span> Add profile details</p>
-            <p><span className="font-semibold text-foreground">3.</span> Open dashboard</p>
-          </div>
-        </div>
-      </div>
-    ),
-    2: (
       <div className="grid min-w-0 gap-6 xl:grid-cols-[0.82fr_1.18fr] xl:items-start">
         <div className="min-w-0 rounded-[18px] border border-primary/10 bg-primary/5 p-5 text-center sm:p-6">
           <div className="mx-auto flex size-20 items-center justify-center rounded-[18px] bg-white text-primary shadow-sm sm:size-24">
@@ -464,7 +442,7 @@ function CreatorOnboardingScreen() {
         </div>
       </div>
     ),
-    3: (
+    2: (
       <div className="space-y-5">
         <div>
           <h2 className="text-xl font-semibold tracking-normal sm:text-2xl">Complete your creator profile</h2>
@@ -511,9 +489,8 @@ function CreatorOnboardingScreen() {
                 <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
               </div>
               <div className="mt-5 space-y-3">
-                <StepNavItem active={step === 1} done={step > 1} number={1} title="Welcome" detail="Understand what happens next." />
-                <StepNavItem active={step === 2} done={step > 2} number={2} title="Rank" detail="Preview your starting rank." />
-                <StepNavItem active={step === 3} done={false} number={3} title="Profile" detail="Complete your creator details." />
+                <StepNavItem active={step === 1} done={step > 1} number={1} title="Rank" detail="Preview your starting rank." />
+                <StepNavItem active={step === 2} done={false} number={2} title="Profile" detail="Complete your creator details." />
               </div>
             </div>
           </aside>
@@ -523,7 +500,7 @@ function CreatorOnboardingScreen() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Step {step} of {totalSteps}</p>
-                  <h2 className="mt-1 text-xl font-semibold text-foreground">{['Welcome to RollerKluster', 'Preview your starting rank', 'Complete your creator profile'][step - 1]}</h2>
+                  <h2 className="mt-1 text-xl font-semibold text-foreground">{['Preview your starting rank', 'Complete your creator profile'][step - 1]}</h2>
                 </div>
                 <Badge variant="secondary" className="w-fit rounded-full">{progress}% complete</Badge>
               </div>
@@ -587,14 +564,5 @@ function OnboardingField({
       <span className="text-sm font-semibold text-foreground">{label}</span>
       <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} inputMode={inputMode} className="h-11 bg-white" />
     </label>
-  );
-}
-
-function SimpleBenefit({ icon, title }: { icon: ReactNode; title: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">{icon}</div>
-      <p className="text-sm font-semibold text-foreground">{title}</p>
-    </div>
   );
 }
