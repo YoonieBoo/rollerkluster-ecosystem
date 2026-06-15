@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Briefcase, Camera, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, Camera, CheckCircle2, Mail, MapPin, MoreHorizontal, Sparkles, Users } from 'lucide-react';
 import { initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { cn } from '@/lib/utils';
 import { getMonthYear } from '@/lib/creator-performance';
@@ -41,7 +41,6 @@ export default function CreatorProfile() {
   const rankState = creator ? getCreatorMonthlyPerformance(creator, submissions, campaigns, month, year) : undefined;
   const displayRank = activeRole === 'creator' && creatorProfile ? creatorProfile.creatorRank : rankState?.currentRank ?? 'Bronze I';
   const primaryPlatform = creator?.platforms[0];
-  const primaryPlatformUrl = normalizeExternalUrl(primaryPlatform?.url);
   const creatorTitle = `${displayRank} Campus Creator`;
   const profileTags = [
     ...(creator?.contentCategories ?? []),
@@ -129,48 +128,17 @@ export default function CreatorProfile() {
                   {creator.contentCategories && creator.contentCategories.length > 0 && (
                     <ProfileInfo icon={<Sparkles className="size-4" />} label="Content Style" value={creator.contentCategories.join(', ')} />
                   )}
-                  <div>
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">Platforms</p>
-                    <div className="mt-3 space-y-2">
-                      {creator.platforms.map(platform => {
-                        const platformUrl = normalizeExternalUrl(platform.url);
-                        const platformContent = (
-                          <>
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-sm font-semibold">{platform.name}</p>
-                              <p className="truncate text-xs text-muted-foreground">{platform.handle}</p>
-                            </div>
-                            <p className="mt-1 text-xs text-muted-foreground">{platform.followers.toLocaleString()} followers</p>
-                          </>
-                        );
-
-                        return platformUrl ? (
-                          <a key={platform.name} href={platformUrl} target="_blank" rel="noreferrer" className="block rounded-[10px] border border-border bg-muted/35 p-3 transition hover:border-primary/30 hover:bg-primary/5">
-                            {platformContent}
-                          </a>
-                        ) : (
-                          <div key={platform.name} className="rounded-[10px] border border-border bg-muted/35 p-3">
-                            {platformContent}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">Contact / Social</p>
-                    <div className="mt-3 grid gap-2">
-                      <a className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href={`mailto:${primaryPlatform?.handle.replace('@', '') || 'creator'}@rollerkluster.com`}>
-                        <Mail className="size-4" />
-                        Message creator
-                      </a>
-                      {primaryPlatform && primaryPlatformUrl && (
-                        <a className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href={primaryPlatformUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink className="size-4" />
-                          {primaryPlatform.handle}
+                  {activeRole === 'admin' && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-muted-foreground">Contact</p>
+                      <div className="mt-3 grid gap-2">
+                        <a className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href={`mailto:${primaryPlatform?.handle.replace('@', '') || 'creator'}@rollerkluster.com`}>
+                          <Mail className="size-4" />
+                          Message creator
                         </a>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </section>
             </aside>
@@ -241,11 +209,6 @@ export default function CreatorProfile() {
       </main>
     </div>
   );
-}
-
-function normalizeExternalUrl(url?: string) {
-  if (!url?.trim()) return '';
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 
 function ProfileInfo({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
