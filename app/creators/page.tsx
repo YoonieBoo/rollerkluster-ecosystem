@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase-client';
 const rankStyles: Record<string, string> = {
   TopPerformer: 'bg-amber-50 text-amber-800 border-amber-200',
   Gold: 'bg-amber-50 text-amber-800 border-amber-200',
+  Platinum: 'bg-blue-50 text-blue-800 border-blue-200',
   Silver2: 'bg-slate-100 text-slate-700 border-slate-200',
   Silver1: 'bg-slate-50 text-slate-700 border-slate-200',
   Bronze3: 'bg-orange-50 text-orange-800 border-orange-200',
@@ -29,12 +30,23 @@ const rankStyles: Record<string, string> = {
 };
 
 function rankLabel(rank?: string) {
-  if (!rank) return 'Bronze';
-  if (rank === 'TopPerformer') return 'Gold';
-  if (rank.startsWith('Bronze')) return 'Bronze';
-  if (rank.startsWith('Silver')) return 'Silver';
-  if (rank.startsWith('Gold')) return 'Gold';
+  if (!rank) return 'Bronze I';
+  if (rank === 'TopPerformer') return 'Platinum';
+  if (rank === 'Gold') return 'Gold I';
+  if (rank === 'Silver2') return 'Silver II';
+  if (rank === 'Silver1') return 'Silver I';
+  if (rank === 'Bronze3') return 'Bronze III';
+  if (rank === 'Bronze2') return 'Bronze II';
+  if (rank === 'Bronze1') return 'Bronze I';
   return rank;
+}
+
+function rankStyle(rank?: string) {
+  const label = rankLabel(rank);
+  if (label === 'Platinum') return rankStyles.Platinum;
+  if (label.startsWith('Gold')) return rankStyles.Gold;
+  if (label.startsWith('Silver')) return rankStyles.Silver2;
+  return rankStyles.Bronze1;
 }
 
 function initials(name: string) {
@@ -135,7 +147,10 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
       .sort((a, b) => b.reputationScore - a.reputationScore);
   }, [approvedCreators, searchTerm, selectedNiche, selectedPlatform, verifiedOnly, availableOnly, minFollowers, minEngagement]);
 
-  const topPerformerCount = approvedCreators.filter(c => c.badge === 'TopPerformer' || c.badge === 'Gold').length;
+  const topPerformerCount = approvedCreators.filter(c => {
+    const label = rankLabel(c.badge);
+    return label === 'Platinum' || label.startsWith('Gold');
+  }).length;
   const verifiedCount = approvedCreators.filter(c => c.verified).length;
   const totalReach = approvedCreators.reduce(
     (sum, creator) => sum + creator.platforms.reduce((platformSum, platform) => platformSum + platform.followers, 0),
@@ -277,7 +292,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                                     Verified creator
                                   </span>
                                 )}
-                                <span className={cn('rank-chip', rankStyles[creator.badge ?? 'Bronze1'])}>
+                                <span className={cn('rank-chip', rankStyle(creator.badge))}>
                                   <RankBadgeIcon rank={rankLabel(creator.badge)} className="size-4" />
                                   {rankLabel(creator.badge)}
                                 </span>

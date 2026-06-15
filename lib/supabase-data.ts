@@ -286,10 +286,7 @@ function normalizeCreatorPlatform(value: string): Creator['platforms'][number]['
 }
 
 function badgeFromCreatorRank(rank: string): Creator['badge'] {
-  if (rank.startsWith('Gold')) return 'Gold';
-  if (rank.startsWith('Silver')) return 'Silver1';
-  if (rank.startsWith('Bronze IV') || rank.startsWith('Bronze III')) return 'Bronze3';
-  if (rank.startsWith('Bronze II')) return 'Bronze2';
+  if (rank) return rank as Creator['badge'];
   return 'Bronze1';
 }
 

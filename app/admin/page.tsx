@@ -45,12 +45,14 @@ function approvalStatusLabel(status: string) {
 }
 
 function rankLabel(rank?: string) {
-  if (!rank) return 'Bronze';
-  if (rank === 'TopPerformer') return 'Gold';
-  if (rank.startsWith('Bronze')) return 'Bronze';
-  if (rank.startsWith('Silver')) return 'Silver';
-  if (rank.startsWith('Gold')) return 'Gold';
-  if (rank === 'Platinum') return 'Gold';
+  if (!rank) return 'Bronze I';
+  if (rank === 'TopPerformer') return 'Platinum';
+  if (rank === 'Gold') return 'Gold I';
+  if (rank === 'Silver2') return 'Silver II';
+  if (rank === 'Silver1') return 'Silver I';
+  if (rank === 'Bronze3') return 'Bronze III';
+  if (rank === 'Bronze2') return 'Bronze II';
+  if (rank === 'Bronze1') return 'Bronze I';
   return rank;
 }
 

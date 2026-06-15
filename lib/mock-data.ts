@@ -1,3 +1,5 @@
+import type { CreatorRank } from './creator-performance';
+
 export interface Creator {
   id: string;
   name: string;
@@ -21,7 +23,7 @@ export interface Creator {
     date: string;
     type: string;
   }[];
-  badge?: 'Bronze1' | 'Bronze2' | 'Bronze3' | 'Silver1' | 'Silver2' | 'Gold' | 'TopPerformer';
+  badge?: 'Bronze1' | 'Bronze2' | 'Bronze3' | 'Silver1' | 'Silver2' | 'Gold' | 'TopPerformer' | CreatorRank;
   reputationScore: number;
   completedEngagements: number;
   contentQualityScore: number;

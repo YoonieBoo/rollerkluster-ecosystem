@@ -25,20 +25,15 @@ export function tierLabel(tier?: string) {
 }
 
 export function brandRankLabel(rank?: string) {
-  const label = tierLabel(rank);
-  if (label === 'Platinum' || label.startsWith('Platinum')) return 'Gold';
-  if (label.startsWith('Gold')) return 'Gold';
-  if (label.startsWith('Silver')) return 'Silver';
-  if (label.startsWith('Bronze')) return 'Bronze';
-  return label;
+  return tierLabel(rank);
 }
 
 export function tierClass(tier?: string) {
   const label = tierLabel(tier);
 
-  if (label === 'Platinum') return 'border-primary/20 bg-blue-50 text-blue-800';
-  if (label === 'Gold') return 'border-amber-200 bg-amber-50 text-amber-800';
-  if (label === 'Silver') return 'border-slate-200 bg-slate-100 text-slate-700';
+  if (label === 'Platinum' || label.startsWith('Platinum')) return 'border-primary/20 bg-blue-50 text-blue-800';
+  if (label.startsWith('Gold')) return 'border-amber-200 bg-amber-50 text-amber-800';
+  if (label.startsWith('Silver')) return 'border-slate-200 bg-slate-100 text-slate-700';
   return 'border-orange-200 bg-orange-50 text-orange-800';
 }
 

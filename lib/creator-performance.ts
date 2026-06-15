@@ -173,6 +173,7 @@ export function submissionStatusLabel(status: Submission['status']) {
 }
 
 export function rankFromLegacyBadge(badge?: Creator['badge']): CreatorRank {
+  if (badge && CREATOR_RANKS.includes(badge as CreatorRank)) return badge as CreatorRank;
   if (badge === 'TopPerformer') return 'Platinum';
   if (badge === 'Gold') return 'Gold I';
   if (badge === 'Silver2') return 'Silver II';
