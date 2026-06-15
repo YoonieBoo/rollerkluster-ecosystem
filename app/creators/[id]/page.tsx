@@ -8,13 +8,13 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Briefcase, Camera, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, Sparkles, Star, Users } from 'lucide-react';
-import { formatCompact, initials, statusLabel, statusTone } from '@/lib/platform-utils';
+import { ArrowLeft, Briefcase, Camera, CheckCircle2, ExternalLink, Mail, MapPin, MoreHorizontal, Sparkles, Users } from 'lucide-react';
+import { initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { cn } from '@/lib/utils';
-import { getMonthYear, isSubmissionApproved, submissionStatusLabel } from '@/lib/creator-performance';
-import type { Creator, CreatorEvaluation, Submission } from '@/lib/mock-data';
+import { getMonthYear } from '@/lib/creator-performance';
+import type { Creator, CreatorEvaluation } from '@/lib/mock-data';
 import { RankBadge } from '@/components/rank-badge';
-import { getCreatorMonthlyPerformance, getCreatorMonthlySubmissionsForDisplay } from '@/lib/creator-performance-source';
+import { getCreatorMonthlyPerformance } from '@/lib/creator-performance-source';
 import { useUiStore } from '@/lib/ui-store';
 import { buildCurrentCreator } from '@/lib/current-creator';
 
@@ -34,9 +34,6 @@ export default function CreatorProfile() {
   const resolvedCreatorId = creator?.id ?? creatorId;
   const creatorEngagements = engagements.filter(e => e.creatorId === resolvedCreatorId);
   const { month, year } = getMonthYear();
-  const creatorSubmissions = getCreatorMonthlySubmissionsForDisplay(resolvedCreatorId, submissions, month, year);
-  const approvedSubmissions = creatorSubmissions.filter(isSubmissionApproved);
-
   const totalFollowers = useMemo(
     () => creator?.platforms.reduce((sum, platform) => sum + platform.followers, 0) ?? 0,
     [creator],
@@ -44,13 +41,12 @@ export default function CreatorProfile() {
   const rankState = creator ? getCreatorMonthlyPerformance(creator, submissions, campaigns, month, year) : undefined;
   const displayRank = activeRole === 'creator' && creatorProfile ? creatorProfile.creatorRank : rankState?.currentRank ?? 'Bronze I';
   const primaryPlatform = creator?.platforms[0];
+  const primaryPlatformUrl = normalizeExternalUrl(primaryPlatform?.url);
   const creatorTitle = `${displayRank} Campus Creator`;
-  const contentStyles = ['Campus storytelling', 'Short-form video', 'Student lifestyle', 'Brand-safe captions'];
   const profileTags = [
-    ...(creator?.contentCategories?.length ? creator.contentCategories : [creator?.niche ?? 'Campus life']),
+    ...(creator?.contentCategories ?? []),
     ...(creator?.isScholarshipStudent ? ['Scholarship student'] : []),
   ].filter(Boolean);
-  const brandFitTags = profileTags.length > 0 ? profileTags : ['Campus culture', 'Student engagement', 'University events'];
   const acceptedCampusInvitation = creator?.id === 'creator-2' && creatorInvitationStatus === 'accepted';
   const canEditOwnProfile = activeRole === 'creator' && creatorProfile && creator?.id === creatorProfile.userId;
 
@@ -126,24 +122,38 @@ export default function CreatorProfile() {
                   {avatarError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{avatarError}</p>}
                   <div>
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Category</p>
-                    <p className="mt-1 text-sm font-semibold">{creator.niche}</p>
+                    <p className="mt-1 text-sm font-semibold">{creator.contentCategories?.join(', ') || 'Not added'}</p>
                   </div>
                   <ProfileInfo icon={<MapPin className="size-4" />} label="University" value="Assumption University" />
-                  <ProfileInfo icon={<Users className="size-4" />} label="Followers" value={formatCompact(totalFollowers)} />
-                  <ProfileInfo icon={<Star className="size-4" />} label="Engagement Rate" value={`${creator.engagementRate}%`} />
-                  <ProfileInfo icon={<Sparkles className="size-4" />} label="Content Style" value={contentStyles.slice(0, 2).join(', ')} />
+                  <ProfileInfo icon={<Users className="size-4" />} label="Followers" value={totalFollowers.toLocaleString()} />
+                  {creator.contentCategories && creator.contentCategories.length > 0 && (
+                    <ProfileInfo icon={<Sparkles className="size-4" />} label="Content Style" value={creator.contentCategories.join(', ')} />
+                  )}
                   <div>
                     <p className="text-xs font-semibold uppercase text-muted-foreground">Platforms</p>
                     <div className="mt-3 space-y-2">
-                      {creator.platforms.map(platform => (
-                        <div key={platform.name} className="rounded-[10px] border border-border bg-muted/35 p-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold">{platform.name}</p>
-                            <p className="truncate text-xs text-muted-foreground">{platform.handle}</p>
+                      {creator.platforms.map(platform => {
+                        const platformUrl = normalizeExternalUrl(platform.url);
+                        const platformContent = (
+                          <>
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-semibold">{platform.name}</p>
+                              <p className="truncate text-xs text-muted-foreground">{platform.handle}</p>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">{platform.followers.toLocaleString()} followers</p>
+                          </>
+                        );
+
+                        return platformUrl ? (
+                          <a key={platform.name} href={platformUrl} target="_blank" rel="noreferrer" className="block rounded-[10px] border border-border bg-muted/35 p-3 transition hover:border-primary/30 hover:bg-primary/5">
+                            {platformContent}
+                          </a>
+                        ) : (
+                          <div key={platform.name} className="rounded-[10px] border border-border bg-muted/35 p-3">
+                            {platformContent}
                           </div>
-                          <p className="mt-1 text-xs text-muted-foreground">{formatCompact(platform.followers)} followers</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                   <div>
@@ -153,8 +163,8 @@ export default function CreatorProfile() {
                         <Mail className="size-4" />
                         Message creator
                       </a>
-                      {primaryPlatform && (
-                        <a className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href="#" onClick={(event) => event.preventDefault()}>
+                      {primaryPlatform && primaryPlatformUrl && (
+                        <a className="inline-flex items-center gap-2 text-sm font-semibold text-primary" href={primaryPlatformUrl} target="_blank" rel="noreferrer">
                           <ExternalLink className="size-4" />
                           {primaryPlatform.handle}
                         </a>
@@ -204,42 +214,6 @@ export default function CreatorProfile() {
                   )}
                 </div>
 
-                <div className="mt-6 grid gap-3 md:grid-cols-4">
-                  <PortfolioStat label="Creator Score" value={creator.reputationScore} />
-                  <PortfolioStat label="Approved Content" value={rankState?.totalContentApproved ?? approvedSubmissions.length} />
-                  <PortfolioStat label="Monthly Views" value={formatCompact(rankState?.totalViews ?? 0)} />
-                  <PortfolioStat label="Engagement Rate" value={`${creator.engagementRate}%`} />
-                </div>
-              </section>
-
-              <section className="panel p-5">
-                <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
-                  <div>
-                    <h2 className="section-heading">Creator Fit</h2>
-                    <p className="section-subtitle">Best suited for student-facing campaigns, campus culture stories, event coverage, and scholarship awareness.</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {brandFitTags.map(tag => <Badge key={tag} variant="secondary" className="rounded-full">{tag}</Badge>)}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Content strengths</h3>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      {contentStyles.map(style => (
-                        <div key={style} className="rounded-[12px] border border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-foreground">
-                          {style}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="panel overflow-hidden">
-                <div className="border-b border-border px-5 py-4">
-                  <h2 className="section-heading">Content Examples</h2>
-                  <p className="section-subtitle">Approved work that shows the creator's style and campaign delivery.</p>
-                </div>
-                <ApprovedContentList submissions={approvedSubmissions} campaigns={campaigns} />
               </section>
 
               <section className="panel overflow-hidden">
@@ -267,6 +241,11 @@ export default function CreatorProfile() {
       </main>
     </div>
   );
+}
+
+function normalizeExternalUrl(url?: string) {
+  if (!url?.trim()) return '';
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 
 function ProfileInfo({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
@@ -317,45 +296,6 @@ function ProfileActionsMenu({ activeRole, visibility }: { activeRole: 'admin' | 
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-function PortfolioStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-[12px] border border-border bg-muted/35 p-4">
-      <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-normal text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function ApprovedContentList({ submissions, campaigns }: { submissions: Submission[]; campaigns: { id: string; title: string; brand: string }[] }) {
-  if (submissions.length === 0) {
-    return <div className="p-5 text-sm text-muted-foreground">No approved content has been recorded yet.</div>;
-  }
-
-  return (
-    <div className="divide-y divide-border">
-      {submissions.map((submission) => {
-        const campaign = campaigns.find(item => item.id === submission.campaignId);
-        return (
-          <a key={submission.id} href={submission.contentUrl ?? submission.link} target="_blank" rel="noreferrer" className="grid gap-3 px-5 py-4 transition hover:bg-muted/35 md:grid-cols-[1fr_auto] md:items-center">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate text-sm font-semibold">{submission.title}</p>
-                <Badge variant="outline" className={cn('rounded-full', statusTone(submission.status))}>{submissionStatusLabel(submission.status)}</Badge>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{campaign?.brand ?? 'Brand'} · {campaign?.title ?? 'Campaign'} · {submission.platform ?? 'Content'}</p>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-right text-xs text-muted-foreground md:min-w-[220px]">
-              <span>{(submission.views ?? 0).toLocaleString()} views</span>
-              <span>{(submission.impressions ?? 0).toLocaleString()} impressions</span>
-              <span>{submission.engagementRate ?? 0}% ER</span>
-            </div>
-          </a>
-        );
-      })}
-    </div>
   );
 }
 
