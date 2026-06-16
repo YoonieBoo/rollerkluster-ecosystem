@@ -244,6 +244,7 @@ function CreatorPortal() {
   const { creatorAvatarUrl, creatorProfile, sessionEmail, sessionUser } = useUiStore();
   const [submissionOpen, setSubmissionOpen] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
+  const [submissionSubmitting, setSubmissionSubmitting] = useState(false);
   const [submissionForm, setSubmissionForm] = useState({
     campaignId: '',
     platform: 'Instagram' as SubmissionPlatform,
@@ -277,27 +278,37 @@ function CreatorPortal() {
   const assignedCampaigns = campaigns.filter(campaign => creatorEngagements.some(engagement => engagement.campaignId === campaign.id));
   const selectableCampaigns = (assignedCampaigns.length > 0 ? assignedCampaigns : availableCampaigns)
     .filter(campaign => !hasSupabaseConfig() || isValidUuid(campaign.id));
-  const submitContent = () => {
+  const submitContent = async () => {
     setSubmissionError('');
-    if (!creator || !submissionForm.campaignId || !submissionForm.contentUrl) return;
+    if (!creator || !submissionForm.campaignId || !submissionForm.contentUrl) {
+      setSubmissionError('Choose a campaign and paste the content link before submitting.');
+      return;
+    }
     if (hasSupabaseConfig() && !isValidUuid(submissionForm.campaignId)) {
       setSubmissionError('Please select a valid campaign before submitting.');
       return;
     }
     const selectedCampaign = campaigns.find(campaign => campaign.id === submissionForm.campaignId);
-    addSubmission({
-      creatorId: creator.id,
-      campaignId: submissionForm.campaignId,
-      engagementId: creatorEngagements.find(engagement => engagement.campaignId === submissionForm.campaignId)?.id,
-      title: `${submissionForm.platform} ${submissionForm.contentType}`,
-      link: submissionForm.contentUrl,
-      contentUrl: submissionForm.contentUrl,
-      contentType: submissionForm.contentType,
-      platform: submissionForm.platform,
-      notes: submissionForm.note || (selectedCampaign ? `Submitted for ${selectedCampaign.title}` : ''),
-    });
-    setSubmissionForm({ campaignId: '', platform: 'Instagram', contentUrl: '', contentType: 'Reel', note: '' });
-    setSubmissionOpen(false);
+    setSubmissionSubmitting(true);
+    try {
+      await addSubmission({
+        creatorId: creator.id,
+        campaignId: submissionForm.campaignId,
+        engagementId: creatorEngagements.find(engagement => engagement.campaignId === submissionForm.campaignId)?.id,
+        title: `${submissionForm.platform} ${submissionForm.contentType}`,
+        link: submissionForm.contentUrl,
+        contentUrl: submissionForm.contentUrl,
+        contentType: submissionForm.contentType,
+        platform: submissionForm.platform,
+        notes: submissionForm.note || (selectedCampaign ? `Submitted for ${selectedCampaign.title}` : ''),
+      });
+      setSubmissionForm({ campaignId: '', platform: 'Instagram', contentUrl: '', contentType: 'Reel', note: '' });
+      setSubmissionOpen(false);
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : 'Submission failed. Please try again.');
+    } finally {
+      setSubmissionSubmitting(false);
+    }
   };
 
   return (
@@ -371,7 +382,9 @@ function CreatorPortal() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" className="border-border bg-white" onClick={() => setSubmissionOpen(false)}>Cancel</Button>
-                    <Button className="bg-primary text-white" onClick={submitContent}>Submit for review</Button>
+                    <Button className="bg-primary text-white" onClick={submitContent} disabled={submissionSubmitting}>
+                      {submissionSubmitting ? 'Submitting...' : 'Submit for review'}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

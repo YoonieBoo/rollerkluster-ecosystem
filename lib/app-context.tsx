@@ -55,7 +55,7 @@ interface AppContextType {
   approveCreator: (creatorId: string) => void;
   rejectCreator: (creatorId: string) => void;
   completeTrainingModule: (moduleId: string, creatorId: string) => void;
-  addSubmission: (submission: Omit<Submission, 'id' | 'status' | 'submittedAt'> & { status?: Submission['status'] }) => void;
+  addSubmission: (submission: Omit<Submission, 'id' | 'status' | 'submittedAt'> & { status?: Submission['status'] }) => Promise<Submission>;
   reviewSubmission: (submissionId: string, status: Submission['status'], reviewNotes?: string, updates?: Partial<Pick<Submission, 'views' | 'impressions' | 'likes' | 'comments' | 'shares' | 'saves' | 'engagementRate' | 'cpiScore' | 'staffFeedback' | 'rejectedReason'>>) => void;
   addEvaluation: (creatorId: string, evaluation: CreatorEvaluation) => void;
   getMonthlyPerformance: (creatorId: string, month: number, year: number) => CreatorMonthlyPerformance | undefined;
@@ -252,7 +252,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ));
   };
 
-  const addSubmission: AppContextType['addSubmission'] = (submission) => {
+  const addSubmission: AppContextType['addSubmission'] = async (submission) => {
     const today = new Date().toISOString().slice(0, 10);
     const nextSubmission: Submission = {
       ...submission,
@@ -270,14 +270,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSubmissions(current => [nextSubmission, ...current]);
 
     if (hasSupabaseConfig()) {
-      insertCreatorSubmission(nextSubmission)
-        .then((persistedSubmission) => {
-          setSubmissions(current => current.map(item => item.id === nextSubmission.id ? persistedSubmission : item));
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+      try {
+        const persistedSubmission = await insertCreatorSubmission(nextSubmission);
+        setSubmissions(current => current.map(item => item.id === nextSubmission.id ? persistedSubmission : item));
+        return persistedSubmission;
+      } catch (error) {
+        setSubmissions(current => current.filter(item => item.id !== nextSubmission.id));
+        console.error(error);
+        throw error;
+      }
     }
+
+    return nextSubmission;
   };
 
   const reviewSubmission: AppContextType['reviewSubmission'] = (submissionId, status, reviewNotes, updates) => {

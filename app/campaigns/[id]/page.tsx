@@ -241,31 +241,42 @@ function CreatorCampaignBrief({
   setSubmissionForm: Dispatch<SetStateAction<{ title: string; link: string; notes: string; platform: SubmissionPlatform }>>;
   submissionError: string;
   setSubmissionError: Dispatch<SetStateAction<string>>;
-  addSubmission: (submission: Omit<Submission, 'id' | 'status' | 'submittedAt'> & { status?: Submission['status'] }) => void;
+  addSubmission: (submission: Omit<Submission, 'id' | 'status' | 'submittedAt'> & { status?: Submission['status'] }) => Promise<Submission>;
   updateEngagementStatus: (engagementId: string, status: Engagement['status']) => void;
 }) {
   const invitationPending = creatorEngagement?.status === 'matched' || creatorEngagement?.status === 'in_discussion';
   const canSubmit = creatorEngagement?.status === 'active';
+  const [submissionSubmitting, setSubmissionSubmitting] = useState(false);
 
-  const submitContent = () => {
+  const submitContent = async () => {
     setSubmissionError('');
-    if (!submissionForm.title || !submissionForm.link) return;
+    if (!submissionForm.title || !submissionForm.link) {
+      setSubmissionError('Add a content title and link before submitting.');
+      return;
+    }
     if (hasSupabaseConfig() && !isValidUuid(campaign.id)) {
       setSubmissionError('Please select a valid campaign before submitting.');
       return;
     }
-    addSubmission({
-      engagementId: creatorEngagement?.id,
-      creatorId: creatorEngagement?.creatorId ?? 'creator-2',
-      campaignId: campaign.id,
-      title: submissionForm.title,
-      link: submissionForm.link,
-      contentUrl: submissionForm.link,
-      contentType: submissionForm.title,
-      platform: submissionForm.platform,
-      notes: submissionForm.notes,
-    });
-    setSubmissionForm({ title: '', link: '', notes: '', platform: 'Instagram' });
+    setSubmissionSubmitting(true);
+    try {
+      await addSubmission({
+        engagementId: creatorEngagement?.id,
+        creatorId: creatorEngagement?.creatorId ?? 'creator-2',
+        campaignId: campaign.id,
+        title: submissionForm.title,
+        link: submissionForm.link,
+        contentUrl: submissionForm.link,
+        contentType: submissionForm.title,
+        platform: submissionForm.platform,
+        notes: submissionForm.notes,
+      });
+      setSubmissionForm({ title: '', link: '', notes: '', platform: 'Instagram' });
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : 'Submission failed. Please try again.');
+    } finally {
+      setSubmissionSubmitting(false);
+    }
   };
 
   return (
@@ -341,8 +352,8 @@ function CreatorCampaignBrief({
                     <Input placeholder="Paste content link" value={submissionForm.link} onChange={(event) => setSubmissionForm({ ...submissionForm, link: event.target.value })} />
                     <Textarea placeholder="Optional note for the campaign manager" value={submissionForm.notes} onChange={(event) => setSubmissionForm({ ...submissionForm, notes: event.target.value })} />
                     {submissionError && <p className="text-sm font-medium text-red-600">{submissionError}</p>}
-                    <Button className="w-fit bg-primary text-white" onClick={submitContent}>
-                      Submit for review
+                    <Button className="w-fit bg-primary text-white" onClick={submitContent} disabled={submissionSubmitting}>
+                      {submissionSubmitting ? 'Submitting...' : 'Submit for review'}
                     </Button>
                   </div>
                 </div>

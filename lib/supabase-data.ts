@@ -372,11 +372,14 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}): Promise
     throw new Error('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
   }
 
+  const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+  const accessToken = session?.access_token ?? supabaseAnonKey;
+
   const response = await fetch(`${supabaseUrl}${path}`, {
     ...init,
     headers: {
       apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       ...(init.headers ?? {}),
     },
