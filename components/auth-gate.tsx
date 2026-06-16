@@ -385,7 +385,6 @@ function CreatorOnboardingScreen() {
     setError('');
     if (step === 1) {
       if (!form.followerCount.trim() || Number.isNaN(Number(form.followerCount))) return 'Add your follower count so we can estimate your starting rank.';
-      if (!proofFile) return `Upload a screenshot of your ${form.platform} profile.`;
     }
     if (step === 2 && (!form.creatorName.trim() || !form.faculty.trim() || !form.bio.trim())) return 'Add your creator name, faculty, and short bio.';
     if (step === 2 && form.categories.length === 0) return 'Choose at least one content category.';
@@ -465,15 +464,25 @@ function CreatorOnboardingScreen() {
             <OnboardingField label="Profile URL" value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://instagram.com/yourhandle" />
           </div>
           <label className="grid gap-2">
-            <span className="text-sm font-semibold text-foreground">Screenshot of your {form.platform} profile</span>
+            <span className="text-sm font-semibold text-foreground">Screenshot of your {form.platform} profile (optional)</span>
             <Input
               type="file"
               accept="image/png,image/jpeg,image/jpg,image/webp"
-              onChange={(event) => setProofFile(event.target.files?.[0] ?? null)}
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                if (file && file.size > 5 * 1024 * 1024) {
+                  setProofFile(null);
+                  setError('That screenshot is over 5MB. Choose a smaller image, or continue without uploading one for now.');
+                  event.currentTarget.value = '';
+                  return;
+                }
+                setError('');
+                setProofFile(file);
+              }}
               className="h-11 bg-white file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary"
             />
             <span className="text-xs leading-5 text-muted-foreground">
-              Upload a clear screenshot that shows your username and follower count. PNG, JPG, or WebP under 5MB.
+              Optional for now. If you upload one, use a clear PNG, JPG, or WebP under 5MB that shows your username and follower count.
             </span>
             {proofFile && <span className="text-xs font-semibold text-primary">{proofFile.name}</span>}
           </label>
