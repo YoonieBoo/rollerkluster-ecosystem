@@ -481,9 +481,6 @@ function CreatorOnboardingScreen() {
               }}
               className="h-11 bg-white file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary"
             />
-            <span className="text-xs leading-5 text-muted-foreground">
-              Optional for now. If you upload one, use a clear PNG, JPG, or WebP under 5MB that shows your username and follower count.
-            </span>
             {proofFile && <span className="text-xs font-semibold text-primary">{proofFile.name}</span>}
           </label>
         </div>
@@ -491,14 +488,10 @@ function CreatorOnboardingScreen() {
     ),
     2: (
       <div className="space-y-5">
-        <div>
-          <h2 className="text-xl font-semibold tracking-normal sm:text-2xl">Complete your creator profile</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">Help brands understand who you are, what you make, and where you fit in the AU ecosystem.</p>
-        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <OnboardingField label="Creator name" value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Yoonie" />
           <OnboardingField label="University" value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder="Assumption University" />
-          <OnboardingField label="Faculty" value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" />
+          <OnboardingField label="Faculty" value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" required />
           <div className="grid gap-2 sm:col-span-2">
             <span className="text-sm font-semibold text-foreground">Content categories</span>
             <div className="flex flex-wrap gap-2">
@@ -610,17 +603,22 @@ function OnboardingField({
   onChange,
   placeholder,
   inputMode,
+  required = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   inputMode?: 'numeric' | 'decimal';
+  required?: boolean;
 }) {
   return (
     <label className="grid gap-2">
-      <span className="text-sm font-semibold text-foreground">{label}</span>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} inputMode={inputMode} className="h-11 bg-white" />
+      <span className="text-sm font-semibold text-foreground">
+        {label}
+        {required && <span className="text-primary"> *</span>}
+      </span>
+      <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} inputMode={inputMode} required={required} className="h-11 bg-white" />
     </label>
   );
 }
