@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Briefcase, Camera, CheckCircle2, Mail, MapPin, MoreHorizontal, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, Camera, CheckCircle2, Mail, MapPin, MoreHorizontal, Pencil, Users } from 'lucide-react';
 import { initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { cn } from '@/lib/utils';
 import { getMonthYear } from '@/lib/creator-performance';
@@ -119,15 +119,8 @@ export default function CreatorProfile() {
                 </div>
                 <div className="space-y-5 p-5">
                   {avatarError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{avatarError}</p>}
-                  <div>
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">Category</p>
-                    <p className="mt-1 text-sm font-semibold">{creator.contentCategories?.join(', ') || 'Not added'}</p>
-                  </div>
                   <ProfileInfo icon={<MapPin className="size-4" />} label="University" value="Assumption University" />
                   <ProfileInfo icon={<Users className="size-4" />} label="Followers" value={totalFollowers.toLocaleString()} />
-                  {creator.contentCategories && creator.contentCategories.length > 0 && (
-                    <ProfileInfo icon={<Sparkles className="size-4" />} label="Content Style" value={creator.contentCategories.join(', ')} />
-                  )}
                   {activeRole === 'admin' && (
                     <div>
                       <p className="text-xs font-semibold uppercase text-muted-foreground">Contact</p>
@@ -147,7 +140,11 @@ export default function CreatorProfile() {
               <section className={cn('panel p-6', activeRole === 'creator' && 'relative pr-16')}>
                 {activeRole === 'creator' && (
                   <div className="absolute right-5 top-5">
-                    <ProfileActionsMenu activeRole={activeRole} visibility="always" />
+                    <Button asChild variant="outline" size="icon" className="size-10 shrink-0 border-border bg-white">
+                      <Link href="/account?mode=edit" aria-label="Edit profile" title="Edit profile">
+                        <Pencil className="size-4" />
+                      </Link>
+                    </Button>
                   </div>
                 )}
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -223,17 +220,12 @@ function ProfileInfo({ icon, label, value }: { icon: React.ReactNode; label: str
   );
 }
 
-function ProfileActionsMenu({ activeRole, visibility }: { activeRole: 'admin' | 'creator'; visibility: 'always' | 'mobile' | 'desktop' }) {
-  const creatorActions = [
-    { href: '/account', label: 'Edit profile' },
-    { href: '/account', label: 'Update platforms' },
-    { href: '/leaderboard', label: 'View progress' },
-  ];
+function ProfileActionsMenu({ activeRole, visibility }: { activeRole: 'admin' | 'creator'; visibility: 'mobile' | 'desktop' }) {
   const brandActions = [
     { href: '/creators', label: 'Compare creators' },
     { href: '/campaigns', label: 'View campaigns' },
   ];
-  const actions = activeRole === 'creator' ? creatorActions : brandActions;
+  const actions = activeRole === 'creator' ? [] : brandActions;
 
   return (
     <DropdownMenu>

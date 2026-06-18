@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserCircle, ExternalLink, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ExternalLink, ShieldCheck, UserCircle } from 'lucide-react';
 import { useUiStore } from '@/lib/ui-store';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -64,7 +66,10 @@ export default function AccountPage() {
 
 function CreatorProfileSetup() {
   const { creatorProfile, sessionEmail, updateCreatorProfile } = useUiStore();
-  const [editing, setEditing] = useState(false);
+  const searchParams = useSearchParams();
+  const requestedMode = searchParams.get('mode');
+  const opensInEditMode = requestedMode === 'edit' || requestedMode === 'platforms';
+  const [editing, setEditing] = useState(opensInEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -86,6 +91,10 @@ function CreatorProfileSetup() {
       engagementRate: creatorProfile.engagementRate !== undefined ? String(creatorProfile.engagementRate) : '',
     });
   }, [creatorProfile]);
+
+  useEffect(() => {
+    if (opensInEditMode) setEditing(true);
+  }, [opensInEditMode]);
 
   const saveProfile = async () => {
     setError('');
@@ -124,17 +133,26 @@ function CreatorProfileSetup() {
   };
 
   const estimatedRank = calculateStartingRank(Number(form.followerCount) || creatorProfile?.followerCount || 0);
+  const profileHref = `/creators/${creatorProfile?.userId ?? 'creator-2'}`;
+  const pageTitle = editing ? (requestedMode === 'platforms' ? 'Update platforms' : 'Edit creator profile') : 'Creator profile';
+  const pageDescription = editing
+    ? 'Make your changes, then save them here. No second edit step is needed.'
+    : 'Your submitted social profile and starting rank.';
 
   return (
     <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
         <div className="page-wrap max-w-[980px]">
+          <Link href={profileHref} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+            <ArrowLeft className="size-4" />
+            Back to my profile
+          </Link>
           <header className="page-header">
             <div>
               <p className="section-label">Creator ecosystem portal</p>
-              <h1 className="page-title mt-2">Creator profile</h1>
-              <p className="page-description">Your submitted social profile and starting rank.</p>
+              <h1 className="page-title mt-2">{pageTitle}</h1>
+              <p className="page-description">{pageDescription}</p>
             </div>
           </header>
 
@@ -149,7 +167,9 @@ function CreatorProfileSetup() {
                   <Badge className="rounded-full bg-primary/10 text-primary hover:bg-blue-50">{editing ? estimatedRank : creatorProfile?.creatorRank ?? 'Bronze I'}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Your starting rank has been estimated from your submitted social profile. Future rank progression follows AU Creator Campus activity layers, not follower count.
+                  {editing
+                    ? 'Edit your connected platform, handle, profile link, follower count, and engagement rate.'
+                    : 'Your starting rank has been estimated from your submitted social profile. Future rank progression follows AU Creator Campus activity layers, not follower count.'}
                 </p>
 
                 {editing ? (
