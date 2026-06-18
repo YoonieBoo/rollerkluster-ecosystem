@@ -327,9 +327,6 @@ function CreatorPortal() {
               <h1 className="page-title">Welcome back, {creator?.name ?? sessionEmail}</h1>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" className="h-10 border-border bg-white">
-                <Link href={`/creators/${creator?.id}`}>View my profile</Link>
-              </Button>
               <Dialog open={submissionOpen} onOpenChange={setSubmissionOpen}>
                 <DialogTrigger asChild>
                   <Button className="h-10 bg-primary text-white hover:bg-primary/90">
@@ -472,7 +469,7 @@ function CreatorPortal() {
                           <p className="mt-2 text-sm text-muted-foreground">{submission.staffFeedback ?? submission.reviewNotes}</p>
                         )}
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-right text-xs text-muted-foreground md:min-w-[210px]">
+                      <div className="grid gap-1 text-left text-xs text-muted-foreground sm:grid-cols-3 md:min-w-[210px] md:gap-2 md:text-right">
                         <span>{(submission.views ?? 0).toLocaleString()} views</span>
                         <span>{(submission.likes ?? 0).toLocaleString()} likes</span>
                         <span>{submission.engagementRate ?? 0}% ER</span>

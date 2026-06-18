@@ -221,12 +221,12 @@ export default function GovernanceAdmin() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 border-b border-border">
+          <div className="mb-6 flex gap-2 overflow-x-auto border-b border-border pb-px">
             {(['approvals', 'submissions', 'performance', 'ranks', 'campaigns', 'activity'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+                className={`shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === tab
                     ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -373,7 +373,7 @@ export default function GovernanceAdmin() {
                         )}
                       </div>
                       <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid gap-2 sm:grid-cols-2">
                           <MetricInput label="Views" value={draft.views} onChange={(value) => updateDraft(submission.id, 'views', value)} />
                           <MetricInput label="Impressions" value={draft.impressions} onChange={(value) => updateDraft(submission.id, 'impressions', value)} />
                           <MetricInput label="Likes" value={draft.likes} onChange={(value) => updateDraft(submission.id, 'likes', value)} />

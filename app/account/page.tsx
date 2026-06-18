@@ -57,11 +57,11 @@ export default function AccountPage() {
           </header>
 
           <Card className="p-6">
-            <div className="flex items-start gap-5">
+            <div className="flex flex-col gap-5 md:flex-row md:items-start">
               <div className="flex size-16 items-center justify-center rounded-full bg-primary text-white">
                 <UserCircle className="size-8" />
               </div>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h2 className="text-xl font-semibold">{brandName || 'Brand account'}</h2>
                   <Badge className="rounded-full bg-primary/10 text-primary hover:bg-blue-50">Brand Side</Badge>
@@ -72,7 +72,7 @@ export default function AccountPage() {
                     <EditField label="User name" value={brandName} onChange={setBrandName} placeholder="Your display name" />
                   </div>
                 )}
-                <div className="mt-5 grid grid-cols-3 gap-3">
+                <div className="mt-5 grid gap-3 md:grid-cols-3">
                   {[
                     ['Role', 'Campaign Owner'],
                     ['Access', 'Creators, Campaigns, Collaborations, Reports'],
@@ -88,7 +88,7 @@ export default function AccountPage() {
                 {brandSaved && <p className="mt-4 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">Account name updated.</p>}
               </div>
               {brandEditing ? (
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 flex-wrap gap-2">
                   <Button className="bg-primary text-white" disabled={brandSaving} onClick={() => void saveBrandName()}>{brandSaving ? 'Saving...' : 'Save'}</Button>
                   <Button variant="outline" className="border-border bg-white" disabled={brandSaving} onClick={() => setBrandEditing(false)}>Cancel</Button>
                 </div>

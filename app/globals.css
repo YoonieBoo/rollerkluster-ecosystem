@@ -142,6 +142,10 @@
   overflow-x: hidden;
 }
 
+.ecosystem-shell > main {
+  min-width: 0;
+}
+
 .right-dashboard-sidebar {
   display: none;
   width: 320px;
@@ -155,13 +159,13 @@
   gap: 16px;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1440px) {
   .right-dashboard-sidebar {
     display: flex;
   }
 }
 
-@media (min-width: 1536px) {
+@media (min-width: 1800px) {
   .right-dashboard-sidebar {
     width: 360px;
     padding: 22px;
@@ -292,6 +296,10 @@
   .page-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .page-header > * {
+    min-width: 0;
   }
 
   .page-title {

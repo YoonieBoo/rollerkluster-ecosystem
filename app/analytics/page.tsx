@@ -44,16 +44,18 @@ export default function AnalyticsPage() {
     <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-[1440px] px-7 py-6">
-          <header className="mb-6 border-b border-border pb-5">
-            <p className="section-label">Ecosystem visibility</p>
-            <h1 className="mt-2 text-[30px] font-semibold leading-tight">Operational visibility</h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Supporting visibility for creator readiness, engagement progress, and structured campaign execution.
-            </p>
+        <div className="page-wrap max-w-[1440px]">
+          <header className="page-header">
+            <div>
+              <p className="section-label">Ecosystem visibility</p>
+              <h1 className="page-title mt-2">Operational visibility</h1>
+              <p className="page-description">
+                Supporting visibility for creator readiness, engagement progress, and structured campaign execution.
+              </p>
+            </div>
           </header>
 
-          <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {summaryStats.map(({ label, value, detail, Icon }) => (
               <Card key={label} className="p-5">
                 <div className="flex items-start justify-between">

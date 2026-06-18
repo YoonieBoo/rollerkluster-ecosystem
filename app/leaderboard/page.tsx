@@ -39,24 +39,24 @@ export default function Leaderboard() {
     const displayRank = activeRole === 'admin' ? brandRankLabel(performance.currentRank) : performance.currentRank;
     return (
       <Link key={creator.id} href={`/creators/${creator.id}`}>
-        <div className="p-4 bg-card hover:bg-card/80 rounded-lg border border-border transition-colors cursor-pointer flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-1">
+        <div className="flex cursor-pointer flex-col gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card/80 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
             {rank && (
-              <div className="w-8 h-8 flex items-center justify-center font-bold rounded-full bg-primary text-white">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-white">
                 {rank}
               </div>
             )}
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="font-semibold text-foreground">{creator.name}</p>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex min-w-0 items-center gap-2">
+                <p className="truncate font-semibold text-foreground">{creator.name}</p>
                 {creator.verified && (
-                  <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">{creator.niche}</p>
+              <p className="truncate text-xs text-muted-foreground">{creator.niche}</p>
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="grid grid-cols-3 gap-3 text-left sm:flex sm:items-center sm:gap-6 sm:text-right">
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Rank Progress</p>
               <p className="font-bold text-foreground">{performance.rankProgressPercentage}%</p>
@@ -65,7 +65,7 @@ export default function Leaderboard() {
               <p className="text-xs text-muted-foreground">Approved</p>
               <p className="font-bold text-foreground">{performance.totalContentApproved}</p>
             </div>
-            <div className="inline-flex items-center gap-1 rounded border border-border bg-white px-2 py-1 text-xs font-semibold text-foreground">
+            <div className="inline-flex w-fit items-center gap-1 rounded border border-border bg-white px-2 py-1 text-xs font-semibold text-foreground">
               <RankBadgeIcon rank={displayRank} className="size-4" />
               {displayRank}
             </div>

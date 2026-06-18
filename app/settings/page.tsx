@@ -12,11 +12,13 @@ export default function SettingsPage() {
     <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-[1100px] px-7 py-6">
-          <header className="mb-6 border-b border-border pb-5">
-            <p className="section-label">Brand settings</p>
-            <h1 className="mt-2 text-[30px] font-semibold leading-tight">Campaign controls</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Configure creator readiness rules, campaign matching preferences, and brand alerts.</p>
+        <div className="page-wrap max-w-[1100px]">
+          <header className="page-header">
+            <div>
+              <p className="section-label">Brand settings</p>
+              <h1 className="page-title mt-2">Campaign controls</h1>
+              <p className="page-description">Configure creator readiness rules, campaign matching preferences, and brand alerts.</p>
+            </div>
           </header>
 
           <div className="grid gap-5 lg:grid-cols-2">
@@ -39,7 +41,7 @@ export default function SettingsPage() {
           </div>
 
           <Card className="mt-5 p-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-[12px] bg-primary text-white">
                   <Settings className="size-4" />

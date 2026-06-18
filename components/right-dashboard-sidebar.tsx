@@ -107,15 +107,6 @@ export function RightDashboardSidebar() {
           <ProfileInfoRow label="University" value="Assumption University" />
           <ProfileInfoRow label="Followers" value={followerDisplay} />
         </div>
-        {creator?.platforms && creator.platforms.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {creator.platforms.map(platform => (
-              <span key={platform.name} className="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                {platform.name}
-              </span>
-            ))}
-          </div>
-        )}
       </SidebarCard>
 
       {creatorInvitations.length > 0 && (

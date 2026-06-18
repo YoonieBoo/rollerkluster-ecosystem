@@ -95,15 +95,17 @@ export default function NotificationsPage() {
     <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-[1100px] px-7 py-6">
-          <header className="mb-6 border-b border-border pb-5">
-            <p className="section-label">{eyebrow}</p>
-            <h1 className="mt-2 text-[30px] font-semibold leading-tight">{heading}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+        <div className="page-wrap max-w-[1100px]">
+          <header className="page-header">
+            <div>
+              <p className="section-label">{eyebrow}</p>
+              <h1 className="page-title mt-2">{heading}</h1>
+              <p className="page-description">{subtitle}</p>
+            </div>
           </header>
 
           <div className="panel overflow-hidden">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <div className="flex flex-col gap-2 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-base font-semibold">Today</h2>
               <Badge variant="secondary" className="rounded-full">{notifications.length} {activeRole === 'creator' ? 'invites' : 'updates'}</Badge>
             </div>
