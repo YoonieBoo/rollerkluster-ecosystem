@@ -2,6 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { Sidebar } from '@/components/sidebar';
+import { SubmissionFlowScreen } from '@/components/submission-flow-screen';
 import { useApp } from '@/lib/app-context';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -247,6 +248,7 @@ function CreatorCampaignBrief({
   const invitationPending = creatorEngagement?.status === 'matched' || creatorEngagement?.status === 'in_discussion';
   const canSubmit = creatorEngagement?.status === 'active';
   const [submissionSubmitting, setSubmissionSubmitting] = useState(false);
+  const [submissionFlowStatus, setSubmissionFlowStatus] = useState<'processing' | 'success' | null>(null);
 
   const submitContent = async () => {
     setSubmissionError('');
@@ -259,6 +261,7 @@ function CreatorCampaignBrief({
       return;
     }
     setSubmissionSubmitting(true);
+    setSubmissionFlowStatus('processing');
     try {
       await addSubmission({
         engagementId: creatorEngagement?.id,
@@ -272,8 +275,10 @@ function CreatorCampaignBrief({
         notes: submissionForm.notes,
       });
       setSubmissionForm({ title: '', link: '', notes: '', platform: 'Instagram' });
+      setSubmissionFlowStatus('success');
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : 'Submission failed. Please try again.');
+      setSubmissionFlowStatus(null);
     } finally {
       setSubmissionSubmitting(false);
     }
@@ -366,6 +371,11 @@ function CreatorCampaignBrief({
           </div>
         </div>
       </main>
+      <SubmissionFlowScreen
+        open={submissionFlowStatus !== null}
+        status={submissionFlowStatus ?? 'processing'}
+        onClose={() => setSubmissionFlowStatus(null)}
+      />
     </div>
   );
 }

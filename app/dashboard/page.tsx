@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Sidebar } from '@/components/sidebar';
 import { RightDashboardSidebar } from '@/components/right-dashboard-sidebar';
+import { SubmissionFlowScreen } from '@/components/submission-flow-screen';
 import { useApp } from '@/lib/app-context';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -245,6 +246,7 @@ function CreatorPortal() {
   const [submissionOpen, setSubmissionOpen] = useState(false);
   const [submissionError, setSubmissionError] = useState('');
   const [submissionSubmitting, setSubmissionSubmitting] = useState(false);
+  const [submissionFlowStatus, setSubmissionFlowStatus] = useState<'processing' | 'success' | null>(null);
   const [submissionForm, setSubmissionForm] = useState({
     campaignId: '',
     platform: 'Instagram' as SubmissionPlatform,
@@ -290,6 +292,8 @@ function CreatorPortal() {
     }
     const selectedCampaign = campaigns.find(campaign => campaign.id === submissionForm.campaignId);
     setSubmissionSubmitting(true);
+    setSubmissionOpen(false);
+    setSubmissionFlowStatus('processing');
     try {
       await addSubmission({
         creatorId: creator.id,
@@ -303,9 +307,11 @@ function CreatorPortal() {
         notes: submissionForm.note || (selectedCampaign ? `Submitted for ${selectedCampaign.title}` : ''),
       });
       setSubmissionForm({ campaignId: '', platform: 'Instagram', contentUrl: '', contentType: 'Reel', note: '' });
-      setSubmissionOpen(false);
+      setSubmissionFlowStatus('success');
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : 'Submission failed. Please try again.');
+      setSubmissionFlowStatus(null);
+      setSubmissionOpen(true);
     } finally {
       setSubmissionSubmitting(false);
     }
@@ -388,6 +394,11 @@ function CreatorPortal() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              <SubmissionFlowScreen
+                open={submissionFlowStatus !== null}
+                status={submissionFlowStatus ?? 'processing'}
+                onClose={() => setSubmissionFlowStatus(null)}
+              />
             </div>
           </header>
 
