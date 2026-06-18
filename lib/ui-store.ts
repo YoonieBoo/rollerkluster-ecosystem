@@ -53,6 +53,7 @@ interface UiState {
   signUpWithPassword: (input: { fullName: string; email: string; password: string; role: ActiveRole }) => Promise<boolean>;
   sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateAccountName: (name: string) => Promise<void>;
   saveCreatorAvatar: (file: File) => Promise<void>;
   saveCreatorOnboarding: (input: SaveCreatorOnboardingInput) => Promise<void>;
   updateCreatorProfile: (input: Omit<SaveCreatorOnboardingInput, 'proofFile'>) => Promise<void>;
@@ -210,6 +211,34 @@ export const useUiStore = create<UiState>((set, get) => ({
       creatorInvitationStatus: 'pending',
     });
   },
+  updateAccountName: async (name) => {
+    const user = get().sessionUser;
+    if (!supabase || !user) throw new Error('You must be signed in before editing your account.');
+
+    const displayName = name.trim();
+    if (!displayName) throw new Error('Add your user name.');
+
+    const role = get().activeRole === 'creator' ? 'creator' : 'brand';
+    await upsertPlatformUser(user, role, get().creatorProfile?.creatorRank);
+    const { error: userNameError } = await supabase
+      .from('users')
+      .update({ name: displayName, full_name: displayName, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+    if (userNameError) {
+      console.error('ACCOUNT NAME SAVE FAILED', userNameError);
+      throw new Error(formatSupabaseOnboardingError(userNameError, 'Could not update account name.'));
+    }
+
+    const { data, error: authUpdateError } = await supabase.auth.updateUser({
+      data: { full_name: displayName, name: displayName },
+    });
+    if (authUpdateError) {
+      console.error('ACCOUNT AUTH NAME SAVE FAILED', authUpdateError);
+      throw new Error(authUpdateError.message);
+    }
+
+    set({ sessionUser: data.user ?? user });
+  },
   saveCreatorAvatar: async (file) => {
     const user = get().sessionUser;
     if (!supabase || !user) throw new Error('You must be signed in before uploading a profile photo.');
@@ -323,9 +352,10 @@ export const useUiStore = create<UiState>((set, get) => ({
     if (!supabase || !user || !existingProfile) throw new Error('You must be signed in before editing your profile.');
 
     const creatorRank = calculateStartingRank(input.followerCount);
+    const creatorName = input.creatorName?.trim() || existingProfile.creatorName || user.email || 'Creator';
     const row: CreatorProfileRow = {
       user_id: user.id,
-      creator_name: existingProfile.creatorName ?? null,
+      creator_name: creatorName,
       university: existingProfile.university ?? null,
       faculty: existingProfile.faculty ?? null,
       bio: existingProfile.bio ?? null,
@@ -336,7 +366,7 @@ export const useUiStore = create<UiState>((set, get) => ({
       social_profile_url: input.socialProfileUrl,
       follower_count: input.followerCount,
       manual_follower_count: input.followerCount,
-      engagement_rate: typeof input.engagementRate === 'number' ? input.engagementRate : null,
+      engagement_rate: typeof input.engagementRate === 'number' ? input.engagementRate : existingProfile.engagementRate ?? null,
       proof_image_url: existingProfile.proofImageUrl ?? null,
       verification_status: existingProfile.verificationStatus,
       creator_rank: creatorRank,
@@ -356,10 +386,26 @@ export const useUiStore = create<UiState>((set, get) => ({
 
     try {
       await upsertPlatformUser(user, 'creator', creatorRank);
+      const { error: userNameError } = await supabase
+        .from('users')
+        .update({ name: creatorName, full_name: creatorName, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      if (userNameError) throw userNameError;
     } catch (error) {
-      console.error('CREATOR PROFILE USER RANK UPDATE FAILED', error);
+      console.error('CREATOR PROFILE USER UPDATE FAILED', error);
     }
-    set({ creatorProfile: normalizeCreatorProfileRow(data as CreatorProfileRow) });
+
+    const { data: authUpdateData, error: authUpdateError } = await supabase.auth.updateUser({
+      data: { full_name: creatorName, name: creatorName },
+    });
+    if (authUpdateError) {
+      console.error('CREATOR PROFILE AUTH NAME UPDATE FAILED', authUpdateError);
+    }
+
+    set({
+      creatorProfile: normalizeCreatorProfileRow(data as CreatorProfileRow),
+      sessionUser: authUpdateData.user ?? user,
+    });
   },
   refreshCreatorProfile: async () => {
     const user = get().sessionUser;

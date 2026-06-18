@@ -7,14 +7,39 @@ import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ExternalLink, ShieldCheck, UserCircle } from 'lucide-react';
+import { ArrowLeft, ExternalLink, UserCircle } from 'lucide-react';
 import { useUiStore } from '@/lib/ui-store';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { calculateStartingRank, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
+import { getSessionDisplayName } from '@/lib/current-creator';
 
 export default function AccountPage() {
-  const { activeRole } = useUiStore();
+  const { activeRole, sessionEmail, sessionUser, updateAccountName } = useUiStore();
+  const [brandEditing, setBrandEditing] = useState(false);
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandError, setBrandError] = useState('');
+  const [brandSaved, setBrandSaved] = useState(false);
+  const [brandName, setBrandName] = useState('');
+
+  useEffect(() => {
+    setBrandName(getSessionDisplayName(sessionUser, sessionEmail));
+  }, [sessionEmail, sessionUser]);
+
+  const saveBrandName = async () => {
+    setBrandError('');
+    setBrandSaved(false);
+    setBrandSaving(true);
+    try {
+      await updateAccountName(brandName);
+      setBrandEditing(false);
+      setBrandSaved(true);
+    } catch (error) {
+      setBrandError(error instanceof Error ? error.message : 'Could not update account name.');
+    } finally {
+      setBrandSaving(false);
+    }
+  };
 
   if (activeRole === 'creator') return <CreatorProfileSetup />;
 
@@ -38,10 +63,15 @@ export default function AccountPage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-semibold">RollerKluster Brand Team</h2>
+                  <h2 className="text-xl font-semibold">{brandName || 'Brand account'}</h2>
                   <Badge className="rounded-full bg-primary/10 text-primary hover:bg-blue-50">Brand Side</Badge>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">Authenticated brand workspace</p>
+                {brandEditing && (
+                  <div className="mt-5 max-w-sm">
+                    <EditField label="User name" value={brandName} onChange={setBrandName} placeholder="Your display name" />
+                  </div>
+                )}
                 <div className="mt-5 grid grid-cols-3 gap-3">
                   {[
                     ['Role', 'Campaign Owner'],
@@ -54,8 +84,17 @@ export default function AccountPage() {
                     </div>
                   ))}
                 </div>
+                {brandError && <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{brandError}</p>}
+                {brandSaved && <p className="mt-4 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">Account name updated.</p>}
               </div>
-              <Button variant="outline" className="border-border bg-white">Edit profile</Button>
+              {brandEditing ? (
+                <div className="flex shrink-0 gap-2">
+                  <Button className="bg-primary text-white" disabled={brandSaving} onClick={() => void saveBrandName()}>{brandSaving ? 'Saving...' : 'Save'}</Button>
+                  <Button variant="outline" className="border-border bg-white" disabled={brandSaving} onClick={() => setBrandEditing(false)}>Cancel</Button>
+                </div>
+              ) : (
+                <Button variant="outline" className="border-border bg-white" onClick={() => setBrandEditing(true)}>Edit profile</Button>
+              )}
             </div>
           </Card>
         </div>
@@ -74,23 +113,23 @@ function CreatorProfileSetup() {
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
+    creatorName: '',
     platform: 'Instagram' as OnboardingPlatform,
     socialHandle: '',
     socialProfileUrl: '',
     followerCount: '',
-    engagementRate: '',
   });
 
   useEffect(() => {
     if (!creatorProfile) return;
     setForm({
+      creatorName: creatorProfile.creatorName || sessionEmail.split('@')[0] || '',
       platform: creatorProfile.platform,
       socialHandle: creatorProfile.socialHandle,
       socialProfileUrl: creatorProfile.socialProfileUrl,
       followerCount: String(creatorProfile.followerCount),
-      engagementRate: creatorProfile.engagementRate !== undefined ? String(creatorProfile.engagementRate) : '',
     });
-  }, [creatorProfile]);
+  }, [creatorProfile, sessionEmail]);
 
   useEffect(() => {
     if (opensInEditMode) setEditing(true);
@@ -100,7 +139,10 @@ function CreatorProfileSetup() {
     setError('');
     setSaved(false);
     const followerCount = Number(form.followerCount);
-    const engagementRate = form.engagementRate ? Number(form.engagementRate) : undefined;
+    if (!form.creatorName.trim()) {
+      setError('Add your user name.');
+      return;
+    }
     if (!form.socialHandle.trim()) {
       setError('Add your social handle.');
       return;
@@ -109,19 +151,15 @@ function CreatorProfileSetup() {
       setError('Enter a valid follower count.');
       return;
     }
-    if (typeof engagementRate === 'number' && Number.isNaN(engagementRate)) {
-      setError('Enter a valid engagement rate.');
-      return;
-    }
 
     setSaving(true);
     try {
       await updateCreatorProfile({
+        creatorName: form.creatorName.trim(),
         platform: form.platform,
         socialHandle: form.socialHandle.trim(),
         socialProfileUrl: form.socialProfileUrl.trim(),
         followerCount,
-        engagementRate,
       });
       setEditing(false);
       setSaved(true);
@@ -168,12 +206,13 @@ function CreatorProfileSetup() {
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {editing
-                    ? 'Edit your connected platform, handle, profile link, follower count, and engagement rate.'
+                    ? 'Edit your user name, connected platform, handle, profile link, and follower count.'
                     : 'Your starting rank has been estimated from your submitted social profile. Future rank progression follows AU Creator Campus activity layers, not follower count.'}
                 </p>
 
                 {editing ? (
                   <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    <EditField label="User name" value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Your display name" />
                     <label className="grid gap-2">
                       <span className="text-xs font-semibold uppercase text-muted-foreground">Platform</span>
                       <Select value={form.platform} onValueChange={(platform) => setForm(current => ({ ...current, platform: platform as OnboardingPlatform }))}>
@@ -184,15 +223,14 @@ function CreatorProfileSetup() {
                     <EditField label="Social handle" value={form.socialHandle} onChange={(socialHandle) => setForm(current => ({ ...current, socialHandle }))} placeholder="@yourhandle" />
                     <EditField label="Profile URL" value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://..." />
                     <EditField label="Follower count" value={form.followerCount} onChange={(followerCount) => setForm(current => ({ ...current, followerCount }))} placeholder="15000" inputMode="numeric" />
-                    <EditField label="Engagement rate" value={form.engagementRate} onChange={(engagementRate) => setForm(current => ({ ...current, engagementRate }))} placeholder="7.13" inputMode="decimal" />
                     <ProfileMetric label="Estimated rank" value={estimatedRank} />
                   </div>
                 ) : (
                   <div className="mt-5 grid gap-3 md:grid-cols-2">
+                    <ProfileMetric label="User name" value={creatorProfile?.creatorName ?? sessionEmail.split('@')[0] ?? 'Creator account'} />
                     <ProfileMetric label="Platform" value={creatorProfile?.platform ?? 'Not connected'} />
                     <ProfileMetric label="Social handle" value={creatorProfile?.socialHandle ?? 'Not connected'} />
                     <ProfileMetric label="Follower count" value={(creatorProfile?.followerCount ?? 0).toLocaleString()} />
-                    <ProfileMetric label="Engagement rate" value={creatorProfile?.engagementRate !== undefined ? `${creatorProfile.engagementRate}%` : 'Not added'} />
                   </div>
                 )}
 
@@ -219,11 +257,6 @@ function CreatorProfileSetup() {
                     </>
                   )}
                 </div>
-              </div>
-              <div className="rounded-[12px] border border-border bg-muted/35 p-4 md:w-[260px]">
-                <ShieldCheck className="mb-3 size-5 text-primary" />
-                <p className="text-sm font-semibold">Review status</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Operations can verify your uploaded social proof and adjust creator rank later if needed.</p>
               </div>
             </div>
           </Card>
