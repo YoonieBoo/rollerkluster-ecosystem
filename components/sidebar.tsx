@@ -62,24 +62,32 @@ export function Sidebar() {
   const roleDescription = activeRole === 'admin' ? 'For brands and campaign owners' : 'For student creators';
   const activeCreatorName = activeCreator?.name ?? getSessionDisplayName(sessionUser, sessionEmail);
 
-  const sidebarBody = (
+  const renderSidebarBody = ({ mobile = false }: { mobile?: boolean } = {}) => {
+    const collapsed = mobile ? false : sidebarCollapsed;
+
+    return (
     <>
-      <div className="flex items-center justify-between px-5 py-5">
+      <div
+        className={cn(
+          'flex py-5',
+          collapsed ? 'flex-col items-center gap-3 px-3' : 'items-center justify-between px-5',
+        )}
+      >
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-white shadow-sm">
             <img src="/logo%20pic.PNG" alt="RollerKluster" className="size-full object-cover" />
           </div>
-          <div className={cn('min-w-0 transition-opacity', sidebarCollapsed && 'pointer-events-none opacity-0')}>
+          <div className={cn('min-w-0 transition-opacity', collapsed && 'pointer-events-none opacity-0')}>
             <h1 className="truncate text-[14px] font-semibold leading-tight text-sidebar-foreground">RollerKluster</h1>
           </div>
         </div>
         <button
           type="button"
-          onClick={toggleSidebar}
+          onClick={mobile ? () => setMobileOpen(false) : toggleSidebar}
           className="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={mobile ? 'Close navigation' : collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {sidebarCollapsed ? <Menu className="size-4" /> : <ChevronLeft className="size-4" />}
+          {mobile || collapsed ? <Menu className="size-4" /> : <ChevronLeft className="size-4" />}
         </button>
       </div>
 
@@ -87,7 +95,7 @@ export function Sidebar() {
         {(activeRole === 'admin' ? groups : ['Creator navigation']).map((group) => (
           <div key={group}>
             {activeRole === 'admin' && (
-              <p className={cn('mb-2 px-3 text-[10px] font-bold uppercase text-muted-foreground', sidebarCollapsed && 'sr-only')}>
+              <p className={cn('mb-2 px-3 text-[10px] font-bold uppercase text-muted-foreground', collapsed && 'sr-only')}>
                 {group}
               </p>
             )}
@@ -101,19 +109,19 @@ export function Sidebar() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    title={sidebarCollapsed ? item.label : undefined}
+                    title={collapsed ? item.label : undefined}
                     className={cn(
                       'sidebar-item flex items-center gap-2.5 rounded-[10px] px-3 py-2.5',
                       isActive
                         ? 'sidebar-item-active font-semibold'
                         : 'text-sidebar-foreground/68 hover:text-sidebar-primary',
-                      sidebarCollapsed && 'justify-center px-0',
+                      collapsed && 'justify-center px-0',
                     )}
                   >
                     <div className={cn('flex size-6 items-center justify-center rounded-md', isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/55')}>
                       <Icon className="size-[17px]" />
                     </div>
-                    <span className={cn('flex min-w-0 flex-1 items-center gap-2 transition-opacity', sidebarCollapsed && 'hidden')}>
+                    <span className={cn('flex min-w-0 flex-1 items-center gap-2 transition-opacity', collapsed && 'hidden')}>
                       <span className="truncate text-[13px] leading-none">{item.label}</span>
                       {activeRole === 'creator' && item.href === '/notifications' && creatorInviteCount > 0 && (
                         <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
@@ -129,7 +137,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className={cn('mt-auto px-4 pb-4 transition-opacity', sidebarCollapsed && 'hidden')}>
+      <div className={cn('mt-auto px-4 pb-4 transition-opacity', collapsed && 'hidden')}>
         <div className="rounded-[10px] border border-border bg-muted/40 p-3">
           <div className="flex items-start gap-2">
             <UserCircle className="mt-0.5 size-4 shrink-0 text-primary" />
@@ -156,7 +164,8 @@ export function Sidebar() {
         </div>
       </div>
     </>
-  );
+    );
+  };
 
   return (
     <>
@@ -178,7 +187,7 @@ export function Sidebar() {
             aria-label="Close navigation"
           />
           <aside className="sidebar-modern relative flex h-dvh w-[min(84vw,320px)] flex-col shadow-xl">
-            {sidebarBody}
+            {renderSidebarBody({ mobile: true })}
           </aside>
         </div>
       )}
@@ -189,7 +198,7 @@ export function Sidebar() {
           sidebarCollapsed ? 'w-[76px]' : 'w-[262px]',
         )}
       >
-        {sidebarBody}
+        {renderSidebarBody()}
       </aside>
     </>
   );
