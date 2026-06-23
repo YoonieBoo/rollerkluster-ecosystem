@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase-client';
 import { useUiStore } from '@/lib/ui-store';
 
-const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
 
 type PushStatus = 'checking' | 'ready' | 'saving' | 'enabled' | 'blocked' | 'unsupported' | 'missing_config' | 'error';
 
@@ -130,7 +130,7 @@ async function saveCreatorPushSubscription(currentUserId: string, publicKey: str
   const existingSub = await reg.pushManager.getSubscription();
   const sub = existingSub ?? await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(publicKey),
+    applicationServerKey: urlBase64ToArrayBuffer(publicKey),
   });
   const json = sub.toJSON();
   if (!json.endpoint) throw new Error('Browser did not return a push endpoint.');
@@ -145,9 +145,10 @@ async function saveCreatorPushSubscription(currentUserId: string, publicKey: str
   if (error) throw new Error(error.message);
 }
 
-function urlBase64ToUint8Array(value: string) {
-  const padding = '='.repeat((4 - value.length % 4) % 4);
-  const base64 = `${value}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
+function urlBase64ToArrayBuffer(value: string) {
+  const normalizedValue = value.trim();
+  const padding = '='.repeat((4 - normalizedValue.length % 4) % 4);
+  const base64 = `${normalizedValue}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
 
@@ -155,5 +156,9 @@ function urlBase64ToUint8Array(value: string) {
     outputArray[index] = rawData.charCodeAt(index);
   }
 
-  return outputArray;
+  if (outputArray.length !== 65 || outputArray[0] !== 4) {
+    throw new Error('The VAPID public key is invalid. Check NEXT_PUBLIC_VAPID_PUBLIC_KEY in Vercel and redeploy.');
+  }
+
+  return outputArray.buffer.slice(outputArray.byteOffset, outputArray.byteOffset + outputArray.byteLength);
 }
