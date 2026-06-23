@@ -27,6 +27,7 @@ import {
 import {
   fetchCampaigns,
   fetchCreatorSubmissions,
+  fetchEngagements,
   fetchSignedUpCreators,
   hasSupabaseConfig,
   insertCreatorSubmission,
@@ -67,7 +68,6 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-const engagementStorageKey = 'rollerkluster-engagements';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [creators, setCreators] = useState<Creator[]>(initialCreators);
@@ -78,41 +78,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [monthlyReports, setMonthlyReports] = useState<MonthlyCreatorReport[]>([]);
   const [rankHistory, setRankHistory] = useState<CreatorRankHistory[]>([]);
   const [scholarshipHourLogs, setScholarshipHourLogs] = useState<ScholarshipHourLog[]>([]);
-  const [engagementsHydrated, setEngagementsHydrated] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      setEngagementsHydrated(true);
-      return;
-    }
-
-    const stored = window.localStorage.getItem(engagementStorageKey);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as Engagement[];
-        setEngagements(parsed);
-      } catch {
-        window.localStorage.removeItem(engagementStorageKey);
-      }
-    }
-    setEngagementsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!engagementsHydrated || typeof window === 'undefined') return;
-    window.localStorage.setItem(engagementStorageKey, JSON.stringify(engagements));
-  }, [engagements, engagementsHydrated]);
 
   useEffect(() => {
     if (!hasSupabaseConfig()) return;
 
     let mounted = true;
-    Promise.all([fetchCreatorSubmissions(), fetchCampaigns(), fetchSignedUpCreators()])
-      .then(([remoteSubmissions, remoteCampaigns, remoteCreators]) => {
+    Promise.all([fetchCreatorSubmissions(), fetchCampaigns(), fetchSignedUpCreators(), fetchEngagements()])
+      .then(([remoteSubmissions, remoteCampaigns, remoteCreators, remoteEngagements]) => {
         if (!mounted) return;
         setSubmissions(remoteSubmissions);
         setCampaigns(remoteCampaigns);
         setCreators(current => mergeCreators(current, remoteCreators));
+        setEngagements(remoteEngagements);
       })
       .catch((error) => {
         console.error(error);

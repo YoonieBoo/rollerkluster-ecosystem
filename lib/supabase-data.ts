@@ -1,5 +1,5 @@
 import { supabase } from './supabase-client';
-import type { Campaign, Creator, Submission } from './mock-data';
+import type { Campaign, Creator, Engagement, Submission } from './mock-data';
 
 type CampaignRow = {
   id: string;
@@ -54,6 +54,15 @@ type CreatorProfileDirectoryRow = {
   verification_status: string;
   creator_rank: string;
   onboarding_completed: boolean;
+  created_at: string | null;
+};
+
+type EngagementRow = {
+  id: string;
+  campaign_id: string;
+  creator_id: string;
+  match_score: number | null;
+  status: string;
   created_at: string | null;
 };
 
@@ -121,6 +130,11 @@ export async function fetchSignedUpCreators() {
   return [...profiledCreators, ...usersWithoutProfiles];
 }
 
+export async function fetchEngagements() {
+  const rows = await supabaseRequest<EngagementRow[]>('/rest/v1/engagements?select=*&order=created_at.desc');
+  return rows.map(mapEngagementFromRow);
+}
+
 export async function insertCreatorSubmission(submission: Submission) {
   if (!isValidUuid(submission.campaignId)) {
     throw new Error('Please select a valid campaign before submitting.');
@@ -154,6 +168,17 @@ export async function persistCreatorRank(creatorId: string, rank: string) {
     body: JSON.stringify({ creator_rank: rank }),
   });
   console.log('RANK UPDATED IN SUPABASE', creatorId, rank);
+}
+
+function mapEngagementFromRow(row: EngagementRow): Engagement {
+  return {
+    id: row.id,
+    campaignId: row.campaign_id,
+    creatorId: row.creator_id,
+    matchScore: row.match_score ?? 82,
+    status: row.status as Engagement['status'],
+    createdAt: row.created_at ?? new Date().toISOString(),
+  };
 }
 
 function mapSubmissionFromRow(row: CreatorSubmissionRow): Submission {
