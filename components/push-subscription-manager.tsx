@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase-client';
 import { useUiStore } from '@/lib/ui-store';
 
-const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
+const vapidPublicKey = normalizeVapidPublicKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
 
 type PushStatus = 'checking' | 'ready' | 'saving' | 'enabled' | 'blocked' | 'unsupported' | 'missing_config' | 'error';
 
@@ -135,18 +135,43 @@ async function saveCreatorPushSubscription(currentUserId: string, publicKey: str
   const json = sub.toJSON();
   if (!json.endpoint) throw new Error('Browser did not return a push endpoint.');
 
-  const { error } = await supabase.from('push_subscriptions').upsert({
-    creator_id: currentUserId,
-    endpoint: json.endpoint,
-    p256dh: json.keys?.p256dh,
-    auth: json.keys?.auth,
-  }, { onConflict: 'endpoint' });
+  const { data, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !data.session?.access_token) {
+    throw new Error(sessionError?.message ?? 'You must be signed in to enable notifications.');
+  }
 
-  if (error) throw new Error(error.message);
+  const response = await fetch('/api/push-subscriptions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${data.session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      creator_id: currentUserId,
+      endpoint: json.endpoint,
+      p256dh: json.keys?.p256dh,
+      auth: json.keys?.auth,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.json().catch(() => undefined) as { error?: string } | undefined;
+    throw new Error(detail?.error ?? 'Could not save notification subscription.');
+  }
+}
+
+function normalizeVapidPublicKey(value?: string) {
+  if (!value) return '';
+
+  return value
+    .trim()
+    .replace(/^NEXT_PUBLIC_VAPID_PUBLIC_KEY\s*=\s*/, '')
+    .replace(/^["']|["']$/g, '')
+    .replace(/\s/g, '');
 }
 
 function urlBase64ToArrayBuffer(value: string) {
-  const normalizedValue = value.trim();
+  const normalizedValue = normalizeVapidPublicKey(value);
   const padding = '='.repeat((4 - normalizedValue.length % 4) % 4);
   const base64 = `${normalizedValue}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
