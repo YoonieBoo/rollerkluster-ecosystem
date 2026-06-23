@@ -13,7 +13,7 @@ import { buildCurrentCreator } from '@/lib/current-creator';
 export function RightDashboardSidebar() {
   const { activeRole, creatorAvatarUrl, creatorProfile, sessionEmail, sessionUser } = useUiStore();
   const { creators, campaigns, engagements, submissions } = useApp();
-  const demoCreator = creators.find(item => item.id === 'creator-2') ?? creators.find(item => item.approvalStatus === 'approved') ?? creators[0];
+  const demoCreator = creators.find(item => item.id === 'creator-1') ?? creators.find(item => item.approvalStatus === 'approved') ?? creators[0];
   const creator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl });
   const { month, year } = getMonthYear();
   const performance = creator ? getCreatorMonthlyPerformance(creator, submissions, campaigns, month, year) : null;

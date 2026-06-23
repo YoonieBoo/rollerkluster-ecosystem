@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 export default function TrainingHub() {
   const { trainingModules, creators, completeTrainingModule } = useApp();
   const { activeRole } = useUiStore();
-  const demoCreatorId = 'creator-2';
+  const demoCreatorId = 'creator-1';
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   const categories = ['All', ...Array.from(new Set(trainingModules.map(module => module.category)))];

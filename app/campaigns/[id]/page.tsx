@@ -69,7 +69,7 @@ export default function CampaignDetail() {
     .filter(creator => creator.approvalStatus === 'approved')
     .filter(creator => !campaignEngagements.some(engagement => engagement.creatorId === creator.id))
     .sort((a, b) => getCampaignFitScore(b, campaign) - getCampaignFitScore(a, campaign));
-  const creatorEngagement = campaignEngagements.find(engagement => engagement.creatorId === 'creator-2');
+  const creatorEngagement = campaignEngagements.find(engagement => engagement.creatorId === 'creator-1');
   const completion = campaign.status === 'completed' ? 100 : Math.min(92, campaignEngagements.length * 34);
 
   if (activeRole === 'creator') {
@@ -265,7 +265,7 @@ function CreatorCampaignBrief({
     try {
       await addSubmission({
         engagementId: creatorEngagement?.id,
-        creatorId: creatorEngagement?.creatorId ?? 'creator-2',
+        creatorId: creatorEngagement?.creatorId ?? 'creator-1',
         campaignId: campaign.id,
         title: submissionForm.title,
         link: submissionForm.link,

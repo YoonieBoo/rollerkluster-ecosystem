@@ -26,7 +26,7 @@ export default function CreatorProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarError, setAvatarError] = useState('');
 
-  const demoCreator = creators.find(c => c.id === 'creator-2') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
+  const demoCreator = creators.find(c => c.id === 'creator-1') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
   const storedCreator = creators.find(c => c.id === creatorId);
   const creator = activeRole === 'creator' && creatorProfile && creatorId === creatorProfile.userId
     ? buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl })
@@ -46,7 +46,7 @@ export default function CreatorProfile() {
     ...(creator?.contentCategories ?? []),
     ...(creator?.isScholarshipStudent ? ['Scholarship student'] : []),
   ].filter(Boolean);
-  const acceptedCampusInvitation = creator?.id === 'creator-2' && creatorInvitationStatus === 'accepted';
+  const acceptedCampusInvitation = creator?.id === 'creator-1' && creatorInvitationStatus === 'accepted';
   const canEditOwnProfile = activeRole === 'creator' && creatorProfile && creator?.id === creatorProfile.userId;
 
   const uploadAvatar = async (file?: File) => {

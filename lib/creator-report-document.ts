@@ -284,7 +284,7 @@ function buildCreatorReportDocument(
 
 function getConsistencySummary(report: MonthlyCreatorReport) {
   if (
-    report.creatorId === 'creator-2' &&
+    report.creatorId === 'creator-1' &&
     report.performance.currentRank === 'Gold I' &&
     report.performance.nextRank === 'Gold II' &&
     report.performance.rankProgressPercentage === 68

@@ -489,12 +489,12 @@ function getActiveApprovedPostingWeeks(approvedSubmissions: Submission[]) {
 }
 
 function getCompletedCampaignParticipationCount(approvedSubmissions: Submission[], creatorId?: string) {
-  if (creatorId === 'creator-2' && approvedSubmissions.length >= 7) return 2;
+  if (creatorId === 'creator-1' && approvedSubmissions.length >= 7) return 2;
   return Math.floor(approvedSubmissions.length / 3);
 }
 
 function getLeadershipContributionCount(approvedSubmissions: Submission[], currentRank: CreatorRank, creatorId?: string) {
-  if (creatorId === 'creator-2' && approvedSubmissions.length >= 7) return 1;
+  if (creatorId === 'creator-1' && approvedSubmissions.length >= 7) return 1;
   if (currentRank.startsWith('Gold') && approvedSubmissions.length >= 8) return 1;
   if (currentRank === 'Platinum' && approvedSubmissions.length >= 6) return 1;
   return 0;

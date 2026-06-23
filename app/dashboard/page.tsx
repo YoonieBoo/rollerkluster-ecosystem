@@ -254,7 +254,7 @@ function CreatorPortal() {
     contentType: 'Reel',
     note: '',
   });
-  const demoCreator = creators.find(c => c.id === 'creator-2') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
+  const demoCreator = creators.find(c => c.id === 'creator-1') ?? creators.find(c => c.approvalStatus === 'approved') ?? creators[0];
   const creator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail, avatarUrl: creatorAvatarUrl });
   const creatorEngagements = engagements.filter(e => e.creatorId === creator?.id);
   const { month, year } = getMonthYear();

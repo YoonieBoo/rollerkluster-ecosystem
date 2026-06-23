@@ -171,7 +171,7 @@ function CreatorProfileSetup() {
   };
 
   const estimatedRank = calculateStartingRank(Number(form.followerCount) || creatorProfile?.followerCount || 0);
-  const profileHref = `/creators/${creatorProfile?.userId ?? 'creator-2'}`;
+  const profileHref = `/creators/${creatorProfile?.userId ?? 'creator-1'}`;
   const pageTitle = editing ? (requestedMode === 'platforms' ? 'Update platforms' : 'Edit creator profile') : 'Creator profile';
   const pageDescription = editing
     ? 'Make your changes, then save them here. No second edit step is needed.'

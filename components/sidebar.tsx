@@ -36,7 +36,7 @@ const menuItems = [
 
 const creatorMenuItems = [
   { href: '/dashboard', label: 'Home', icon: Home, group: 'Creator portal' },
-  { href: '/creators/creator-2', label: 'My profile', icon: UserCircle, group: 'Creator portal' },
+  { href: '/creators/creator-1', label: 'My profile', icon: UserCircle, group: 'Creator portal' },
   { href: '/notifications', label: 'Invites', icon: Bell, group: 'Support' },
 ];
 
@@ -45,7 +45,7 @@ export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, activeRole, sessionEmail, sessionUser, creatorProfile, signOut } = useUiStore();
   const { creators, engagements } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const demoCreator = creators.find(creator => creator.id === 'creator-2') ?? creators.find(creator => creator.approvalStatus === 'approved') ?? creators[0];
+  const demoCreator = creators.find(creator => creator.id === 'creator-1') ?? creators.find(creator => creator.approvalStatus === 'approved') ?? creators[0];
   const activeCreator = buildCurrentCreator({ demoCreator, creatorProfile, sessionUser, sessionEmail });
   const creatorInviteCount = activeRole === 'creator' && activeCreator
     ? engagements.filter(engagement =>
@@ -54,7 +54,7 @@ export function Sidebar() {
       ).length
     : 0;
   const resolvedCreatorMenuItems = creatorMenuItems.map(item =>
-    item.href === '/creators/creator-2' && activeCreator ? { ...item, href: `/creators/${activeCreator.id}` } : item,
+    item.href === '/creators/creator-1' && activeCreator ? { ...item, href: `/creators/${activeCreator.id}` } : item,
   );
   const visibleItems = activeRole === 'admin' ? menuItems : resolvedCreatorMenuItems;
   const groups = activeRole === 'admin' ? ['Operate', 'Review', 'Account'] : ['Creator portal', 'Support'];
