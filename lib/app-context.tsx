@@ -35,6 +35,7 @@ import {
   updateCreatorSubmission,
 } from './supabase-data';
 import { getCreatorMonthlyPerformance } from './creator-performance-source';
+import { supabase } from './supabase-client';
 
 interface AppContextType {
   creators: Creator[];
@@ -50,7 +51,7 @@ interface AppContextType {
   addCampaign: (campaign: Omit<Campaign, 'id' | 'createdAt' | 'status'> & { status?: Campaign['status'] }) => void;
   updateCampaign: (campaign: Campaign) => void;
   addEngagement: (engagement: Engagement) => void;
-  createEngagement: (campaignId: string, creatorId: string, matchScore?: number) => void;
+  createEngagement: (campaignId: string, creatorId: string, matchScore?: number) => Promise<void>;
   updateEngagement: (engagement: Engagement) => void;
   updateEngagementStatus: (engagementId: string, status: Engagement['status']) => void;
   approveCreator: (creatorId: string) => void;
@@ -157,7 +158,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEngagements(current => [...current, engagement]);
   };
 
-  const createEngagement = (campaignId: string, creatorId: string, matchScore = 82) => {
+  const createEngagement = async (campaignId: string, creatorId: string, matchScore = 82) => {
     setEngagements(current => {
       if (current.some(e => e.campaignId === campaignId && e.creatorId === creatorId)) return current;
       return [
@@ -172,6 +173,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         },
       ];
     });
+
+    if (!supabase) return;
+
+    const { error } = await supabase
+      .from('engagements')
+      .upsert(
+        {
+          campaign_id: campaignId,
+          creator_id: creatorId,
+          match_score: matchScore,
+          status: 'matched',
+        },
+        { onConflict: 'campaign_id,creator_id', ignoreDuplicates: true },
+      );
+
+    if (error) {
+      console.error('Failed to persist engagement invitation', error);
+      throw error;
+    }
   };
 
   const updateEngagement = (updatedEngagement: Engagement) => {
