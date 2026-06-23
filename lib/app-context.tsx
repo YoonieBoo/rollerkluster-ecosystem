@@ -176,21 +176,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (!supabase) return;
 
-    const { error } = await supabase
-      .from('engagements')
-      .upsert(
-        {
-          campaign_id: campaignId,
-          creator_id: creatorId,
-          match_score: matchScore,
-          status: 'matched',
-        },
-        { onConflict: 'campaign_id,creator_id', ignoreDuplicates: true },
-      );
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !data.session?.access_token) {
+      console.error('Failed to get Supabase session before sending invitation', sessionError);
+      return;
+    }
 
-    if (error) {
-      console.error('Failed to persist engagement invitation', error);
-      throw error;
+    const response = await fetch('/api/engagements/invite', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${data.session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ campaignId, creatorId, matchScore }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      console.error('Failed to persist engagement invitation', detail);
     }
   };
 
