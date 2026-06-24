@@ -9,11 +9,16 @@ import { useUiStore } from '@/lib/ui-store';
 const vapidPublicKey = normalizeVapidPublicKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
 
 type PushStatus = 'checking' | 'ready' | 'saving' | 'enabled' | 'blocked' | 'unsupported' | 'missing_config' | 'error';
+type BrowserContext = {
+  isIosSafari: boolean;
+  isStandalone: boolean;
+};
 
 export function PushSubscriptionManager() {
   const { activeRole, authHydrated, isAuthenticated, sessionUser } = useUiStore();
   const [status, setStatus] = useState<PushStatus>('checking');
   const [errorMessage, setErrorMessage] = useState('');
+  const [browserContext, setBrowserContext] = useState<BrowserContext>({ isIosSafari: false, isStandalone: false });
   const savedUserRef = useRef<string | null>(null);
   const isCreatorSession = authHydrated && isAuthenticated && activeRole === 'creator' && Boolean(sessionUser?.id);
 
@@ -43,6 +48,12 @@ export function PushSubscriptionManager() {
     }
     if (!supabase || !vapidPublicKey) {
       setStatus('missing_config');
+      return;
+    }
+    const context = getBrowserContext();
+    setBrowserContext(context);
+    if (context.isIosSafari && !context.isStandalone) {
+      setStatus('unsupported');
       return;
     }
     if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
@@ -89,6 +100,8 @@ export function PushSubscriptionManager() {
 
   if (!isCreatorSession || status === 'checking' || status === 'enabled') return null;
 
+  const isIosSafariBrowser = status === 'unsupported' && browserContext.isIosSafari && !browserContext.isStandalone;
+
   return (
     <div className="fixed bottom-4 right-4 z-[70] w-[min(360px,calc(100vw-2rem))] rounded-[12px] border border-border bg-white p-4 shadow-xl">
       <div className="flex items-start gap-3">
@@ -101,7 +114,9 @@ export function PushSubscriptionManager() {
             {status === 'blocked'
               ? 'Notifications are blocked for this site. Enable them in Chrome site settings, then reload.'
               : status === 'unsupported'
-                ? 'This browser does not support web push notifications.'
+                ? isIosSafariBrowser
+                  ? 'On iPhone, invite notifications work after you add RollerKluster to your Home Screen. In Safari, tap Share, choose Add to Home Screen, then open the new app icon and enable notifications.'
+                  : 'This browser does not support web push notifications.'
                 : status === 'missing_config'
                   ? 'The VAPID public key is missing in this deployment.'
                   : 'Allow notifications so you know when a brand invites you to a campaign.'}
@@ -121,6 +136,20 @@ export function PushSubscriptionManager() {
       </div>
     </div>
   );
+}
+
+function getBrowserContext(): BrowserContext {
+  if (typeof window === 'undefined') return { isIosSafari: false, isStandalone: false };
+
+  const userAgent = window.navigator.userAgent;
+  const isIos = /iPad|iPhone|iPod/.test(userAgent) || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+  const isSafari = /^((?!CriOS|FxiOS|EdgiOS|OPiOS).)*Safari/i.test(userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in window.navigator && window.navigator.standalone === true);
+
+  return {
+    isIosSafari: isIos && isSafari,
+    isStandalone,
+  };
 }
 
 async function saveCreatorPushSubscription(currentUserId: string, publicKey: string) {
