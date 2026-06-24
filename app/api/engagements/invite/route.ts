@@ -17,8 +17,8 @@ type PushSubscriptionRow = {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+const vapidPublicKey = normalizeEnvValue(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, 'NEXT_PUBLIC_VAPID_PUBLIC_KEY');
+const vapidPrivateKey = normalizeEnvValue(process.env.VAPID_PRIVATE_KEY, 'VAPID_PRIVATE_KEY');
 const vapidSubject = process.env.VAPID_SUBJECT ?? 'mailto:notifications@rollerkluster.com';
 
 export async function POST(request: Request) {
@@ -138,4 +138,13 @@ export async function POST(request: Request) {
     pushSent,
     subscriptionCount: subscriptions?.length ?? 0,
   });
+}
+
+function normalizeEnvValue(value: string | undefined, key: string) {
+  if (!value) return '';
+  return value
+    .trim()
+    .replace(new RegExp(`^${key}\\s*=\\s*`), '')
+    .replace(/^["']|["']$/g, '')
+    .replace(/\s/g, '');
 }

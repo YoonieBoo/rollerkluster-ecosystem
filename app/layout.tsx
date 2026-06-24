@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
@@ -10,6 +10,12 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'RollerKluster | Creator Ecosystem Platform',
   description: 'A governed creator ecosystem for managing creator capability, brand campaign demand, readiness training, structured engagements, and quality oversight.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'RollerKluster',
+    statusBarStyle: 'default',
+  },
   icons: {
     icon: [
       {
@@ -19,6 +25,10 @@ export const metadata: Metadata = {
     ],
     apple: '/logo%20pic.PNG',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#bf6be8',
 }
 
 export default function RootLayout({
