@@ -179,7 +179,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { data, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !data.session?.access_token) {
       console.error('Failed to get Supabase session before sending invitation', sessionError);
-      return;
+      throw new Error(sessionError?.message ?? 'You must be signed in before sending invitations.');
     }
 
     const response = await fetch('/api/engagements/invite', {
@@ -194,6 +194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!response.ok) {
       const detail = await response.text();
       console.error('Failed to persist engagement invitation', detail);
+      throw new Error(detail || 'Failed to send campaign invitation.');
     }
   };
 

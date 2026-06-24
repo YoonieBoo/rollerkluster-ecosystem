@@ -44,7 +44,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid authentication token.' }, { status: 401 });
   }
 
-  const role = typeof userData.user.user_metadata?.role === 'string' ? userData.user.user_metadata.role : '';
+  const metadataRole = typeof userData.user.user_metadata?.role === 'string' ? userData.user.user_metadata.role : '';
+  const { data: platformUser } = await authClient
+    .from('users')
+    .select('role')
+    .eq('id', userData.user.id)
+    .maybeSingle();
+  const storedRole = typeof platformUser?.role === 'string' ? platformUser.role : '';
+  const role = metadataRole || storedRole;
   if (role !== 'brand' && role !== 'admin') {
     return NextResponse.json({ error: 'Only brand/admin users can send invitations.' }, { status: 403 });
   }
