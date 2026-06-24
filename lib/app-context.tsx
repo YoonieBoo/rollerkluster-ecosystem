@@ -53,7 +53,7 @@ interface AppContextType {
   addEngagement: (engagement: Engagement) => void;
   createEngagement: (campaignId: string, creatorId: string, matchScore?: number) => Promise<void>;
   updateEngagement: (engagement: Engagement) => void;
-  updateEngagementStatus: (engagementId: string, status: Engagement['status']) => void;
+  updateEngagementStatus: (engagementId: string, status: Engagement['status']) => Promise<void>;
   approveCreator: (creatorId: string) => void;
   rejectCreator: (creatorId: string) => void;
   completeTrainingModule: (moduleId: string, creatorId: string) => void;
@@ -204,7 +204,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const updateEngagementStatus = (engagementId: string, status: Engagement['status']) => {
+  const updateEngagementStatus = async (engagementId: string, status: Engagement['status']) => {
     const today = new Date().toISOString().slice(0, 10);
     setEngagements(current => current.map(engagement => {
       if (engagement.id !== engagementId) return engagement;
@@ -228,6 +228,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
         }));
       }
+    }
+
+    if (!supabase) return;
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !data.session?.access_token) {
+      throw new Error(sessionError?.message ?? 'You must be signed in before updating invitations.');
+    }
+
+    const response = await fetch('/api/engagements/status', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${data.session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ engagementId, status }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || 'Failed to update invitation status.');
     }
   };
 

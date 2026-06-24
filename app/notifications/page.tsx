@@ -77,7 +77,7 @@ export default function NotificationsPage() {
         return {
           id: `invitation-${engagement.id}`,
           title: `${campaignTitle} invited you to participate.`,
-          meta: `${campaign?.brand ?? 'Brand'} · Open the campaign brief`,
+          meta: campaign?.brand ?? 'Brand',
           tone: 'info' as const,
           href: `/campaigns/${engagement.campaignId}`,
         };

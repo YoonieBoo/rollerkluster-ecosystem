@@ -115,7 +115,7 @@ export function PushSubscriptionManager() {
               ? 'Notifications are blocked for this site. Enable them in Chrome site settings, then reload.'
               : status === 'unsupported'
                 ? isIosSafariBrowser
-                  ? 'On iPhone, invite notifications work after you add RollerKluster to your Home Screen. In Safari, tap Share, choose Add to Home Screen, then open the new app icon and enable notifications.'
+                  ? 'In Safari, tap Share, choose Add to Home Screen, then open the new app icon and enable notifications for Invites.'
                   : 'This browser does not support web push notifications.'
                 : status === 'missing_config'
                   ? 'The VAPID public key is missing in this deployment.'

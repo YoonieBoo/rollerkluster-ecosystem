@@ -29,7 +29,7 @@ function getCampaignFitScore(creator: Creator, campaign: Campaign) {
 
 export default function CampaignDetail() {
   const { campaigns, creators, engagements, submissions, createEngagement, updateEngagementStatus, addSubmission, reviewSubmission } = useApp();
-  const { activeRole, creatorInvitationStatus, setCreatorInvitationStatus } = useUiStore();
+  const { activeRole, creatorInvitationStatus, creatorProfile, sessionUser, setCreatorInvitationStatus } = useUiStore();
   const [submissionForm, setSubmissionForm] = useState({ title: '', link: '', notes: '', platform: 'Instagram' as SubmissionPlatform });
   const [submissionError, setSubmissionError] = useState('');
   const params = useParams();
@@ -69,7 +69,8 @@ export default function CampaignDetail() {
     .filter(creator => creator.approvalStatus === 'approved')
     .filter(creator => !campaignEngagements.some(engagement => engagement.creatorId === creator.id))
     .sort((a, b) => getCampaignFitScore(b, campaign) - getCampaignFitScore(a, campaign));
-  const creatorEngagement = campaignEngagements.find(engagement => engagement.creatorId === 'creator-1');
+  const currentCreatorId = creatorProfile?.userId ?? sessionUser?.id ?? 'creator-1';
+  const creatorEngagement = campaignEngagements.find(engagement => engagement.creatorId === currentCreatorId);
   const completion = campaign.status === 'completed' ? 100 : Math.min(92, campaignEngagements.length * 34);
 
   if (activeRole === 'creator') {
@@ -243,12 +244,26 @@ function CreatorCampaignBrief({
   submissionError: string;
   setSubmissionError: Dispatch<SetStateAction<string>>;
   addSubmission: (submission: Omit<Submission, 'id' | 'status' | 'submittedAt'> & { status?: Submission['status'] }) => Promise<Submission>;
-  updateEngagementStatus: (engagementId: string, status: Engagement['status']) => void;
+  updateEngagementStatus: (engagementId: string, status: Engagement['status']) => Promise<void>;
 }) {
   const invitationPending = creatorEngagement?.status === 'matched' || creatorEngagement?.status === 'in_discussion';
-  const canSubmit = creatorEngagement?.status === 'active';
+  const canSubmit = creatorEngagement?.status === 'accepted' || creatorEngagement?.status === 'active';
   const [submissionSubmitting, setSubmissionSubmitting] = useState(false);
   const [submissionFlowStatus, setSubmissionFlowStatus] = useState<'processing' | 'success' | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState<Engagement['status'] | null>(null);
+
+  const updateInvitation = async (status: Engagement['status']) => {
+    if (!creatorEngagement) return;
+    setSubmissionError('');
+    setStatusUpdating(status);
+    try {
+      await updateEngagementStatus(creatorEngagement.id, status);
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : 'Could not update invitation status.');
+    } finally {
+      setStatusUpdating(null);
+    }
+  };
 
   const submitContent = async () => {
     setSubmissionError('');
@@ -288,7 +303,7 @@ function CreatorCampaignBrief({
     <div className="flex h-screen ecosystem-shell">
       <Sidebar />
       <main className="flex-1 overflow-auto">
-        <div className="page-wrap">
+        <div className={cn('page-wrap', invitationPending && 'pb-24 sm:pb-0')}>
           <Link href="/" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
             <ArrowLeft className="size-4" />
             Back to home
@@ -308,14 +323,12 @@ function CreatorCampaignBrief({
                   <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{campaign.description}</p>
                 </div>
                 {invitationPending && creatorEngagement && (
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" className="border-border bg-white" onClick={() => updateEngagementStatus(creatorEngagement.id, 'declined')}>
-                      Decline invitation
-                    </Button>
-                    <Button className="bg-primary text-white" onClick={() => updateEngagementStatus(creatorEngagement.id, 'active')}>
-                      Accept invitation
-                    </Button>
-                  </div>
+                  <InviteActions
+                    className="hidden sm:flex"
+                    onAccept={() => updateInvitation('accepted')}
+                    onDecline={() => updateInvitation('declined')}
+                    updating={statusUpdating}
+                  />
                 )}
               </div>
             </div>
@@ -376,6 +389,46 @@ function CreatorCampaignBrief({
         status={submissionFlowStatus ?? 'processing'}
         onClose={() => setSubmissionFlowStatus(null)}
       />
+      {invitationPending && creatorEngagement && (
+        <InviteActions
+          className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-white p-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] sm:hidden"
+          onAccept={() => updateInvitation('accepted')}
+          onDecline={() => updateInvitation('declined')}
+          updating={statusUpdating}
+        />
+      )}
+    </div>
+  );
+}
+
+function InviteActions({
+  className,
+  onAccept,
+  onDecline,
+  updating,
+}: {
+  className?: string;
+  onAccept: () => void;
+  onDecline: () => void;
+  updating: Engagement['status'] | null;
+}) {
+  return (
+    <div className={cn('flex flex-wrap gap-2', className)}>
+      <Button
+        variant="outline"
+        className="min-w-0 flex-1 border-border bg-white sm:flex-none"
+        onClick={onDecline}
+        disabled={Boolean(updating)}
+      >
+        {updating === 'declined' ? 'Declining...' : 'Decline'}
+      </Button>
+      <Button
+        className="min-w-0 flex-1 bg-primary text-white sm:flex-none"
+        onClick={onAccept}
+        disabled={Boolean(updating)}
+      >
+        {updating === 'accepted' ? 'Accepting...' : 'Accept'}
+      </Button>
     </div>
   );
 }
