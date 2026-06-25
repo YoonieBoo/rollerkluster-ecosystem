@@ -300,7 +300,7 @@ export default function GovernanceAdmin() {
                 const draft = getDraft(submission.id);
                 return (
                   <Card key={submission.id} className="border border-border rounded-xl shadow-sm overflow-hidden">
-                    <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px]">
+                    <div className="grid gap-5 p-5 lg:grid-cols-[1fr_400px]">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-base font-semibold">{submission.title}</h3>
@@ -356,7 +356,7 @@ export default function GovernanceAdmin() {
           )}
 
           {activeTab === 'performance' && (
-            <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+            <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
               <Card className="border border-border rounded-xl shadow-sm overflow-hidden">
                 <div className="border-b border-border px-5 py-4">
                   <h2 className="text-lg font-semibold">Monthly creator performance</h2>

@@ -296,7 +296,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
               </div>
             </div>
             <p className="text-lg font-semibold text-primary">Hello, {brandName}</p>
-            <h1 className="mt-1 text-3xl font-semibold leading-tight tracking-normal text-foreground">What kind of creators do you want to find?</h1>
+            <h1 className="mt-1 text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">What kind of creators do you want to find?</h1>
 
             <div className="mt-6 flex overflow-x-auto border-b border-border">
               <SearchModeButton
@@ -399,7 +399,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                       </div>
                       <div className="flex flex-wrap items-center justify-end gap-2">
                         <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
-                          <SelectTrigger className="h-9 min-w-[210px] rounded-[6px] border-border bg-white">
+                          <SelectTrigger className="h-9 w-full rounded-[6px] border-border bg-white sm:w-auto sm:min-w-[210px]">
                             <SelectValue placeholder={inviteCampaigns.length ? 'Campaign to invite to' : 'No active campaigns'} />
                           </SelectTrigger>
                           <SelectContent>
@@ -482,7 +482,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
-                      <SelectTrigger className="h-8 min-w-[200px] rounded-[6px] border-border bg-white text-xs">
+                      <SelectTrigger className="h-8 w-full rounded-[6px] border-border bg-white text-xs sm:w-auto sm:min-w-[200px]">
                         <SelectValue placeholder={inviteCampaigns.length ? 'Choose campaign' : 'No active campaigns'} />
                       </SelectTrigger>
                       <SelectContent>
@@ -549,7 +549,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                           className={cn(
                             'grid cursor-pointer gap-4 transition hover:bg-muted/45',
                             creatorView === 'list'
-                              ? 'px-5 py-5 lg:grid-cols-[minmax(0,1fr)_170px_170px_210px] lg:items-center'
+                              ? 'px-5 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center lg:grid-cols-[minmax(0,1fr)_170px_170px_210px]'
                               : 'rounded-[12px] border border-border bg-white p-4',
                           )}
                         >
@@ -578,19 +578,20 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                               </div>
                               <p className="mt-1 text-xs font-medium text-primary">{creator.niche}</p>
                               <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{creator.bio}</p>
+                              <p className="mt-1.5 text-xs text-muted-foreground lg:hidden">{primaryPlatform.name} · {formatFollowers(primaryPlatform.followers)} followers · {creator.engagementRate}% eng.</p>
                             </div>
                           </div>
 
-                          <div>
+                          <div className="hidden lg:block">
                             <p className="text-sm font-medium">{primaryPlatform.name}</p>
                             <p className="text-xs text-muted-foreground">{formatFollowers(primaryPlatform.followers)} followers</p>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+                          <div className="hidden lg:grid lg:grid-cols-1 lg:gap-2">
                             <Metric label="Engagement rate" value={`${creator.engagementRate}%`} />
                           </div>
 
-                          <div className="flex items-center justify-between gap-2 lg:justify-end">
+                          <div className="flex items-center justify-end gap-2">
                             <div className="flex flex-wrap gap-1.5 lg:hidden">
                               {creator.platforms.slice(0, 3).map(platform => (
                                 <span key={platform.name} className="platform-pill">{platform.name}</span>

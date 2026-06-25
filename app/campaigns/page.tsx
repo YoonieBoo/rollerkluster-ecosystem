@@ -172,7 +172,7 @@ export default function CampaignManagement() {
               const spent = Math.round(campaign.budget * completion / 100);
 
               return (
-                <Link key={campaign.id} href={`/campaigns/${campaign.id}`} className="panel grid gap-5 p-5 transition hover:border-primary/30 hover:bg-white lg:grid-cols-[1fr_260px_210px] lg:items-center">
+                <Link key={campaign.id} href={`/campaigns/${campaign.id}`} className="panel grid gap-5 p-5 transition hover:border-primary/30 hover:bg-white md:grid-cols-[1fr_auto] md:items-start lg:grid-cols-[1fr_260px_210px] lg:items-center">
                   <div>
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <h2 className="section-heading">{campaign.title}</h2>

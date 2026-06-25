@@ -134,7 +134,7 @@ export default function CampaignDetail() {
             </div>
           </section>
 
-          <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
             <section className="space-y-6">
               <div className="panel p-5">
                 <div className="mb-4 flex items-center justify-between gap-4">
@@ -354,7 +354,7 @@ function CreatorCampaignBrief({
             </div>
           </section>
 
-          <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
             <section className="space-y-6">
               <div className="panel overflow-hidden">
                 <div className="border-b border-border px-5 py-4">
@@ -543,7 +543,7 @@ function AuCreatorCampusInvitation({
             </div>
           </section>
 
-          <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_320px]">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_300px]">
             <section className="min-w-0 space-y-6">
               <InvitationSection title="Campaign Overview">
                 <p>Help showcase student life, campus culture, university activities, and scholarship opportunities through authentic creator content.</p>
