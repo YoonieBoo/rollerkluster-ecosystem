@@ -27,8 +27,6 @@ const menuItems = [
   { href: '/creators', label: 'Find creators', icon: Compass, group: 'Operate' },
   { href: '/campaigns', label: 'Campaigns', icon: Briefcase, group: 'Operate' },
   { href: '/admin', label: 'Applications', icon: ShieldCheck, group: 'Operate' },
-  { href: '/notifications', label: 'Inbox', icon: Bell, group: 'Operate' },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3, group: 'Review' },
 ];
 
 const creatorMenuItems = [
@@ -54,7 +52,9 @@ export function Sidebar() {
     item.href === '/creators/creator-1' && activeCreator ? { ...item, href: `/creators/${activeCreator.id}` } : item,
   );
   const visibleItems = activeRole === 'admin' ? menuItems : resolvedCreatorMenuItems;
-  const groups = activeRole === 'admin' ? ['Operate', 'Review', 'Account'] : ['Creator portal', 'Support'];
+  const groups = activeRole === 'admin'
+    ? Array.from(new Set(visibleItems.map(item => item.group ?? 'Account')))
+    : ['Creator portal', 'Support'];
   const roleLabel = activeRole === 'admin' ? 'Brand Workspace' : 'Creator Side';
   const roleDescription = activeRole === 'admin' ? 'For brands and campaign owners' : 'For student creators';
   const activeCreatorName = activeCreator?.name ?? getSessionDisplayName(sessionUser, sessionEmail);

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Flag, Grid2X2, Handshake, Linkedin, List, Loader2, Mail, MoreHorizontal, Search, ShieldCheck, Sparkles, Star, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
+import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Flag, Grid2X2, Handshake, Linkedin, List, Loader2, Mail, MoreHorizontal, Search, ShieldCheck, Sparkles, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { RankBadgeIcon } from '@/components/rank-badge';
@@ -159,12 +159,6 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
     const label = rankLabel(c.badge);
     return label === 'Platinum' || label.startsWith('Gold');
   }).length;
-  const verifiedCount = approvedCreators.filter(c => c.verified).length;
-  const totalReach = approvedCreators.reduce(
-    (sum, creator) => sum + creator.platforms.reduce((platformSum, platform) => platformSum + platform.followers, 0),
-    0,
-  );
-
   const findCreatorMatches = async () => {
     const prompt = matchPrompt.trim();
     if (!prompt) {
@@ -244,25 +238,10 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
         <div className="page-wrap">
           <header className="page-header">
             <div>
-              <p className="section-label">Creator supply layer</p>
               <h1 className="page-title mt-2">Creator discovery</h1>
               <p className="page-description">
                 Browse approved creators by fit, audience, and readiness. Use filters only when you need to narrow the pool.
               </p>
-            </div>
-            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-[12px] border border-border bg-border">
-              <div className="bg-white p-3">
-                <p className="text-lg font-semibold leading-none">{approvedCreators.length}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">Approved</p>
-              </div>
-              <div className="bg-white p-3">
-                <p className="text-lg font-semibold leading-none">{verifiedCount}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">Verified</p>
-              </div>
-              <div className="bg-white p-3">
-                <p className="text-lg font-semibold leading-none">{formatFollowers(totalReach)}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">Reach</p>
-              </div>
             </div>
           </header>
 
@@ -476,15 +455,13 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                           </div>
 
                           <div>
-                            <p className="text-[11px] font-semibold uppercase text-muted-foreground">Primary platform</p>
-                            <p className="mt-1 text-sm font-medium">{primaryPlatform.name}</p>
+                            <p className="text-sm font-medium">{primaryPlatform.name}</p>
                             <p className="text-xs text-muted-foreground">{formatFollowers(primaryPlatform.followers)} followers</p>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+                          <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
                             <Metric label="Creator score" value={creator.reputationScore} />
                             <Metric label="Engagement rate" value={`${creator.engagementRate}%`} />
-                            <Metric label="Readiness" value={creator.contentQualityScore.toFixed(1)} icon={<Star className="size-3 text-amber-500" />} />
                           </div>
 
                           <div className="flex items-center justify-between gap-2 lg:justify-end">
