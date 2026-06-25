@@ -77,7 +77,7 @@ type AiCreatorMatch = {
 export default function CreatorDiscovery() {
   const { creators, campaigns, engagements, submissions, createEngagement } = useApp();
   const { creatorView, setCreatorView, sessionEmail, sessionUser } = useUiStore();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedNiches, setSelectedNiches] = useState<Set<string>>(new Set());
   const [matchedCreators, setMatchedCreators] = useState<string[]>([]);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [matchPrompt, setMatchPrompt] = useState('');
@@ -88,7 +88,6 @@ export default function CreatorDiscovery() {
   const [invitingCreatorId, setInvitingCreatorId] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
   const [searchMode, setSearchMode] = useState<'suggested' | 'keyword' | 'ai'>('ai');
-  const [keywordSearchSubmitted, setKeywordSearchSubmitted] = useState(false);
   const [aiSearchSubmitted, setAiSearchSubmitted] = useState(false);
 
   const [supabaseCreators, setSupabaseCreators] = useState<Creator[]>([]);
@@ -159,14 +158,22 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
 
   const filteredCreators = useMemo(() => {
     return [...approvedCreators]
-      .filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.bio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.niche.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      .filter(c => {
+        if (selectedNiches.size === 0) return true;
+        return selectedNiches.has(c.niche) || (c.contentCategories ?? []).some(cat => selectedNiches.has(cat));
+      })
       .sort((a, b) => b.reputationScore - a.reputationScore);
-  }, [approvedCreators, searchTerm]);
-  const hideCreatorDirectory = (searchMode === 'ai' && aiSearchSubmitted) || (searchMode === 'keyword' && keywordSearchSubmitted);
+  }, [approvedCreators, selectedNiches]);
+  const hideCreatorDirectory = searchMode === 'ai' && aiSearchSubmitted;
+
+  const availableNiches = useMemo(() => {
+    const niches = new Set<string>();
+    approvedCreators.forEach(c => {
+      if (c.niche) niches.add(c.niche);
+      (c.contentCategories ?? []).forEach(cat => { if (cat) niches.add(cat); });
+    });
+    return Array.from(niches).sort();
+  }, [approvedCreators]);
 
   const topPerformerCount = approvedCreators.filter(c => {
     const label = rankLabel(c.badge);
@@ -289,13 +296,13 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 onClick={() => {
                   setSearchMode('suggested');
                   setAiSearchSubmitted(false);
-                  setKeywordSearchSubmitted(false);
+                  setSelectedNiches(new Set());
                 }}
               />
               <SearchModeButton
                 active={searchMode === 'keyword'}
                 icon={<Search className="size-4" />}
-                label="Keywords search"
+                label="Filter search"
                 onClick={() => setSearchMode('keyword')}
               />
               <SearchModeButton
@@ -330,41 +337,36 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 )}
 
                 {searchMode === 'keyword' && (
-                  <>
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Search by creator, category, platform, or capability..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          setKeywordSearchSubmitted(false);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') setKeywordSearchSubmitted(true);
-                        }}
-                        className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
-                      />
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs leading-5 text-muted-foreground">
-                        Search creator names, categories, platform handles, or profile keywords. Press Enter to apply.
-                      </p>
-                      {keywordSearchSubmitted && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-muted-foreground"
-                          onClick={() => {
-                            setSearchTerm('');
-                            setKeywordSearchSubmitted(false);
-                          }}
-                        >
-                          Clear search
-                        </Button>
-                      )}
-                    </div>
-                  </>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {availableNiches.map(niche => (
+                      <button
+                        key={niche}
+                        type="button"
+                        onClick={() => setSelectedNiches(prev => {
+                          const next = new Set(prev);
+                          next.has(niche) ? next.delete(niche) : next.add(niche);
+                          return next;
+                        })}
+                        className={cn(
+                          'rounded-full border px-4 py-1.5 text-sm font-medium transition',
+                          selectedNiches.has(niche)
+                            ? 'border-primary bg-primary text-white'
+                            : 'border-border bg-white text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                        )}
+                      >
+                        {niche}
+                      </button>
+                    ))}
+                    {selectedNiches.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedNiches(new Set())}
+                        className="rounded-full border border-border px-4 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
