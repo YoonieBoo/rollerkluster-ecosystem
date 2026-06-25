@@ -280,111 +280,103 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
             </div>
             <p className="text-lg font-semibold text-primary">Hello, {brandName}</p>
             <h1 className="mt-1 text-3xl font-semibold leading-tight tracking-normal text-foreground">What kind of creators do you want to find?</h1>
+
+            <div className="mt-6 flex overflow-x-auto border-b border-border">
+              <SearchModeButton
+                active={searchMode === 'suggested'}
+                icon={<Flag className="size-4" />}
+                label="Suggested creators"
+                onClick={() => {
+                  setSearchMode('suggested');
+                  setAiSearchSubmitted(false);
+                  setKeywordSearchSubmitted(false);
+                }}
+              />
+              <SearchModeButton
+                active={searchMode === 'keyword'}
+                icon={<Search className="size-4" />}
+                label="Keywords search"
+                onClick={() => setSearchMode('keyword')}
+              />
+              <SearchModeButton
+                active={searchMode === 'ai'}
+                icon={<Sparkles className="size-4" />}
+                label="AI search"
+                onClick={() => setSearchMode('ai')}
+              />
+            </div>
+
+            {searchMode !== 'suggested' && (
+              <div className="mt-4 w-full max-w-2xl text-left">
+                {searchMode === 'ai' && (
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                    <div className="relative">
+                      <Sparkles className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={matchPrompt}
+                        onChange={(event) => setMatchPrompt(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') void findCreatorMatches();
+                        }}
+                        placeholder="find beauty creators with strong TikTok engagement for AU students"
+                        className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
+                      />
+                    </div>
+                    <Button className="h-12 rounded-[4px] bg-primary px-5 text-white" onClick={() => void findCreatorMatches()} disabled={aiMatching}>
+                      {aiMatching ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                      Match
+                    </Button>
+                  </div>
+                )}
+
+                {searchMode === 'keyword' && (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by creator, category, platform, or capability..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setKeywordSearchSubmitted(false);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') setKeywordSearchSubmitted(true);
+                        }}
+                        className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
+                      />
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Search creator names, categories, platform handles, or profile keywords. Press Enter to apply.
+                      </p>
+                      {keywordSearchSubmitted && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground"
+                          onClick={() => {
+                            setSearchTerm('');
+                            setKeywordSearchSubmitted(false);
+                          }}
+                        >
+                          Clear search
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </header>
 
           <div className="space-y-5">
             <section className="space-y-4">
-              <div className="panel overflow-hidden">
-                <div className="border-b border-border bg-white">
-                  <div className="flex max-w-full overflow-x-auto border-b border-border">
-                    <SearchModeButton
-                      active={searchMode === 'suggested'}
-                      icon={<Flag className="size-4" />}
-                      label="Suggested creators"
-                      onClick={() => {
-                        setSearchMode('suggested');
-                        setAiSearchSubmitted(false);
-                        setKeywordSearchSubmitted(false);
-                      }}
-                    />
-                    <SearchModeButton
-                      active={searchMode === 'keyword'}
-                      icon={<Search className="size-4" />}
-                      label="Keywords search"
-                      onClick={() => setSearchMode('keyword')}
-                    />
-                    <SearchModeButton
-                      active={searchMode === 'ai'}
-                      icon={<Sparkles className="size-4" />}
-                      label="AI search"
-                      onClick={() => setSearchMode('ai')}
-                    />
-                  </div>
-
-                  <div className="p-4">
-                    {searchMode === 'ai' && (
-                      <>
-                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-                          <div className="relative">
-                            <Sparkles className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                              value={matchPrompt}
-                              onChange={(event) => setMatchPrompt(event.target.value)}
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter') void findCreatorMatches();
-                              }}
-                              placeholder="find beauty creators with strong TikTok engagement for AU students"
-                              className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
-                            />
-                          </div>
-                          <Button className="h-12 rounded-[4px] bg-primary px-5 text-white" onClick={() => void findCreatorMatches()} disabled={aiMatching}>
-                            {aiMatching ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                            Match
-                          </Button>
-                        </div>
-                      </>
-                    )}
-
-                    {searchMode === 'keyword' && (
-                      <>
-                        <div className="relative">
-                          <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            placeholder="Search by creator, category, platform, or capability..."
-                            value={searchTerm}
-                            onChange={(e) => {
-                              setSearchTerm(e.target.value);
-                              setKeywordSearchSubmitted(false);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') setKeywordSearchSubmitted(true);
-                            }}
-                            className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
-                          />
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                          <p className="text-xs leading-5 text-muted-foreground">
-                            Search creator names, categories, platform handles, or profile keywords. Press Enter to apply.
-                          </p>
-                          {keywordSearchSubmitted && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-muted-foreground"
-                              onClick={() => {
-                                setSearchTerm('');
-                                setKeywordSearchSubmitted(false);
-                              }}
-                            >
-                              Clear search
-                            </Button>
-                          )}
-                        </div>
-                      </>
-                    )}
-
-                    {searchMode === 'suggested' && (
-                      <div className="rounded-[4px] border border-border bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
-                        Showing suggested onboarded creators. Switch to Keywords search or AI search to narrow the list.
-                      </div>
-                    )}
-                  </div>
+              {(aiMatchError || inviteError) && (
+                <div className="px-1 py-2 text-sm font-semibold text-red-600">
+                  {aiMatchError || inviteError}
                 </div>
-                {(aiMatchError || inviteError) && (
-                  <div className="border-t border-border px-5 py-3 text-sm font-semibold text-red-600">
-                    {aiMatchError || inviteError}
-                  </div>
-                )}
+              )}
                 {aiMatchedCreators.length > 0 && (
                   <div className="border-t border-border">
                     <div className="flex items-center justify-between gap-3 px-5 py-4">
@@ -454,7 +446,6 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                     </div>
                   </div>
                 )}
-              </div>
 
               {!hideCreatorDirectory && (
                 <div className="flex justify-end">
@@ -593,10 +584,10 @@ function SearchModeButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-11 shrink-0 items-center gap-2 border-r border-border px-4 text-sm font-semibold transition',
+        'flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-semibold transition',
         active
-          ? 'bg-blue-50 text-blue-600'
-          : 'bg-white text-muted-foreground hover:bg-muted/45 hover:text-foreground',
+          ? 'border-primary text-primary'
+          : 'border-transparent text-muted-foreground hover:text-foreground',
       )}
     >
       {icon}
