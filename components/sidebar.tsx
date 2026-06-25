@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { useApp } from '@/lib/app-context';
-import { buildCurrentCreator, getSessionDisplayName } from '@/lib/current-creator';
+import { buildCurrentCreator } from '@/lib/current-creator';
 
 const menuItems = [
   { href: '/creators', label: 'Find creators', icon: Compass, group: 'Operate' },
@@ -54,9 +54,7 @@ export function Sidebar() {
   const groups = activeRole === 'admin'
     ? Array.from(new Set(visibleItems.map(item => item.group ?? 'Account')))
     : ['Creator portal', 'Support'];
-  const roleLabel = activeRole === 'admin' ? 'Brand Workspace' : 'Creator Side';
   const roleDescription = activeRole === 'admin' ? 'For brands and campaign owners' : 'For student creators';
-  const activeCreatorName = activeCreator?.name ?? getSessionDisplayName(sessionUser, sessionEmail);
 
   const renderSidebarBody = ({ mobile = false }: { mobile?: boolean } = {}) => {
     const collapsed = mobile ? false : sidebarCollapsed;
@@ -134,29 +132,14 @@ export function Sidebar() {
       </nav>
 
       <div className={cn('mt-auto px-4 pb-4 transition-opacity', collapsed && 'hidden')}>
-        <div className="rounded-[10px] border border-border bg-muted/40 p-3">
-          <div className="flex items-start gap-2">
-            <UserCircle className="mt-0.5 size-4 shrink-0 text-primary" />
-            <div className="min-w-0">
-              {activeRole === 'creator' ? (
-                <p className="text-[12px] font-semibold text-sidebar-foreground">{activeCreatorName}</p>
-              ) : (
-                <>
-                  <p className="text-[12px] font-semibold text-sidebar-foreground">{roleLabel}</p>
-                  <p className="mt-2 truncate text-[11px] text-muted-foreground">{sessionEmail}</p>
-                </>
-              )}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={signOut}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[8px] border border-border bg-white px-3 py-2 text-[12px] font-semibold text-muted-foreground transition hover:text-foreground"
-          >
-            <LogOut className="size-3.5" />
-            Sign out
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={signOut}
+          className="flex w-full items-center justify-center gap-2 rounded-[8px] border border-border bg-white px-3 py-2 text-[12px] font-semibold text-muted-foreground transition hover:text-foreground"
+        >
+          <LogOut className="size-3.5" />
+          Sign out
+        </button>
       </div>
     </>
     );
