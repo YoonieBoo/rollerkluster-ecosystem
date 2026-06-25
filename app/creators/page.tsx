@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Filter, Grid2X2, Handshake, Linkedin, List, Loader2, Mail, MoreHorizontal, Search, ShieldCheck, SlidersHorizontal, Sparkles, Star, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
+import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Filter, Flag, Grid2X2, Handshake, Linkedin, List, Loader2, Mail, MoreHorizontal, Search, ShieldCheck, SlidersHorizontal, Sparkles, Star, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { RankBadgeIcon } from '@/components/rank-badge';
@@ -85,6 +85,7 @@ export default function CreatorDiscovery() {
   const [selectedCampaignId, setSelectedCampaignId] = useState('');
   const [invitingCreatorId, setInvitingCreatorId] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
+  const [searchMode, setSearchMode] = useState<'suggested' | 'keyword' | 'ai'>('ai');
 
   const [supabaseCreators, setSupabaseCreators] = useState<Creator[]>([]);
 
@@ -283,44 +284,79 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
           <div className="space-y-5">
             <section className="space-y-4">
               <div className="panel overflow-hidden">
-                <div className="border-b border-border px-5 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="flex size-8 items-center justify-center rounded-[9px] bg-secondary text-primary">
-                      <Sparkles className="size-4" />
-                    </span>
-                    <div>
-                      <h2 className="section-heading">AI creator matching</h2>
-                      <p className="section-subtitle">Tell the AI what the brand wants and get ranked creator matches.</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_240px_auto] lg:items-center">
-                  <div className="relative">
-                    <Sparkles className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
-                    <Input
-                      value={matchPrompt}
-                      onChange={(event) => setMatchPrompt(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') void findCreatorMatches();
-                      }}
-                      placeholder="Example: Find beauty TikTok creators with strong engagement for AU students"
-                      className="h-11 rounded-[10px] border-border bg-muted/35 pl-9"
+                <div className="border-b border-border bg-white">
+                  <div className="flex max-w-full overflow-x-auto border-b border-border">
+                    <SearchModeButton
+                      active={searchMode === 'suggested'}
+                      icon={<Flag className="size-4" />}
+                      label="Suggested creators"
+                      onClick={() => setSearchMode('suggested')}
+                    />
+                    <SearchModeButton
+                      active={searchMode === 'keyword'}
+                      icon={<Search className="size-4" />}
+                      label="Keywords search"
+                      onClick={() => setSearchMode('keyword')}
+                    />
+                    <SearchModeButton
+                      active={searchMode === 'ai'}
+                      icon={<Sparkles className="size-4" />}
+                      label="AI search"
+                      onClick={() => setSearchMode('ai')}
                     />
                   </div>
-                  <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
-                    <SelectTrigger className="h-11 rounded-[10px] border-border bg-white">
-                      <SelectValue placeholder={inviteCampaigns.length ? 'Campaign to invite to' : 'No active campaigns'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {inviteCampaigns.map(campaign => (
-                        <SelectItem key={campaign.id} value={campaign.id}>{campaign.title}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button className="h-11 bg-primary text-white" onClick={() => void findCreatorMatches()} disabled={aiMatching}>
-                    {aiMatching ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                    Match creators
-                  </Button>
+
+                  <div className="p-4">
+                    {searchMode === 'ai' && (
+                      <>
+                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                          <div className="relative">
+                            <Sparkles className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              value={matchPrompt}
+                              onChange={(event) => setMatchPrompt(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') void findCreatorMatches();
+                              }}
+                              placeholder="find beauty creators with strong TikTok engagement for AU students"
+                              className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
+                            />
+                          </div>
+                          <Button className="h-12 rounded-[4px] bg-primary px-5 text-white" onClick={() => void findCreatorMatches()} disabled={aiMatching}>
+                            {aiMatching ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                            Match
+                          </Button>
+                        </div>
+                        <p className="mt-2 max-w-5xl text-xs leading-5 text-muted-foreground">
+                          Describe creator content and persona only. Matching relevance is not guaranteed if you include characteristics like demographics or audience data.
+                          Try these: Relatable skincare creators with a clean girl aesthetic, tech review channels that provide accessible explanations.
+                        </p>
+                      </>
+                    )}
+
+                    {searchMode === 'keyword' && (
+                      <>
+                        <div className="relative">
+                          <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Search by creator, category, platform, or capability..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
+                          />
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                          Search creator names, categories, platform handles, or profile keywords.
+                        </p>
+                      </>
+                    )}
+
+                    {searchMode === 'suggested' && (
+                      <div className="rounded-[4px] border border-border bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
+                        Showing suggested onboarded creators. Switch to Keywords search or AI search to narrow the list.
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {(aiMatchError || inviteError) && (
                   <div className="border-t border-border px-5 py-3 text-sm font-semibold text-red-600">
@@ -334,9 +370,21 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                         <p className="text-sm font-semibold">Best matches</p>
                         <p className="text-xs text-muted-foreground">{aiMatchedCreators.length} creators ranked for this request</p>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setAiMatches([])}>
-                        Clear
-                      </Button>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+                          <SelectTrigger className="h-9 min-w-[210px] rounded-[6px] border-border bg-white">
+                            <SelectValue placeholder={inviteCampaigns.length ? 'Campaign to invite to' : 'No active campaigns'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {inviteCampaigns.map(campaign => (
+                              <SelectItem key={campaign.id} value={campaign.id}>{campaign.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setAiMatches([])}>
+                          Clear
+                        </Button>
+                      </div>
                     </div>
                     <div className="grid gap-3 px-4 pb-4 lg:grid-cols-2">
                       {aiMatchedCreators.map(({ creator, match }) => {
@@ -384,16 +432,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
               </div>
 
               <div className="panel p-4">
-                <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search by creator, category, platform, or capability..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="h-10 rounded-[8px] border-border bg-muted/40 pl-9 shadow-none"
-                    />
-                  </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="h-10 justify-start border-border bg-white lg:w-auto">
                     <SlidersHorizontal className="size-4" />
                     {showFilters ? 'Hide filters' : 'Show filters'}
@@ -547,6 +586,34 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
         />
       )}
     </div>
+  );
+}
+
+function SearchModeButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex h-11 shrink-0 items-center gap-2 border-r border-border px-4 text-sm font-semibold transition',
+        active
+          ? 'bg-blue-50 text-blue-600'
+          : 'bg-white text-muted-foreground hover:bg-muted/45 hover:text-foreground',
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 

@@ -47,7 +47,10 @@ export default function Dashboard() {
   const approvedCreators = creators.filter(c => c.approvalStatus === 'approved');
   const pendingCreators = creators.filter(c => c.approvalStatus === 'pending');
   const activeEngagements = engagements.filter(e => e.status === 'matched' || e.status === 'in_discussion' || e.status === 'active');
-  const topCreators = [...approvedCreators].sort((a, b) => getCreatorFollowerCount(b) - getCreatorFollowerCount(a)).slice(0, 4);
+  const onboardedCreators = approvedCreators.filter(creator =>
+    isValidUuid(creator.id) && creator.trainingCompleted.includes('Creator onboarding'),
+  );
+  const topCreators = [...onboardedCreators].sort((a, b) => getCreatorFollowerCount(b) - getCreatorFollowerCount(a)).slice(0, 4);
   const recentlyActive = [...engagements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const campaignsNeedingMatches = campaigns
     .map(campaign => ({
