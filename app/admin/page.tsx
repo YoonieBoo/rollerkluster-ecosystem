@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CheckCircle2, AlertCircle, TrendingUp, Briefcase, ChevronsUpDown, MoreHorizontal, Clock, GraduationCap } from 'lucide-react';
+import { CheckCircle2, ChevronsUpDown, MoreHorizontal, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { brandRankLabel, statusTone } from '@/lib/platform-utils';
 import { RankBadge } from '@/components/rank-badge';
@@ -92,11 +92,10 @@ const emptyReviewDraft: ReviewDraft = {
 
 export default function GovernanceAdmin() {
   const { creators, campaigns, engagements, submissions, approveCreator, rejectCreator, reviewSubmission, updateEngagementStatus } = useApp();
-  const [activeTab, setActiveTab] = useState<'approvals' | 'submissions' | 'performance' | 'ranks' | 'campaigns' | 'activity'>('approvals');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'submissions' | 'performance' | 'ranks'>('approvals');
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
 
   const pendingCreators = creators.filter(c => c.approvalStatus === 'pending');
-  const allCampaigns = campaigns;
   const recentActivity = engagements
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
@@ -107,7 +106,6 @@ export default function GovernanceAdmin() {
   const approvedCreators = creators.filter(c => c.approvalStatus === 'approved');
   const monthlyPerformance = approvedCreators.map(creator => getCreatorMonthlyPerformance(creator, submissions, campaigns, month, year));
   const pendingSubmissions = submissions.filter(submission => submission.status === 'pending_review' || submission.status === 'submitted');
-  const needsReviewCount = submissions.filter(submission => ['pending_review', 'submitted', 'needs_changes', 'changes_requested'].includes(submission.status)).length;
   const topPerformingCreators = [...monthlyPerformance].sort((a, b) => b.totalViews - a.totalViews).slice(0, 5);
   const closeToNextRank = monthlyPerformance.filter(performance => performance.rankProgressPercentage >= 70 && performance.nextRank).slice(0, 5);
   const totalHoursThisMonth = monthlyPerformance.reduce((sum, performance) => sum + performance.scholarshipHoursEarned, 0);
@@ -171,58 +169,9 @@ export default function GovernanceAdmin() {
             <p className="text-muted-foreground mt-1">Find creators, send campaign offers, and monitor creator collaborations.</p>
           </div>
 
-          {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-            <Card className="p-6 border border-border rounded-xl shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium mb-1">Creator Applications</p>
-                  <h3 className="text-3xl font-bold text-foreground">{pendingCreators.length}</h3>
-                </div>
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-              </div>
-            </Card>
-
-            <Card className="p-6 border border-border rounded-xl shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium mb-1">Campaign Matches</p>
-                  <h3 className="text-3xl font-bold text-foreground">{allCampaigns.length}</h3>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {allCampaigns.filter(c => c.status === 'in_progress').length} active
-                  </p>
-                </div>
-                <Briefcase className="w-5 h-5 text-primary" />
-              </div>
-            </Card>
-
-            <Card className="p-6 border border-border rounded-xl shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium mb-1">Active Collaborations</p>
-                  <h3 className="text-3xl font-bold text-foreground">{engagements.length}</h3>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {engagements.filter(e => e.status === 'active').length} currently active
-                  </p>
-                </div>
-                <TrendingUp className="w-5 h-5 text-primary" />
-              </div>
-            </Card>
-            <Card className="p-6 border border-border rounded-xl shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium mb-1">Content Reviews</p>
-                  <h3 className="text-3xl font-bold text-foreground">{needsReviewCount}</h3>
-                  <p className="text-xs text-muted-foreground mt-2">{pendingSubmissions.length} pending approval</p>
-                </div>
-                <Clock className="w-5 h-5 text-primary" />
-              </div>
-            </Card>
-          </div>
-
           {/* Tabs */}
           <div className="mb-6 flex gap-2 overflow-x-auto border-b border-border pb-px">
-            {(['approvals', 'submissions', 'performance', 'ranks', 'campaigns', 'activity'] as const).map(tab => (
+            {(['approvals', 'submissions', 'performance', 'ranks'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -236,8 +185,6 @@ export default function GovernanceAdmin() {
                 {tab === 'submissions' && 'Submission Queue'}
                 {tab === 'performance' && 'Monthly Performance'}
                 {tab === 'ranks' && 'Ranks & Hours'}
-                {tab === 'campaigns' && 'Campaign Matches'}
-                {tab === 'activity' && 'Ecosystem Activity'}
               </button>
             ))}
           </div>
@@ -504,125 +451,6 @@ export default function GovernanceAdmin() {
             </div>
           )}
 
-          {activeTab === 'campaigns' && (
-            <div className="space-y-4">
-              {allCampaigns.map(campaign => {
-                const campaignEngagements = engagements.filter(e => e.campaignId === campaign.id);
-                return (
-                  <Link key={campaign.id} href={`/campaigns/${campaign.id}`}>
-                    <Card className="p-6 border border-border rounded-xl shadow-sm hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-grow">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold text-foreground">{campaign.title}</h3>
-                            <Badge variant={campaign.status === 'completed' ? 'secondary' : 'default'}>
-                              {getStatusLabel(campaign.status)}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-3">{campaign.brand}</p>
-                          <div className="grid grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Budget</p>
-                              <p className="font-medium text-foreground">${(campaign.budget / 1000).toFixed(0)}K</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Creator Assignments</p>
-                              <p className="font-medium text-foreground">{campaignEngagements.length}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Start Date</p>
-                              <p className="font-medium text-foreground">{new Date(campaign.startDate).toLocaleDateString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Target Niches</p>
-                              <p className="font-medium text-foreground">{campaign.targetNiches.length}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-
-          {activeTab === 'activity' && (
-            <div className="space-y-6">
-              <Card className="p-6 border border-border rounded-xl shadow-sm">
-                <h2 className="text-lg font-semibold text-foreground mb-4">Campaign Invitations</h2>
-                <div className="space-y-3">
-                  {campaignInvitations.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No campaign invitations are active right now.</p>
-                  ) : campaignInvitations.map(invitation => {
-                    const creator = creators.find(c => c.id === invitation.creatorId);
-                    const campaign = campaigns.find(c => c.id === invitation.campaignId);
-                    return (
-                      <div key={invitation.id} className="rounded-lg border border-border bg-card p-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-medium text-foreground text-sm">{campaign?.brand} invited {creator?.name}</p>
-                              <span className={`inline-flex w-fit items-center gap-1 rounded-md border px-3 py-1 text-xs font-medium ${getEngagementStatusColor(invitation.status)}`}>
-                                {invitation.status === 'matched' ? 'New' : 'Viewed'}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-xs text-muted-foreground">{campaign?.title} · {campaign?.targetNiches.join(', ')} · Deadline {campaign ? new Date(campaign.endDate).toLocaleDateString() : 'TBD'}</p>
-                            <p className="mt-2 text-sm text-muted-foreground">{campaign?.managerMessage ?? 'Campaign manager message pending.'}</p>
-                          </div>
-                          <div className="flex flex-wrap gap-2 md:justify-end">
-                            {campaign && (
-                              <Button asChild variant="outline" size="sm" className="h-8 border-border bg-white text-xs">
-                                <Link href={`/campaigns/${campaign.id}`}>Open campaign</Link>
-                              </Button>
-                            )}
-                            {invitation.status === 'matched' ? (
-                              <Button size="sm" className="h-8 bg-primary text-xs" onClick={() => updateEngagementStatus(invitation.id, 'in_discussion')}>
-                                Mark viewed
-                              </Button>
-                            ) : (
-                              <Button size="sm" className="h-8 bg-primary text-xs" onClick={() => updateEngagementStatus(invitation.id, 'active')}>
-                                Start campaign
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card className="p-6 border border-border rounded-xl shadow-sm">
-                <h2 className="text-lg font-semibold text-foreground mb-4">Ecosystem Activity</h2>
-                <div className="space-y-3">
-                  {recentActivity.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No creator-brand engagement activity recorded yet.</p>
-                  ) : (
-                    recentActivity.map(activity => {
-                      const creator = creators.find(c => c.id === activity.creatorId);
-                      const campaign = campaigns.find(c => c.id === activity.campaignId);
-                      return (
-                        <div key={activity.id} className="p-4 bg-card rounded-lg border border-border flex items-start justify-between">
-                          <div>
-                            <p className="font-medium text-foreground text-sm">
-                              {creator?.name} {activity.status === 'matched' ? '→' : '✓'} {campaign?.title}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(activity.createdAt).toLocaleDateString()} • Score: {activity.matchScore}%
-                            </p>
-                          </div>
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md border ${getEngagementStatusColor(activity.status)}`}>
-                            {getStatusLabel(activity.status)}
-                          </span>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </Card>
-            </div>
-          )}
         </div>
       </main>
     </div>

@@ -94,20 +94,6 @@ export default function Dashboard() {
               <h1 className="page-title mt-2">Brand Campaign Hub</h1>
               <p className="page-description mt-2">Find creators, send campaign offers, and monitor creator collaborations.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" className="h-10 border-border bg-white">
-                <Link href="/creators">
-                  Find creators
-                  <Search className="size-4" />
-                </Link>
-              </Button>
-              <Button asChild className="h-10 bg-primary text-white hover:bg-primary/90">
-                <Link href="/campaigns">
-                  Match creators
-                  <ArrowUpRight className="size-4" />
-                </Link>
-              </Button>
-            </div>
           </header>
 
           <section className="mb-6 grid gap-3 md:grid-cols-3">

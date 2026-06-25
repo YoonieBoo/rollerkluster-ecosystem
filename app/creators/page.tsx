@@ -79,6 +79,8 @@ export default function CreatorDiscovery() {
   const [invitingCreatorId, setInvitingCreatorId] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
   const [searchMode, setSearchMode] = useState<'suggested' | 'keyword' | 'ai'>('ai');
+  const [keywordSearchSubmitted, setKeywordSearchSubmitted] = useState(false);
+  const [aiSearchSubmitted, setAiSearchSubmitted] = useState(false);
 
   const [supabaseCreators, setSupabaseCreators] = useState<Creator[]>([]);
 
@@ -154,6 +156,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
       )
       .sort((a, b) => b.reputationScore - a.reputationScore);
   }, [approvedCreators, searchTerm]);
+  const hideCreatorDirectory = (searchMode === 'ai' && aiSearchSubmitted) || (searchMode === 'keyword' && keywordSearchSubmitted);
 
   const topPerformerCount = approvedCreators.filter(c => {
     const label = rankLabel(c.badge);
@@ -207,6 +210,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
       }
       const payload = await response.json() as { matches?: AiCreatorMatch[] };
       setAiMatches(payload.matches ?? []);
+      setAiSearchSubmitted(true);
     } catch (error) {
       setAiMatchError(error instanceof Error ? error.message : 'Could not match creators.');
     } finally {
@@ -254,7 +258,11 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                       active={searchMode === 'suggested'}
                       icon={<Flag className="size-4" />}
                       label="Suggested creators"
-                      onClick={() => setSearchMode('suggested')}
+                      onClick={() => {
+                        setSearchMode('suggested');
+                        setAiSearchSubmitted(false);
+                        setKeywordSearchSubmitted(false);
+                      }}
                     />
                     <SearchModeButton
                       active={searchMode === 'keyword'}
@@ -304,13 +312,34 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                           <Input
                             placeholder="Search by creator, category, platform, or capability..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                              setSearchTerm(e.target.value);
+                              setKeywordSearchSubmitted(false);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') setKeywordSearchSubmitted(true);
+                            }}
                             className="h-12 rounded-[4px] border-gray-500 bg-white pl-11 text-[15px] shadow-none focus-visible:ring-1 focus-visible:ring-primary"
                           />
                         </div>
-                        <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                          Search creator names, categories, platform handles, or profile keywords.
-                        </p>
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs leading-5 text-muted-foreground">
+                            Search creator names, categories, platform handles, or profile keywords. Press Enter to apply.
+                          </p>
+                          {keywordSearchSubmitted && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-muted-foreground"
+                              onClick={() => {
+                                setSearchTerm('');
+                                setKeywordSearchSubmitted(false);
+                              }}
+                            >
+                              Clear search
+                            </Button>
+                          )}
+                        </div>
                       </>
                     )}
 
@@ -344,7 +373,10 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setAiMatches([])}>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => {
+                          setAiMatches([]);
+                          setAiSearchSubmitted(false);
+                        }}>
                           Clear
                         </Button>
                       </div>
@@ -394,18 +426,20 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 )}
               </div>
 
-              <div className="flex justify-end">
-                <div className="flex rounded-[10px] border border-border bg-white p-1">
-                  <button type="button" onClick={() => setCreatorView('list')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'list' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
-                    <List className="size-4" />
-                  </button>
-                  <button type="button" onClick={() => setCreatorView('grid')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'grid' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
-                    <Grid2X2 className="size-4" />
-                  </button>
+              {!hideCreatorDirectory && (
+                <div className="flex justify-end">
+                  <div className="flex rounded-[10px] border border-border bg-white p-1">
+                    <button type="button" onClick={() => setCreatorView('list')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'list' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
+                      <List className="size-4" />
+                    </button>
+                    <button type="button" onClick={() => setCreatorView('grid')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'grid' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
+                      <Grid2X2 className="size-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="panel overflow-hidden">
+              {!hideCreatorDirectory && <div className="panel overflow-hidden">
                 {filteredCreators.length === 0 ? (
                   <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
                     <Users className="mb-3 size-8 text-muted-foreground/50" />
@@ -494,7 +528,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                     })}
                   </div>
                 )}
-              </div>
+              </div>}
             </section>
           </div>
         </div>
