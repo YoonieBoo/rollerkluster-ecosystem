@@ -84,6 +84,7 @@ export default function CreatorDiscovery() {
   const [aiMatches, setAiMatches] = useState<AiCreatorMatch[]>([]);
   const [aiMatching, setAiMatching] = useState(false);
   const [aiMatchError, setAiMatchError] = useState('');
+  const [aiNoMatchMessage, setAiNoMatchMessage] = useState('');
   const [selectedCampaignId, setSelectedCampaignId] = useState('');
   const [invitingCreatorId, setInvitingCreatorId] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
@@ -195,6 +196,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
     }
     setAiMatching(true);
     setAiMatchError('');
+    setAiNoMatchMessage('');
     setInviteError('');
     try {
       const { data, error: sessionError } = supabase ? await supabase.auth.getSession() : { data: { session: null }, error: null };
@@ -233,8 +235,9 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
         const detail = await response.text();
         throw new Error(detail || 'Could not match creators.');
       }
-      const payload = await response.json() as { matches?: AiCreatorMatch[] };
+      const payload = await response.json() as { matches?: AiCreatorMatch[]; noMatchMessage?: string };
       setAiMatches(payload.matches ?? []);
+      setAiNoMatchMessage(payload.noMatchMessage ?? '');
       setAiSearchSubmitted(true);
     } catch (error) {
       setAiMatchError(error instanceof Error ? error.message : 'Could not match creators.');
@@ -388,6 +391,11 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
               {(aiMatchError || inviteError) && (
                 <div className="px-1 py-2 text-sm font-semibold text-red-600">
                   {aiMatchError || inviteError}
+                </div>
+              )}
+              {aiNoMatchMessage && (
+                <div className="rounded-[10px] border border-border bg-muted/40 px-5 py-4 text-sm text-muted-foreground">
+                  {aiNoMatchMessage}
                 </div>
               )}
                 {aiMatchedCreators.length > 0 && (

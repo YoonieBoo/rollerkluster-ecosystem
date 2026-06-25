@@ -31,6 +31,11 @@ type MatchResult = {
   reasons: string[];
 };
 
+type AiResponse = {
+  matches: MatchResult[];
+  noMatchMessage?: string;
+};
+
 const openAiApiKey = process.env.OPENAI_API_KEY;
 const openAiModel = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -83,14 +88,18 @@ export async function POST(request: Request) {
   }
 
   const ranked = rankCreators(prompt, creators).slice(0, 8);
-  const aiMatches = openAiApiKey ? await explainWithOpenAI(prompt, creators, ranked).catch((error) => {
+  const aiResult = openAiApiKey ? await explainWithOpenAI(prompt, creators, ranked).catch((error) => {
     console.error('AI creator matching failed', error);
     return null;
   }) : null;
 
+  if (aiResult?.noMatchMessage) {
+    return NextResponse.json({ matches: [], noMatchMessage: aiResult.noMatchMessage, source: 'ai' });
+  }
+
   return NextResponse.json({
-    matches: aiMatches?.length ? mergeAiReasons(ranked, aiMatches) : ranked,
-    source: aiMatches?.length ? 'ai' : 'rules',
+    matches: aiResult?.matches?.length ? mergeAiReasons(ranked, aiResult.matches) : ranked,
+    source: aiResult?.matches?.length ? 'ai' : 'rules',
   });
 }
 
@@ -151,7 +160,7 @@ function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[
     .sort((a, b) => b.score - a.score);
 }
 
-async function explainWithOpenAI(prompt: string, creators: CreatorSnapshot[], ranked: MatchResult[]) {
+async function explainWithOpenAI(prompt: string, creators: CreatorSnapshot[], ranked: MatchResult[]): Promise<AiResponse> {
   const shortlisted = ranked.map(match => {
     const creator = creators.find(item => item.id === match.creatorId);
     return {
@@ -179,16 +188,53 @@ async function explainWithOpenAI(prompt: string, creators: CreatorSnapshot[], ra
       input: [
         {
           role: 'system',
-          content: 'You rank creators for brand campaigns. Return only valid JSON with a matches array. Use the provided creator ids only. Reasons must be concise and based on the provided data.',
+          content: `You are a creator-matching AI for an influencer platform. Your job is to match brands with the most relevant creators based on the user's search intent.
+
+When a user describes the type of creator they want, follow these rules:
+
+1. Extract the core domain/field from the user's input.
+   - Examples: "tech field" → technology, coding, software, gadgets, computer science, engineering, AI, programming
+   - "beauty" → makeup, skincare, cosmetics, beauty tips, hair, fashion beauty
+   - "fitness" → gym, workout, health, sports, bodybuilding, wellness
+   - "food" → cooking, recipes, food review, culinary, nutrition
+   - "campus/student life" → student lifestyle, campus life, university, dorm life
+
+2. Match creators ONLY if their Skills/Content Categories, interests, or niche directly relate to the extracted domain.
+   - A creator tagged with "Campus life" or "Student lifestyle" should NOT match a "tech field" search unless they also have tech-related tags.
+   - A creator tagged with "Technology", "Coding", "Gadgets", "Software", "Computer Science", "Engineering", "AI/ML", "Programming", or similar SHOULD match a "tech field" search.
+
+3. Do not match based on campaign keywords alone. The creator's own profile tags and niche must reflect the requested field.
+
+4. Score and rank creators by relevance:
+   - High match (score 80-98): Creator's primary niche/category directly matches the requested field
+   - Medium match (score 55-79): Creator has secondary tags or interests that relate to the field
+   - Low/No match: Exclude these entirely — do not include them in matches
+
+5. Field synonym mapping — treat these as equivalent when matching:
+   - Tech: technology, computer science, coding, programming, software, hardware, gadgets, engineering, cybersecurity, AI, machine learning, developer, startup, SaaS
+   - Beauty: makeup, skincare, cosmetics, beauty, hair care, nail art, beauty review, GRWM
+   - Fitness: gym, workout, fitness, health, bodybuilding, yoga, sports, nutrition, wellness
+   - Food: cooking, recipes, food blogger, food review, culinary, baking, restaurant, nutrition
+   - Lifestyle: daily life, vlog, personal growth, motivation, productivity
+   - Fashion: style, outfit, OOTD, clothing, streetwear, luxury fashion
+   - Gaming: gaming, esports, game review, streamer, Twitch, game dev
+   - Education: tutoring, study tips, e-learning, school, academic
+   - Travel: travel vlog, adventure, backpacking, destination, tourism
+   - Finance: investing, personal finance, crypto, stocks, budgeting
+
+6. If no creators match the requested field, return matches as an empty array and set noMatchMessage to: "No creators found matching [field]. Try broadening your search or check back when more creators in this niche join."
+
+Always prioritize quality of match over quantity. It is better to return 2 highly relevant creators than 8 loosely related ones.
+
+Return only valid JSON using this exact shape:
+{ "matches": [{ "creatorId": "id", "score": 85, "reasons": ["reason 1", "reason 2"] }], "noMatchMessage": "" }
+Use the provided creator ids only. Leave noMatchMessage as empty string when matches are found.`,
         },
         {
           role: 'user',
           content: JSON.stringify({
             brandRequest: prompt,
             shortlistedCreators: shortlisted,
-            responseShape: {
-              matches: [{ creatorId: 'creator id', score: 1, reasons: ['reason 1', 'reason 2', 'reason 3'] }],
-            },
           }),
         },
       ],
@@ -206,10 +252,14 @@ async function explainWithOpenAI(prompt: string, creators: CreatorSnapshot[], ra
 
   const payload = await response.json() as { output_text?: string; output?: { content?: { text?: string }[] }[] };
   const text = payload.output_text ?? payload.output?.flatMap(item => item.content ?? []).map(item => item.text).filter(Boolean).join('\n') ?? '';
-  const parsed = JSON.parse(text) as { matches?: MatchResult[] };
-  return (parsed.matches ?? [])
+  const parsed = JSON.parse(text) as { matches?: MatchResult[]; noMatchMessage?: string };
+  const filteredMatches = (parsed.matches ?? [])
     .filter(match => ranked.some(item => item.creatorId === match.creatorId))
     .slice(0, 8);
+  return {
+    matches: filteredMatches,
+    noMatchMessage: parsed.noMatchMessage || undefined,
+  };
 }
 
 function mergeAiReasons(ranked: MatchResult[], aiMatches: MatchResult[]) {
