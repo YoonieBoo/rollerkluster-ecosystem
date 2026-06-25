@@ -284,7 +284,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 }
                 .orb-bg { animation: orbColorCycle 4s ease-in-out infinite; background: radial-gradient(circle at 38% 35%, var(--orb-c1) 0%, var(--orb-c2) 55%, var(--orb-c3) 100%); }
               `}</style>
-              <svg className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }} width="80" height="80" viewBox="0 0 80 80" fill="none">
+              <svg className="absolute inset-0 animate-spin" style={{ animationDuration: aiMatching ? '0.8s' : '4s' }} width="80" height="80" viewBox="0 0 80 80" fill="none">
                 <defs>
                   <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#7E5FD0" stopOpacity="0.1" />
@@ -294,10 +294,19 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 <circle cx="40" cy="40" r="36" stroke="url(#ringGrad)" strokeWidth="5" strokeDasharray="205 27" strokeLinecap="round" />
               </svg>
               <div className="orb-bg relative flex size-14 items-center justify-center rounded-full">
-                <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
-                  <path d="M3 8 Q6.5 2 10 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M20 8 Q23.5 2 27 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
+                {aiMatching ? (
+                  <svg width="30" height="14" viewBox="0 0 30 14" fill="none">
+                    <circle cx="7" cy="7" r="5" fill="rgba(255,255,255,0.9)" />
+                    <circle cx="23" cy="7" r="5" fill="rgba(255,255,255,0.9)" />
+                    <circle cx="7" cy="7" r="2.2" fill="rgba(20,30,100,0.65)" />
+                    <circle cx="23" cy="7" r="2.2" fill="rgba(20,30,100,0.65)" />
+                  </svg>
+                ) : (
+                  <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
+                    <path d="M3 8 Q6.5 2 10 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
+                    <path d="M20 8 Q23.5 2 27 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                )}
               </div>
             </div>
             <p className="text-lg font-semibold text-primary">Hello, {brandName}</p>
