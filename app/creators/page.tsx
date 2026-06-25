@@ -270,24 +270,26 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 @property --orb-c2 { syntax: '<color>'; initial-value: #22d3ee; inherits: false; }
                 @property --orb-c3 { syntax: '<color>'; initial-value: #0ea5e9; inherits: false; }
                 @keyframes orbColorCycle {
-                  0%, 100% { --orb-c1: #4ade80; --orb-c2: #22d3ee; --orb-c3: #0ea5e9; }
-                  50% { --orb-c1: #e0a0f5; --orb-c2: #C377E4; --orb-c3: #9b3dcc; }
+                  0%   { --orb-c1: #4a72d4; --orb-c2: #2550B7; --orb-c3: #1a3a8a; }
+                  33%  { --orb-c1: #9e7fe0; --orb-c2: #7E5FD0; --orb-c3: #5a40a8; }
+                  66%  { --orb-c1: #da8ef0; --orb-c2: #C96AE7; --orb-c3: #9a4ab8; }
+                  100% { --orb-c1: #4a72d4; --orb-c2: #2550B7; --orb-c3: #1a3a8a; }
                 }
-                .orb-bg { animation: orbColorCycle 3s ease-in-out infinite; background: radial-gradient(circle at 38% 35%, var(--orb-c1) 0%, var(--orb-c2) 55%, var(--orb-c3) 100%); }
+                .orb-bg { animation: orbColorCycle 4s ease-in-out infinite; background: radial-gradient(circle at 38% 35%, var(--orb-c1) 0%, var(--orb-c2) 55%, var(--orb-c3) 100%); }
               `}</style>
               <svg className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }} width="80" height="80" viewBox="0 0 80 80" fill="none">
                 <defs>
                   <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#86efac" stopOpacity="0.1" />
-                    <stop offset="100%" stopColor="#86efac" stopOpacity="0.85" />
+                    <stop offset="0%" stopColor="#7E5FD0" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#C96AE7" stopOpacity="0.85" />
                   </linearGradient>
                 </defs>
                 <circle cx="40" cy="40" r="36" stroke="url(#ringGrad)" strokeWidth="5" strokeDasharray="205 27" strokeLinecap="round" />
               </svg>
               <div className="orb-bg relative flex size-14 items-center justify-center rounded-full">
                 <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
-                  <path d="M3 8 Q6.5 2 10 8" stroke="#0f2d4a" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M20 8 Q23.5 2 27 8" stroke="#0f2d4a" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M3 8 Q6.5 2 10 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M20 8 Q23.5 2 27 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
               </div>
             </div>
