@@ -251,15 +251,25 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
       <main className="flex-1 overflow-auto">
         <div className="page-wrap">
           <header className="mb-7 flex flex-col items-center border-b border-border pb-7 text-center">
-            <div className="relative mb-4 flex size-20 items-center justify-center rounded-full bg-primary/15 text-primary shadow-[0_0_38px_rgba(195,119,228,0.32)]">
-              <div className="absolute inset-2 rounded-full border border-primary/25" />
-              <Sparkles className="relative size-8" />
+            <div className="relative mb-4 flex size-20 items-center justify-center">
+              <svg className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }} width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#86efac" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#86efac" stopOpacity="0.85" />
+                  </linearGradient>
+                </defs>
+                <circle cx="40" cy="40" r="36" stroke="url(#ringGrad)" strokeWidth="5" strokeDasharray="205 27" strokeLinecap="round" />
+              </svg>
+              <div className="relative flex size-14 items-center justify-center rounded-full" style={{ background: 'radial-gradient(circle at 38% 35%, #4ade80 0%, #22d3ee 55%, #0ea5e9 100%)' }}>
+                <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
+                  <path d="M3 8 Q6.5 2 10 8" stroke="#0f2d4a" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M20 8 Q23.5 2 27 8" stroke="#0f2d4a" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </div>
             </div>
             <p className="text-lg font-semibold text-primary">Hello, {brandName}</p>
             <h1 className="mt-1 text-3xl font-semibold leading-tight tracking-normal text-foreground">What kind of creators do you want to find?</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Describe the campaign, product category, platform, or content style, and RollerKluster will surface creators that fit.
-            </p>
           </header>
 
           <div className="space-y-5">
@@ -312,9 +322,6 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                             Match
                           </Button>
                         </div>
-                        <p className="mt-2 max-w-5xl text-xs leading-5 text-muted-foreground">
-                          Tell the AI the campaign style, product category, preferred platforms, and the kind of content you want. For example: skincare creators with clean, polished Reels or tech creators who explain products clearly.
-                        </p>
                       </>
                     )}
 
