@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Filter, Grid2X2, Handshake, Linkedin, List, Mail, MoreHorizontal, Search, ShieldCheck, SlidersHorizontal, Star, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
+import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Filter, Grid2X2, Handshake, Linkedin, List, Loader2, Mail, MoreHorizontal, Search, ShieldCheck, SlidersHorizontal, Sparkles, Star, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { RankBadgeIcon } from '@/components/rank-badge';
@@ -59,6 +59,12 @@ function formatFollowers(value: number) {
   return value.toLocaleString();
 }
 
+type AiCreatorMatch = {
+  creatorId: string;
+  score: number;
+  reasons: string[];
+};
+
 export default function CreatorDiscovery() {
   const { creators, campaigns, engagements, submissions, createEngagement } = useApp();
   const { creatorView, setCreatorView } = useUiStore();
@@ -72,6 +78,13 @@ export default function CreatorDiscovery() {
   const [matchedCreators, setMatchedCreators] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
+  const [matchPrompt, setMatchPrompt] = useState('');
+  const [aiMatches, setAiMatches] = useState<AiCreatorMatch[]>([]);
+  const [aiMatching, setAiMatching] = useState(false);
+  const [aiMatchError, setAiMatchError] = useState('');
+  const [selectedCampaignId, setSelectedCampaignId] = useState('');
+  const [invitingCreatorId, setInvitingCreatorId] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState('');
 
   const [supabaseCreators, setSupabaseCreators] = useState<Creator[]>([]);
 
@@ -132,6 +145,13 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
   const selectedCreator = approvedCreators.find(creator => creator.id === selectedCreatorId);
   const niches = Array.from(new Set(approvedCreators.map(c => c.niche)));
   const platforms = Array.from(new Set(approvedCreators.flatMap(c => c.platforms.map(p => p.name))));
+  const inviteCampaigns = campaigns.filter(campaign => campaign.status === 'open' || campaign.status === 'in_progress');
+  const aiMatchedCreators = aiMatches
+    .map(match => {
+      const creator = approvedCreators.find(item => item.id === match.creatorId);
+      return creator ? { creator, match } : null;
+    })
+    .filter((item): item is { creator: Creator; match: AiCreatorMatch } => Boolean(item));
 
   const filteredCreators = useMemo(() => {
     return [...approvedCreators]
@@ -158,6 +178,78 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
     (sum, creator) => sum + creator.platforms.reduce((platformSum, platform) => platformSum + platform.followers, 0),
     0,
   );
+
+  const findCreatorMatches = async () => {
+    const prompt = matchPrompt.trim();
+    if (!prompt) {
+      setAiMatchError('Describe what kind of creators the brand needs.');
+      return;
+    }
+    setAiMatching(true);
+    setAiMatchError('');
+    setInviteError('');
+    try {
+      const { data, error: sessionError } = supabase ? await supabase.auth.getSession() : { data: { session: null }, error: null };
+      if (sessionError || !data.session?.access_token) {
+        throw new Error(sessionError?.message ?? 'Sign in as a brand before matching creators.');
+      }
+      const response = await fetch('/api/creator-matching', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${data.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          creators: approvedCreators.map(creator => ({
+            id: creator.id,
+            name: creator.name,
+            bio: creator.bio,
+            niche: creator.niche,
+            categories: creator.contentCategories ?? [creator.niche],
+            platforms: creator.platforms.map(platform => ({
+              name: platform.name,
+              followers: platform.followers,
+              handle: platform.handle,
+            })),
+            engagementRate: creator.engagementRate,
+            verified: creator.verified,
+            rank: rankLabel(creator.badge),
+            reputationScore: creator.reputationScore,
+            contentQualityScore: creator.contentQualityScore,
+            completedEngagements: creator.completedEngagements,
+          })),
+        }),
+      });
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || 'Could not match creators.');
+      }
+      const payload = await response.json() as { matches?: AiCreatorMatch[] };
+      setAiMatches(payload.matches ?? []);
+    } catch (error) {
+      setAiMatchError(error instanceof Error ? error.message : 'Could not match creators.');
+    } finally {
+      setAiMatching(false);
+    }
+  };
+
+  const inviteCreator = async (creator: Creator, score: number) => {
+    setInviteError('');
+    if (!selectedCampaignId) {
+      setInviteError('Choose a campaign before inviting creators.');
+      return;
+    }
+    setInvitingCreatorId(creator.id);
+    try {
+      await createEngagement(selectedCampaignId, creator.id, score);
+      setMatchedCreators(current => current.includes(creator.id) ? current : [...current, creator.id]);
+    } catch (error) {
+      setInviteError(error instanceof Error ? error.message : 'Could not send invite.');
+    } finally {
+      setInvitingCreatorId(null);
+    }
+  };
 
   return (
     <div className="flex h-screen ecosystem-shell">
@@ -190,6 +282,107 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
 
           <div className="space-y-5">
             <section className="space-y-4">
+              <div className="panel overflow-hidden">
+                <div className="border-b border-border px-5 py-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-8 items-center justify-center rounded-[9px] bg-secondary text-primary">
+                      <Sparkles className="size-4" />
+                    </span>
+                    <div>
+                      <h2 className="section-heading">AI creator matching</h2>
+                      <p className="section-subtitle">Tell the AI what the brand wants and get ranked creator matches.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_240px_auto] lg:items-center">
+                  <div className="relative">
+                    <Sparkles className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
+                    <Input
+                      value={matchPrompt}
+                      onChange={(event) => setMatchPrompt(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') void findCreatorMatches();
+                      }}
+                      placeholder="Example: Find beauty TikTok creators with strong engagement for AU students"
+                      className="h-11 rounded-[10px] border-border bg-muted/35 pl-9"
+                    />
+                  </div>
+                  <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+                    <SelectTrigger className="h-11 rounded-[10px] border-border bg-white">
+                      <SelectValue placeholder={inviteCampaigns.length ? 'Campaign to invite to' : 'No active campaigns'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {inviteCampaigns.map(campaign => (
+                        <SelectItem key={campaign.id} value={campaign.id}>{campaign.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button className="h-11 bg-primary text-white" onClick={() => void findCreatorMatches()} disabled={aiMatching}>
+                    {aiMatching ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                    Match creators
+                  </Button>
+                </div>
+                {(aiMatchError || inviteError) && (
+                  <div className="border-t border-border px-5 py-3 text-sm font-semibold text-red-600">
+                    {aiMatchError || inviteError}
+                  </div>
+                )}
+                {aiMatchedCreators.length > 0 && (
+                  <div className="border-t border-border">
+                    <div className="flex items-center justify-between gap-3 px-5 py-4">
+                      <div>
+                        <p className="text-sm font-semibold">Best matches</p>
+                        <p className="text-xs text-muted-foreground">{aiMatchedCreators.length} creators ranked for this request</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setAiMatches([])}>
+                        Clear
+                      </Button>
+                    </div>
+                    <div className="grid gap-3 px-4 pb-4 lg:grid-cols-2">
+                      {aiMatchedCreators.map(({ creator, match }) => {
+                        const primaryPlatform = creator.platforms.reduce((largest, platform) => platform.followers > largest.followers ? platform : largest, creator.platforms[0]);
+                        return (
+                          <div key={creator.id} className="rounded-[10px] border border-border bg-white p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex min-w-0 gap-3">
+                                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+                                  {initials(creator.name)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="truncate text-sm font-semibold">{creator.name}</p>
+                                    <Badge variant="secondary" className="rounded-full">{match.score}% fit</Badge>
+                                  </div>
+                                  <p className="mt-1 text-xs font-semibold text-primary">{creator.niche}</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">{primaryPlatform?.name ?? 'Platform'} · {formatFollowers(primaryPlatform?.followers ?? 0)} followers · {creator.engagementRate}% engagement</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-4 space-y-2">
+                              {match.reasons.slice(0, 3).map(reason => (
+                                <div key={reason} className="flex gap-2 text-sm leading-5 text-muted-foreground">
+                                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                                  <p>{reason}</p>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-4 flex flex-wrap justify-end gap-2">
+                              <Button variant="outline" size="sm" className="border-border bg-white" onClick={() => setSelectedCreatorId(creator.id)}>
+                                View profile
+                              </Button>
+                              <Button size="sm" className="bg-primary text-white" onClick={() => void inviteCreator(creator, match.score)} disabled={invitingCreatorId === creator.id}>
+                                {invitingCreatorId === creator.id ? <Loader2 className="size-3.5 animate-spin" /> : <Handshake className="size-3.5" />}
+                                Invite
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="panel p-4">
                 <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
                   <div className="relative">

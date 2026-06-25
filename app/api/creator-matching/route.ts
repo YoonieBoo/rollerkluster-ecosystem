@@ -1,0 +1,294 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+type CreatorSnapshot = {
+  id: string;
+  name: string;
+  bio?: string;
+  niche?: string;
+  categories?: string[];
+  platforms?: {
+    name: string;
+    followers: number;
+    handle?: string;
+  }[];
+  engagementRate?: number;
+  verified?: boolean;
+  rank?: string;
+  reputationScore?: number;
+  contentQualityScore?: number;
+  completedEngagements?: number;
+};
+
+type MatchRequest = {
+  prompt?: string;
+  creators?: CreatorSnapshot[];
+};
+
+type MatchResult = {
+  creatorId: string;
+  score: number;
+  reasons: string[];
+};
+
+const openAiApiKey = process.env.OPENAI_API_KEY;
+const openAiModel = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export async function POST(request: Request) {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.json({ error: 'Supabase is not configured.' }, { status: 500 });
+  }
+
+  const authorization = request.headers.get('authorization');
+  const accessToken = authorization?.replace(/^Bearer\s+/i, '');
+  if (!accessToken) {
+    return NextResponse.json({ error: 'Missing authentication token.' }, { status: 401 });
+  }
+
+  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+  const { data: userData, error: userError } = await authClient.auth.getUser(accessToken);
+  if (userError || !userData.user) {
+    return NextResponse.json({ error: 'Invalid authentication token.' }, { status: 401 });
+  }
+
+  const metadataRole = typeof userData.user.user_metadata?.role === 'string' ? userData.user.user_metadata.role : '';
+  const { data: platformUser } = await authClient
+    .from('users')
+    .select('role')
+    .eq('id', userData.user.id)
+    .maybeSingle();
+  const storedRole = typeof platformUser?.role === 'string' ? platformUser.role : '';
+  const role = metadataRole || storedRole;
+  if (role !== 'brand' && role !== 'admin') {
+    return NextResponse.json({ error: 'Only brand users can match creators.' }, { status: 403 });
+  }
+
+  const body = await request.json() as MatchRequest;
+  const prompt = body.prompt?.trim() ?? '';
+  const creators = (body.creators ?? []).slice(0, 80);
+
+  if (!prompt) {
+    return NextResponse.json({ error: 'Describe what kind of creators the brand needs.' }, { status: 400 });
+  }
+  if (creators.length === 0) {
+    return NextResponse.json({ matches: [] });
+  }
+
+  const ranked = rankCreators(prompt, creators).slice(0, 8);
+  const aiMatches = openAiApiKey ? await explainWithOpenAI(prompt, creators, ranked).catch((error) => {
+    console.error('AI creator matching failed', error);
+    return null;
+  }) : null;
+
+  return NextResponse.json({
+    matches: aiMatches?.length ? mergeAiReasons(ranked, aiMatches) : ranked,
+    source: aiMatches?.length ? 'ai' : 'rules',
+  });
+}
+
+function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[] {
+  const terms = tokenize(prompt);
+  const requestedPlatforms = findRequestedPlatforms(prompt);
+  const requestedFollowerMinimum = findFollowerMinimum(prompt);
+  const requestedEngagementMinimum = findEngagementMinimum(prompt);
+
+  return creators
+    .map(creator => {
+      const creatorText = tokenize([
+        creator.name,
+        creator.bio,
+        creator.niche,
+        creator.rank,
+        ...(creator.categories ?? []),
+        ...(creator.platforms ?? []).flatMap(platform => [platform.name, platform.handle]),
+      ].filter(Boolean).join(' '));
+      const textHits = Array.from(terms).filter(term => creatorText.has(term));
+      const totalFollowers = totalCreatorFollowers(creator);
+      const platformMatch = requestedPlatforms.length === 0 || requestedPlatforms.some(platform =>
+        creator.platforms?.some(item => item.name.toLowerCase() === platform),
+      );
+      const followerFit = !requestedFollowerMinimum || totalFollowers >= requestedFollowerMinimum;
+      const engagementFit = !requestedEngagementMinimum || Number(creator.engagementRate ?? 0) >= requestedEngagementMinimum;
+
+      let score = 35;
+      score += Math.min(24, textHits.length * 6);
+      score += platformMatch ? 16 : -8;
+      score += followerFit ? 10 : -6;
+      score += engagementFit ? 8 : -4;
+      score += Math.min(12, Math.round(Number(creator.reputationScore ?? 0) / 10));
+      score += creator.verified ? 5 : 0;
+      score += Math.min(5, Math.round(Number(creator.contentQualityScore ?? 0)));
+      score = Math.max(1, Math.min(98, score));
+
+      return {
+        creatorId: creator.id,
+        score,
+        reasons: buildRuleReasons({
+          creator,
+          textHits,
+          platformMatch,
+          followerFit,
+          engagementFit,
+          requestedPlatforms,
+          requestedFollowerMinimum,
+          requestedEngagementMinimum,
+        }),
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+async function explainWithOpenAI(prompt: string, creators: CreatorSnapshot[], ranked: MatchResult[]) {
+  const shortlisted = ranked.map(match => {
+    const creator = creators.find(item => item.id === match.creatorId);
+    return {
+      id: match.creatorId,
+      name: creator?.name,
+      niche: creator?.niche,
+      categories: creator?.categories,
+      platforms: creator?.platforms,
+      engagementRate: creator?.engagementRate,
+      verified: creator?.verified,
+      rank: creator?.rank,
+      reputationScore: creator?.reputationScore,
+      baseScore: match.score,
+    };
+  });
+
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openAiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: openAiModel,
+      input: [
+        {
+          role: 'system',
+          content: 'You rank creators for brand campaigns. Return only valid JSON with a matches array. Use the provided creator ids only. Reasons must be concise and based on the provided data.',
+        },
+        {
+          role: 'user',
+          content: JSON.stringify({
+            brandRequest: prompt,
+            shortlistedCreators: shortlisted,
+            responseShape: {
+              matches: [{ creatorId: 'creator id', score: 1, reasons: ['reason 1', 'reason 2', 'reason 3'] }],
+            },
+          }),
+        },
+      ],
+      text: {
+        format: {
+          type: 'json_object',
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  const payload = await response.json() as { output_text?: string; output?: { content?: { text?: string }[] }[] };
+  const text = payload.output_text ?? payload.output?.flatMap(item => item.content ?? []).map(item => item.text).filter(Boolean).join('\n') ?? '';
+  const parsed = JSON.parse(text) as { matches?: MatchResult[] };
+  return (parsed.matches ?? [])
+    .filter(match => ranked.some(item => item.creatorId === match.creatorId))
+    .slice(0, 8);
+}
+
+function mergeAiReasons(ranked: MatchResult[], aiMatches: MatchResult[]) {
+  const rankedById = new Map(ranked.map(match => [match.creatorId, match]));
+  return aiMatches
+    .map(match => ({
+      creatorId: match.creatorId,
+      score: Math.max(1, Math.min(98, Math.round(match.score || rankedById.get(match.creatorId)?.score || 70))),
+      reasons: match.reasons?.length ? match.reasons.slice(0, 3) : rankedById.get(match.creatorId)?.reasons ?? [],
+    }))
+    .sort((a, b) => b.score - a.score);
+}
+
+function buildRuleReasons({
+  creator,
+  textHits,
+  platformMatch,
+  followerFit,
+  engagementFit,
+  requestedPlatforms,
+  requestedFollowerMinimum,
+  requestedEngagementMinimum,
+}: {
+  creator: CreatorSnapshot;
+  textHits: string[];
+  platformMatch: boolean;
+  followerFit: boolean;
+  engagementFit: boolean;
+  requestedPlatforms: string[];
+  requestedFollowerMinimum: number | null;
+  requestedEngagementMinimum: number | null;
+}) {
+  const reasons: string[] = [];
+  if (textHits.length) reasons.push(`Matches campaign terms: ${textHits.slice(0, 3).join(', ')}.`);
+  if (requestedPlatforms.length) {
+    reasons.push(platformMatch ? `Active on requested platform ${requestedPlatforms.join(', ')}.` : `Not strongest on requested platform, but profile still has adjacent fit.`);
+  }
+  if (requestedFollowerMinimum) {
+    reasons.push(followerFit ? `Meets the requested reach with ${formatFollowers(totalCreatorFollowers(creator))} followers.` : `Below requested reach, but may fit niche or engagement needs.`);
+  }
+  if (requestedEngagementMinimum) {
+    reasons.push(engagementFit ? `${creator.engagementRate ?? 0}% engagement meets the request.` : `${creator.engagementRate ?? 0}% engagement is below the requested threshold.`);
+  }
+  if (creator.verified) reasons.push('Verified creator profile.');
+  if (!reasons.length) reasons.push('Strong overall creator score and profile readiness.');
+  return reasons.slice(0, 3);
+}
+
+function tokenize(value: string) {
+  const stopWords = new Set(['the', 'and', 'for', 'with', 'that', 'this', 'want', 'need', 'creator', 'creators', 'campaign', 'brand', 'best']);
+  return new Set(
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9%.\s]/g, ' ')
+      .split(/\s+/)
+      .filter(term => term.length > 2 && !stopWords.has(term)),
+  );
+}
+
+function findRequestedPlatforms(prompt: string) {
+  const lower = prompt.toLowerCase();
+  return ['instagram', 'tiktok', 'youtube', 'facebook', 'twitter', 'x', 'twitch', 'linkedin']
+    .filter(platform => lower.includes(platform));
+}
+
+function findFollowerMinimum(prompt: string) {
+  const match = prompt.toLowerCase().match(/(\d+(?:\.\d+)?)\s*(k|m)?\+?\s*(followers|follower|reach)/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  const multiplier = match[2] === 'm' ? 1_000_000 : match[2] === 'k' ? 1_000 : 1;
+  return Math.round(value * multiplier);
+}
+
+function findEngagementMinimum(prompt: string) {
+  const match = prompt.toLowerCase().match(/(\d+(?:\.\d+)?)\s*%?\+?\s*(engagement|er)/);
+  return match ? Number(match[1]) : null;
+}
+
+function totalCreatorFollowers(creator: CreatorSnapshot) {
+  return creator.platforms?.reduce((sum, platform) => sum + Number(platform.followers ?? 0), 0) ?? 0;
+}
+
+function formatFollowers(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${Math.round(value / 1_000)}K`;
+  return value.toLocaleString();
+}
