@@ -96,15 +96,17 @@ useEffect(() => {
   async function loadSignedUpCreators() {
     if (!supabase) return;
 
-    const { data, error } = await supabase
-      .from('creator_profiles')
-      .select('*')
-      .eq('onboarding_completed', true);
+    const [{ data, error }, { data: userData }] = await Promise.all([
+      supabase.from('creator_profiles').select('*').eq('onboarding_completed', true),
+      supabase.from('users').select('id, avatar_url').eq('role', 'creator'),
+    ]);
 
     if (error) {
       console.error('Failed to load signed-up creators', error);
       return;
     }
+
+    const avatarMap = new Map((userData ?? []).map((u: { id: string; avatar_url: string | null }) => [u.id, u.avatar_url]));
 
     const mappedCreators: Creator[] = (data ?? []).map((profile) => ({
       id: profile.user_id,
@@ -126,7 +128,7 @@ useEffect(() => {
       verified: profile.verification_status === 'verified',
       approvalStatus: 'approved',
       badge: profile.creator_rank || 'Bronze1',
-      avatar: profile.avatar_url ?? undefined,
+      avatar: avatarMap.get(profile.user_id) ?? profile.avatar_url ?? undefined,
       portfolioItems: [],
       trainingCompleted: [],
       engagementHistory: [],
