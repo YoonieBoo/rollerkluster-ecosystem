@@ -265,15 +265,19 @@ const synonymMap: Record<string, string[]> = {
   'computer science': ['computer', 'science', 'coding', 'programming', 'tech', 'technology', 'stem', 'engineering'],
   fitness: ['fitness', 'gym', 'workout', 'exercise', 'health', 'sport', 'sports', 'athletic', 'training', 'wellbeing'],
   food: ['food', 'cooking', 'recipe', 'culinary', 'foodie', 'restaurant', 'eating', 'cuisine', 'baking', 'snack'],
-  beauty: ['beauty', 'makeup', 'skincare', 'cosmetics', 'style', 'glam', 'glamour', 'grooming', 'aesthetics'],
-  fashion: ['fashion', 'style', 'clothing', 'outfit', 'wardrobe', 'streetwear', 'aesthetic', 'ootd'],
-  travel: ['travel', 'traveling', 'adventure', 'explore', 'exploring', 'wanderlust', 'trip', 'destination'],
+  beauty: ['beauty', 'makeup', 'skincare', 'cosmetics', 'glam', 'glamour', 'grooming', 'glow', 'blush', 'lipstick', 'foundation'],
+  fashion: ['fashion', 'style', 'styling', 'clothing', 'outfit', 'wardrobe', 'streetwear', 'ootd', 'looks'],
+  travel: ['travel', 'traveling', 'adventure', 'explore', 'exploring', 'wanderlust', 'trip', 'destination', 'backpacking'],
   gaming: ['gaming', 'games', 'gamer', 'esports', 'videogames', 'streaming', 'twitch', 'playthrough'],
   music: ['music', 'musician', 'singing', 'singer', 'band', 'song', 'artist', 'playlist', 'audio'],
-  lifestyle: ['lifestyle', 'daily', 'vlog', 'vlogs', 'campus', 'student', 'routine', 'wellness'],
-  education: ['education', 'study', 'learning', 'academic', 'school', 'student', 'campus', 'tutorial'],
-  campus: ['campus', 'university', 'student', 'college', 'academic', 'school', 'dorm'],
+  lifestyle: ['lifestyle', 'daily', 'vlog', 'vlogs', 'campus', 'student', 'routine', 'wellness', 'life'],
+  education: ['education', 'study', 'studying', 'learning', 'academic', 'school', 'student', 'campus', 'tutorial', 'university', 'college'],
+  campus: ['campus', 'university', 'student', 'college', 'academic', 'school', 'dorm', 'uni'],
+  university: ['university', 'campus', 'student', 'college', 'academic', 'school', 'dorm', 'uni'],
+  student: ['student', 'campus', 'university', 'college', 'academic', 'school', 'dorm'],
+  college: ['college', 'campus', 'university', 'student', 'academic', 'school'],
   art: ['art', 'artist', 'creative', 'design', 'drawing', 'illustration', 'photography', 'graphic'],
+  events: ['events', 'event', 'party', 'celebration', 'social', 'community'],
 };
 
 function expandTerms(terms: Set<string>): Set<string> {
@@ -291,6 +295,9 @@ function tokenize(value: string) {
     'campaign', 'brand', 'best', 'from', 'are', 'has', 'have', 'who', 'can', 'does',
     'show', 'find', 'get', 'some', 'any', 'all', 'their', 'its', 'our', 'your', 'into',
     'good', 'great', 'top', 'strong', 'high', 'active', 'based',
+    // generic content-creation words that appear in every creator's profile
+    'content', 'create', 'creating', 'created', 'makes', 'making', 'make', 'post',
+    'posting', 'posts', 'share', 'sharing', 'about', 'also', 'even', 'more', 'just',
   ]);
   return new Set(
     value
