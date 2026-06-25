@@ -295,10 +295,9 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
               </svg>
               <div className="orb-bg relative flex size-14 items-center justify-center rounded-full">
                 {aiMatching ? (
-                  <svg width="34" height="20" viewBox="0 0 34 20" fill="none">
-                    <rect x="1" y="2" width="11" height="9" rx="4.5" fill="rgba(255,255,255,0.88)" transform="rotate(-14 6.5 6.5)" />
-                    <rect x="20" y="0" width="9" height="9" rx="4.5" fill="rgba(255,255,255,0.88)" transform="rotate(-12 24.5 4.5)" />
-                    <path d="M5,13 C4,18 12,21 26,15" stroke="rgba(255,255,255,0.82)" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+                  <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
+                    <circle cx="8" cy="6" r="4" fill="rgba(255,255,255,0.88)" />
+                    <circle cx="22" cy="6" r="4" fill="rgba(255,255,255,0.88)" />
                   </svg>
                 ) : (
                   <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
