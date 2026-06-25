@@ -47,7 +47,7 @@ export default function Dashboard() {
   const approvedCreators = creators.filter(c => c.approvalStatus === 'approved');
   const pendingCreators = creators.filter(c => c.approvalStatus === 'pending');
   const activeEngagements = engagements.filter(e => e.status === 'matched' || e.status === 'in_discussion' || e.status === 'active');
-  const topCreators = [...approvedCreators].sort((a, b) => b.reputationScore - a.reputationScore).slice(0, 4);
+  const topCreators = [...approvedCreators].sort((a, b) => getCreatorFollowerCount(b) - getCreatorFollowerCount(a)).slice(0, 4);
   const recentlyActive = [...engagements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   const campaignsNeedingMatches = campaigns
     .map(campaign => ({
@@ -130,55 +130,8 @@ export default function Dashboard() {
             <div className="panel overflow-hidden">
               <div className="flex items-center justify-between border-b border-border px-5 py-4">
                 <div>
-                  <h2 className="section-heading">Campaign workflow</h2>
-                  <p className="section-subtitle">Review creator applications, manage campaign matches, and track active collaborations.</p>
-                </div>
-                <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-700">
-                  {pendingCreators.length + campaignsNeedingMatches.length} open
-                </Badge>
-              </div>
-
-              <div className="grid divide-y divide-border lg:grid-cols-2 lg:divide-x lg:divide-y-0">
-                <QueueColumn title="Creator applications" href="/admin" linkLabel="Review applications">
-                  {pendingCreators.length === 0 ? (
-                    <EmptyLine text="No creator applications are waiting." />
-                  ) : pendingCreators.map(creator => (
-                    <Link key={creator.id} href="/admin" className="flex items-center justify-between rounded-[10px] border border-border bg-white px-3 py-3 transition hover:bg-muted/45">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">{initials(creator.name)}</div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{creator.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{creator.niche} · {creator.engagementRate}% engagement</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="size-4 text-muted-foreground" />
-                    </Link>
-                  ))}
-                </QueueColumn>
-
-                <QueueColumn title="Campaign matches" href="/campaigns" linkLabel="Open matches">
-                  {campaignsNeedingMatches.length === 0 ? (
-                    <EmptyLine text="Every active campaign has enough creator coverage." />
-                  ) : campaignsNeedingMatches.map(campaign => (
-                    <Link key={campaign.id} href={`/campaigns/${campaign.id}`} className="block rounded-[10px] border border-border bg-white px-3 py-3 transition hover:bg-muted/45">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{campaign.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{campaign.brand} · {2 - campaign.matchCount} assignments needed</p>
-                        </div>
-                        <Badge variant="outline" className={cn('shrink-0 rounded-full', statusTone(campaign.status))}>{statusLabel(campaign.status)}</Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </QueueColumn>
-              </div>
-            </div>
-
-            <div className="panel overflow-hidden">
-              <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                <div>
                   <h2 className="section-heading">Recommended creators</h2>
-                  <p className="section-subtitle">Creators with strong readiness scores for brand collaborations.</p>
+                  <p className="section-subtitle">Onboarded creators with the largest connected social audiences.</p>
                 </div>
                 <ShieldCheck className="size-5 text-primary" />
               </div>
@@ -191,7 +144,7 @@ export default function Dashboard() {
                           <p className="truncate text-sm font-semibold">{creator.name}</p>
                           {creator.verified && <CheckCircle2 className="size-3.5 shrink-0 text-primary" />}
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{creator.niche} · {creator.reputationScore} readiness</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{creator.niche} · {formatFollowerCount(getCreatorFollowerCount(creator))} followers</p>
                         <div className="mt-3">
                           <TierBadge tier={creator.badge} verified={creator.verified} brandView />
                         </div>
@@ -230,7 +183,6 @@ export default function Dashboard() {
           </section>
         </div>
       </main>
-      <RightDashboardSidebar />
     </div>
   );
 }
@@ -543,6 +495,16 @@ function ReadinessRow({ label, value }: { label: string; value: string | number 
       <span className="text-sm font-semibold">{value}</span>
     </div>
   );
+}
+
+function getCreatorFollowerCount(creator: { platforms: { followers: number }[] }) {
+  return creator.platforms.reduce((sum, platform) => sum + platform.followers, 0);
+}
+
+function formatFollowerCount(value: number) {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `${Math.round(value / 1000)}K`;
+  return value.toLocaleString();
 }
 
 function QueueColumn({ title, href, linkLabel, children }: { title: string; href: string; linkLabel: string; children: React.ReactNode }) {
