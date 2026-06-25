@@ -14,6 +14,39 @@ import { cn } from '@/lib/utils';
 
 type SignInRole = 'admin' | 'creator';
 
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background">
+      <div className="relative" style={{ width: 110, height: 95 }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: 88,
+            height: 78,
+            background: 'linear-gradient(135deg, #C96AE7 0%, #7E5FD0 50%, #2550B7 100%)',
+            animation: 'blobMorph 2.8s ease-in-out infinite',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: 26,
+            height: 26,
+            borderRadius: '50%',
+            background: '#C96AE7',
+            animation: 'dotFloat 2.8s ease-in-out infinite',
+          }}
+        />
+      </div>
+      <p className="text-[13px] font-semibold text-muted-foreground">Loading RollerKluster</p>
+    </div>
+  );
+}
+
 export function AuthGate({ children }: { children: ReactNode }) {
   const { authHydrated, hydrateAuth, isAuthenticated, activeRole, creatorProfile } = useUiStore();
   const pathname = usePathname();
@@ -40,25 +73,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }, [activeRole, authHydrated, creatorProfile?.onboardingCompleted, isAuthenticated, isAuthEntryRoute, pathname, router]);
 
   if (!authHydrated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="rounded-xl border border-border bg-white px-5 py-4 text-sm font-semibold text-muted-foreground shadow-sm">
-          Loading RollerKluster
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!isAuthenticated) {
     if (pathname === '/signup') return <SignUpScreen />;
     if (pathname === '/' || pathname === '/login') return <SignInScreen />;
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="rounded-xl border border-border bg-white px-5 py-4 text-sm font-semibold text-muted-foreground shadow-sm">
-          Opening login
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (activeRole === 'creator' && !creatorProfile?.onboardingCompleted) {

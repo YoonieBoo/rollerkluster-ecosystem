@@ -276,6 +276,17 @@
   text-transform: uppercase;
 }
 
+@keyframes blobMorph {
+  0%, 100% { border-radius: 60% 40% 55% 45% / 50% 45% 55% 50%; }
+  25%  { border-radius: 45% 55% 40% 60% / 60% 40% 60% 40%; }
+  50%  { border-radius: 55% 45% 60% 40% / 40% 60% 40% 60%; }
+  75%  { border-radius: 40% 60% 45% 55% / 55% 45% 55% 45%; }
+}
+@keyframes dotFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%  { transform: translateY(-10px) scale(1.08); }
+}
+
 .rank-chip {
   display: inline-flex;
   align-items: center;
