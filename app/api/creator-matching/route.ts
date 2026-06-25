@@ -105,23 +105,36 @@ export async function POST(request: Request) {
 
 function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[] {
   const rawTerms = tokenize(prompt);
-  const terms = expandTerms(rawTerms);
-  const hasNicheTerms = rawTerms.size > 0;
+  const { nicheTerms } = expandTerms(rawTerms);
+  const hasNicheTerms = nicheTerms.size > 0;
   const requestedPlatforms = findRequestedPlatforms(prompt);
   const requestedFollowerMinimum = findFollowerMinimum(prompt);
   const requestedEngagementMinimum = findEngagementMinimum(prompt);
 
   return creators
     .map(creator => {
-      const creatorText = tokenize([
+      // Only tokenize the creator's own niche-defining fields, not generic bio text
+      const creatorNicheText = tokenize([
+        creator.niche,
+        ...(creator.categories ?? []),
+      ].filter(Boolean).join(' '));
+      // Also check bio/name but with lower weight — kept separate
+      const creatorFullText = tokenize([
         creator.name,
         creator.bio,
         creator.niche,
-        creator.rank,
         ...(creator.categories ?? []),
         ...(creator.platforms ?? []).flatMap(platform => [platform.name, platform.handle]),
       ].filter(Boolean).join(' '));
-      const textHits = Array.from(terms).filter(term => creatorText.has(term));
+
+      // Only count hits from niche-mapped terms (not generic words like "field", "see")
+      const nicheHits = hasNicheTerms
+        ? Array.from(nicheTerms).filter(term => creatorNicheText.has(term))
+        : [];
+      const fullHits = hasNicheTerms
+        ? Array.from(nicheTerms).filter(term => creatorFullText.has(term))
+        : [];
+
       const totalFollowers = totalCreatorFollowers(creator);
       const platformMatch = requestedPlatforms.length === 0 || requestedPlatforms.some(platform =>
         creator.platforms?.some(item => item.name.toLowerCase() === platform),
@@ -130,16 +143,24 @@ function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[
       const engagementFit = !requestedEngagementMinimum || Number(creator.engagementRate ?? 0) >= requestedEngagementMinimum;
 
       let score = 20;
-      // Heavy bonus for niche/content matches, heavy penalty for zero hits when niche terms exist
       if (hasNicheTerms) {
-        score += textHits.length > 0 ? Math.min(40, textHits.length * 12) : -15;
+        // Primary niche/category match scores much higher than bio match
+        score += Math.min(45, nicheHits.length * 18);
+        // Bio/name mention adds a smaller bonus if niche didn't already match
+        if (nicheHits.length === 0) {
+          score += Math.min(10, fullHits.length * 5);
+        }
+        // Heavy penalty for zero niche hits — this creator is not relevant
+        if (nicheHits.length === 0 && fullHits.length === 0) {
+          score -= 20;
+        }
       }
-      score += platformMatch ? 14 : -8;
-      score += followerFit ? 10 : -6;
-      score += engagementFit ? 8 : -4;
-      score += Math.min(10, Math.round(Number(creator.reputationScore ?? 0) / 10));
-      score += creator.verified ? 5 : 0;
-      score += Math.min(5, Math.round(Number(creator.contentQualityScore ?? 0)));
+      score += platformMatch ? 12 : -6;
+      score += followerFit ? 8 : -4;
+      score += engagementFit ? 6 : -3;
+      score += Math.min(8, Math.round(Number(creator.reputationScore ?? 0) / 10));
+      score += creator.verified ? 4 : 0;
+      score += Math.min(4, Math.round(Number(creator.contentQualityScore ?? 0)));
       score = Math.max(1, Math.min(98, score));
 
       return {
@@ -147,7 +168,7 @@ function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[
         score,
         reasons: buildRuleReasons({
           creator,
-          textHits,
+          textHits: nicheHits.length > 0 ? nicheHits : fullHits,
           platformMatch,
           followerFit,
           engagementFit,
@@ -330,13 +351,17 @@ const synonymMap: Record<string, string[]> = {
   events: ['events', 'event', 'party', 'celebration', 'social', 'community'],
 };
 
-function expandTerms(terms: Set<string>): Set<string> {
-  const expanded = new Set(terms);
+function expandTerms(terms: Set<string>): { allTerms: Set<string>; nicheTerms: Set<string> } {
+  const allTerms = new Set(terms);
+  const nicheTerms = new Set<string>();
   for (const term of terms) {
     const synonyms = synonymMap[term];
-    if (synonyms) synonyms.forEach(s => expanded.add(s));
+    if (synonyms) {
+      nicheTerms.add(term);
+      synonyms.forEach(s => { allTerms.add(s); nicheTerms.add(s); });
+    }
   }
-  return expanded;
+  return { allTerms, nicheTerms };
 }
 
 function tokenize(value: string) {
@@ -348,6 +373,10 @@ function tokenize(value: string) {
     // generic content-creation words that appear in every creator's profile
     'content', 'create', 'creating', 'created', 'makes', 'making', 'make', 'post',
     'posting', 'posts', 'share', 'sharing', 'about', 'also', 'even', 'more', 'just',
+    // generic search/query words that should never match creator profiles
+    'field', 'see', 'like', 'looking', 'people', 'interested', 'work', 'works',
+    'want', 'show', 'give', 'very', 'really', 'much', 'many', 'lot', 'few',
+    'they', 'them', 'those', 'these', 'when', 'where', 'what', 'how', 'why',
   ]);
   return new Set(
     value
