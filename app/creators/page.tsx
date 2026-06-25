@@ -157,22 +157,28 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
     .filter((item): item is { creator: Creator; match: AiCreatorMatch } => Boolean(item));
 
   const filteredCreators = useMemo(() => {
+    const selectedLower = new Set(Array.from(selectedNiches).map(n => n.toLowerCase()));
     return [...approvedCreators]
       .filter(c => {
-        if (selectedNiches.size === 0) return true;
-        return selectedNiches.has(c.niche) || (c.contentCategories ?? []).some(cat => selectedNiches.has(cat));
+        if (selectedLower.size === 0) return true;
+        return selectedLower.has((c.niche ?? '').toLowerCase()) ||
+               (c.contentCategories ?? []).some(cat => selectedLower.has(cat.toLowerCase()));
       })
       .sort((a, b) => b.reputationScore - a.reputationScore);
   }, [approvedCreators, selectedNiches]);
   const hideCreatorDirectory = searchMode === 'ai' && aiSearchSubmitted;
 
   const availableNiches = useMemo(() => {
-    const niches = new Set<string>();
+    const seen = new Set<string>();
+    const result: string[] = [];
     approvedCreators.forEach(c => {
-      if (c.niche) niches.add(c.niche);
-      (c.contentCategories ?? []).forEach(cat => { if (cat) niches.add(cat); });
+      [c.niche, ...(c.contentCategories ?? [])].forEach(cat => {
+        if (!cat) return;
+        const lower = cat.toLowerCase();
+        if (!seen.has(lower)) { seen.add(lower); result.push(cat); }
+      });
     });
-    return Array.from(niches).sort();
+    return result.sort((a, b) => a.localeCompare(b));
   }, [approvedCreators]);
 
   const topPerformerCount = approvedCreators.filter(c => {
@@ -344,12 +350,13 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                         type="button"
                         onClick={() => setSelectedNiches(prev => {
                           const next = new Set(prev);
-                          next.has(niche) ? next.delete(niche) : next.add(niche);
+                          const lower = niche.toLowerCase();
+                          next.has(lower) ? next.delete(lower) : next.add(lower);
                           return next;
                         })}
                         className={cn(
                           'rounded-full border px-4 py-1.5 text-sm font-medium transition',
-                          selectedNiches.has(niche)
+                          selectedNiches.has(niche.toLowerCase())
                             ? 'border-primary bg-primary text-white'
                             : 'border-border bg-white text-muted-foreground hover:border-primary/50 hover:text-foreground',
                         )}
