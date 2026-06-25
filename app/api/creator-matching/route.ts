@@ -95,7 +95,9 @@ export async function POST(request: Request) {
 }
 
 function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[] {
-  const terms = tokenize(prompt);
+  const rawTerms = tokenize(prompt);
+  const terms = expandTerms(rawTerms);
+  const hasNicheTerms = rawTerms.size > 0;
   const requestedPlatforms = findRequestedPlatforms(prompt);
   const requestedFollowerMinimum = findFollowerMinimum(prompt);
   const requestedEngagementMinimum = findEngagementMinimum(prompt);
@@ -118,12 +120,15 @@ function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[
       const followerFit = !requestedFollowerMinimum || totalFollowers >= requestedFollowerMinimum;
       const engagementFit = !requestedEngagementMinimum || Number(creator.engagementRate ?? 0) >= requestedEngagementMinimum;
 
-      let score = 35;
-      score += Math.min(24, textHits.length * 6);
-      score += platformMatch ? 16 : -8;
+      let score = 20;
+      // Heavy bonus for niche/content matches, heavy penalty for zero hits when niche terms exist
+      if (hasNicheTerms) {
+        score += textHits.length > 0 ? Math.min(40, textHits.length * 12) : -15;
+      }
+      score += platformMatch ? 14 : -8;
       score += followerFit ? 10 : -6;
       score += engagementFit ? 8 : -4;
-      score += Math.min(12, Math.round(Number(creator.reputationScore ?? 0) / 10));
+      score += Math.min(10, Math.round(Number(creator.reputationScore ?? 0) / 10));
       score += creator.verified ? 5 : 0;
       score += Math.min(5, Math.round(Number(creator.contentQualityScore ?? 0)));
       score = Math.max(1, Math.min(98, score));
@@ -253,8 +258,40 @@ function buildRuleReasons({
   return reasons.slice(0, 3);
 }
 
+const synonymMap: Record<string, string[]> = {
+  tech: ['tech', 'technology', 'coding', 'programming', 'software', 'computer', 'digital', 'engineering', 'stem', 'developer', 'development'],
+  technology: ['technology', 'tech', 'coding', 'programming', 'software', 'computer', 'digital', 'engineering', 'stem'],
+  coding: ['coding', 'programming', 'tech', 'technology', 'software', 'developer', 'development', 'computer'],
+  'computer science': ['computer', 'science', 'coding', 'programming', 'tech', 'technology', 'stem', 'engineering'],
+  fitness: ['fitness', 'gym', 'workout', 'exercise', 'health', 'sport', 'sports', 'athletic', 'training', 'wellbeing'],
+  food: ['food', 'cooking', 'recipe', 'culinary', 'foodie', 'restaurant', 'eating', 'cuisine', 'baking', 'snack'],
+  beauty: ['beauty', 'makeup', 'skincare', 'cosmetics', 'style', 'glam', 'glamour', 'grooming', 'aesthetics'],
+  fashion: ['fashion', 'style', 'clothing', 'outfit', 'wardrobe', 'streetwear', 'aesthetic', 'ootd'],
+  travel: ['travel', 'traveling', 'adventure', 'explore', 'exploring', 'wanderlust', 'trip', 'destination'],
+  gaming: ['gaming', 'games', 'gamer', 'esports', 'videogames', 'streaming', 'twitch', 'playthrough'],
+  music: ['music', 'musician', 'singing', 'singer', 'band', 'song', 'artist', 'playlist', 'audio'],
+  lifestyle: ['lifestyle', 'daily', 'vlog', 'vlogs', 'campus', 'student', 'routine', 'wellness'],
+  education: ['education', 'study', 'learning', 'academic', 'school', 'student', 'campus', 'tutorial'],
+  campus: ['campus', 'university', 'student', 'college', 'academic', 'school', 'dorm'],
+  art: ['art', 'artist', 'creative', 'design', 'drawing', 'illustration', 'photography', 'graphic'],
+};
+
+function expandTerms(terms: Set<string>): Set<string> {
+  const expanded = new Set(terms);
+  for (const term of terms) {
+    const synonyms = synonymMap[term];
+    if (synonyms) synonyms.forEach(s => expanded.add(s));
+  }
+  return expanded;
+}
+
 function tokenize(value: string) {
-  const stopWords = new Set(['the', 'and', 'for', 'with', 'that', 'this', 'want', 'need', 'creator', 'creators', 'campaign', 'brand', 'best']);
+  const stopWords = new Set([
+    'the', 'and', 'for', 'with', 'that', 'this', 'want', 'need', 'creator', 'creators',
+    'campaign', 'brand', 'best', 'from', 'are', 'has', 'have', 'who', 'can', 'does',
+    'show', 'find', 'get', 'some', 'any', 'all', 'their', 'its', 'our', 'your', 'into',
+    'good', 'great', 'top', 'strong', 'high', 'active', 'based',
+  ]);
   return new Set(
     value
       .toLowerCase()
