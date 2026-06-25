@@ -354,6 +354,27 @@ export const campaigns: Campaign[] = [
     status: 'open',
     createdAt: '2024-06-20',
   },
+  {
+    id: 'campaign-5',
+    title: 'Campus Life Test Campaign',
+    description: 'Test campaign for campus lifestyle creators on TikTok and Instagram.',
+    brand: 'RollerKluster Test',
+    budget: 5000,
+    startDate: '2026-06-25',
+    endDate: '2026-08-31',
+    targetNiches: ['Campus life', 'Lifestyle', 'Beauty'],
+    targetPlatforms: ['TikTok', 'Instagram'],
+    minFollowers: 1000,
+    contentType: 'Short-form video & Stories',
+    goals: ['Test creator invite flow', 'Validate shortlist feature'],
+    requirements: ['Active campus creator', 'Any engagement rate'],
+    hashtags: ['#CampusLife', '#RollerKluster'],
+    mentions: ['@rollerkluster'],
+    cta: 'Share your campus life with your audience.',
+    managerMessage: 'This is a test campaign — feel free to engage naturally.',
+    status: 'open',
+    createdAt: '2026-06-25',
+  },
 ];
 
 export const engagements: Engagement[] = [
