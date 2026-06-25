@@ -87,7 +87,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ matches: [] });
   }
 
-  const ranked = rankCreators(prompt, creators).slice(0, 8);
+  const allRanked = rankCreators(prompt, creators);
+  // Only pass creators with a meaningful relevance score to OpenAI / return to client
+  const ranked = (allRanked.some(r => r.score >= 50)
+    ? allRanked.filter(r => r.score >= 45)
+    : allRanked.filter(r => r.score >= 30)
+  ).slice(0, 8);
   const aiResult = openAiApiKey ? await explainWithOpenAI(prompt, creators, ranked).catch((error) => {
     console.error('AI creator matching failed', error);
     return null;
