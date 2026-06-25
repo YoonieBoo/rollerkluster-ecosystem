@@ -271,73 +271,34 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
       <main className="flex-1 overflow-auto">
         <div className="page-wrap">
           <header className="mb-7 flex flex-col items-center border-b border-border pb-7 text-center">
-            <div className="relative mb-5 flex items-center justify-center" style={{ width: 112, height: 112 }}>
+            <div className="relative mb-4 flex size-20 items-center justify-center">
               <style>{`
-                @keyframes mkBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-                @keyframes mkGlow { 0%,100%{filter:drop-shadow(0 3px 0px rgba(126,95,208,0))} 50%{filter:drop-shadow(0 8px 24px rgba(126,95,208,0.38))} }
-                @keyframes mkEyeOpen { 0%,80%,100%{opacity:1} 85%,92%{opacity:0} }
-                @keyframes mkEyeClosed { 0%,80%,100%{opacity:0} 85%,92%{opacity:1} }
-                @keyframes mkPupilScan { 0%,100%{transform:translateX(0)} 30%{transform:translateX(3px)} 70%{transform:translateX(-3px)} }
-                @keyframes mkRingSpin { to{transform:rotate(360deg)} }
-                @keyframes mkRingPulse { 0%,100%{opacity:0.8} 50%{opacity:1} }
-                .mk-blob-idle { animation: mkBounce 2.8s ease-in-out infinite, mkGlow 2.8s ease-in-out infinite; }
-                .mk-eo-l { animation: mkEyeOpen 4.4s ease-in-out infinite; }
-                .mk-eo-r { animation: mkEyeOpen 4.4s ease-in-out infinite 0.08s; }
-                .mk-ec-l { animation: mkEyeClosed 4.4s ease-in-out infinite; }
-                .mk-ec-r { animation: mkEyeClosed 4.4s ease-in-out infinite 0.08s; }
-                .mk-pupils { animation: mkPupilScan 1.15s ease-in-out infinite; }
-                .mk-ring { transform-origin: 56px 56px; animation: mkRingSpin 1.4s linear infinite, mkRingPulse 1.4s ease-in-out infinite; }
+                @property --orb-c1 { syntax: '<color>'; initial-value: #4ade80; inherits: false; }
+                @property --orb-c2 { syntax: '<color>'; initial-value: #22d3ee; inherits: false; }
+                @property --orb-c3 { syntax: '<color>'; initial-value: #0ea5e9; inherits: false; }
+                @keyframes orbColorCycle {
+                  0%   { --orb-c1: #4a72d4; --orb-c2: #2550B7; --orb-c3: #1a3a8a; }
+                  33%  { --orb-c1: #9e7fe0; --orb-c2: #7E5FD0; --orb-c3: #5a40a8; }
+                  66%  { --orb-c1: #da8ef0; --orb-c2: #C96AE7; --orb-c3: #9a4ab8; }
+                  100% { --orb-c1: #4a72d4; --orb-c2: #2550B7; --orb-c3: #1a3a8a; }
+                }
+                .orb-bg { animation: orbColorCycle 4s ease-in-out infinite; background: radial-gradient(circle at 38% 35%, var(--orb-c1) 0%, var(--orb-c2) 55%, var(--orb-c3) 100%); }
               `}</style>
-
-              {aiMatching ? (
-                <>
-                  <svg className="mk-ring absolute inset-0" width="112" height="112" viewBox="0 0 112 112" fill="none">
-                    <defs>
-                      <linearGradient id="mkRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#7E5FD0" stopOpacity="0.04" />
-                        <stop offset="65%" stopColor="#C96AE7" stopOpacity="0.65" />
-                        <stop offset="100%" stopColor="#C96AE7" stopOpacity="0.96" />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="56" cy="56" r="51" stroke="url(#mkRingGrad)" strokeWidth="4.5" strokeDasharray="272 50" strokeLinecap="round" />
-                  </svg>
-                  <svg style={{ position: 'absolute', top: 8, left: 8 }} width="96" height="96" viewBox="0 0 100 100" fill="none">
-                    <defs>
-                      <radialGradient id="mkBlobL" cx="34%" cy="28%" r="68%">
-                        <stop offset="0%" stopColor="#B89CE4" />
-                        <stop offset="38%" stopColor="#8566CC" />
-                        <stop offset="78%" stopColor="#4A6AC4" />
-                        <stop offset="100%" stopColor="#2550B7" />
-                      </radialGradient>
-                    </defs>
-                    <path d="M98,50 Q78,62 84,84 Q62,78 50,98 Q38,78 16,84 Q22,62 2,50 Q22,38 16,16 Q38,22 50,2 Q62,22 84,16 Q78,38 98,50Z" fill="url(#mkBlobL)" />
-                    <circle cx="39" cy="46" r="5.5" fill="rgba(18,22,72,0.72)" />
-                    <circle cx="61" cy="46" r="5.5" fill="rgba(18,22,72,0.72)" />
-                    <g className="mk-pupils">
-                      <circle cx="39" cy="44.5" r="2.3" fill="rgba(255,255,255,0.52)" />
-                      <circle cx="61" cy="44.5" r="2.3" fill="rgba(255,255,255,0.52)" />
-                    </g>
-                    <path d="M37,58 Q50,65 63,58" stroke="rgba(18,22,72,0.58)" strokeWidth="2.6" strokeLinecap="round" fill="none" />
-                  </svg>
-                </>
-              ) : (
-                <svg className="mk-blob-idle" style={{ position: 'absolute', top: 8, left: 8 }} width="96" height="96" viewBox="0 0 100 100" fill="none">
-                  <defs>
-                    <radialGradient id="mkBlobI" cx="34%" cy="28%" r="68%">
-                      <stop offset="0%" stopColor="#B89CE4" />
-                      <stop offset="38%" stopColor="#8566CC" />
-                      <stop offset="78%" stopColor="#4A6AC4" />
-                      <stop offset="100%" stopColor="#2550B7" />
-                    </radialGradient>
-                  </defs>
-                  <path d="M98,50 Q78,62 84,84 Q62,78 50,98 Q38,78 16,84 Q22,62 2,50 Q22,38 16,16 Q38,22 50,2 Q62,22 84,16 Q78,38 98,50Z" fill="url(#mkBlobI)" />
-                  <g className="mk-eo-l"><circle cx="39" cy="46" r="5" fill="rgba(18,22,72,0.72)" /></g>
-                  <g className="mk-ec-l"><path d="M34.5,46 Q39,43 43.5,46" stroke="rgba(18,22,72,0.72)" strokeWidth="2.8" strokeLinecap="round" fill="none" /></g>
-                  <g className="mk-eo-r"><circle cx="61" cy="46" r="5" fill="rgba(18,22,72,0.72)" /></g>
-                  <g className="mk-ec-r"><path d="M56.5,46 Q61,43 65.5,46" stroke="rgba(18,22,72,0.72)" strokeWidth="2.8" strokeLinecap="round" fill="none" /></g>
-                  <path d="M37,58 Q50,66 63,58" stroke="rgba(18,22,72,0.60)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+              <svg className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }} width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#7E5FD0" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#C96AE7" stopOpacity="0.85" />
+                  </linearGradient>
+                </defs>
+                <circle cx="40" cy="40" r="36" stroke="url(#ringGrad)" strokeWidth="5" strokeDasharray="205 27" strokeLinecap="round" />
+              </svg>
+              <div className="orb-bg relative flex size-14 items-center justify-center rounded-full">
+                <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
+                  <path d="M3 8 Q6.5 2 10 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M20 8 Q23.5 2 27 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
-              )}
+              </div>
             </div>
             <p className="text-lg font-semibold text-primary">Hello, {brandName}</p>
             <h1 className="mt-1 text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">What kind of creators do you want to find?</h1>
