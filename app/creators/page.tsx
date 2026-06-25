@@ -545,8 +545,9 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                       return (
                         <div
                           key={creator.id}
+                          onClick={() => setSelectedCreatorId(creator.id)}
                           className={cn(
-                            'grid gap-4 transition hover:bg-muted/45',
+                            'grid cursor-pointer gap-4 transition hover:bg-muted/45',
                             creatorView === 'list'
                               ? 'px-5 py-5 lg:grid-cols-[minmax(0,1fr)_170px_170px_210px] lg:items-center'
                               : 'rounded-[12px] border border-border bg-white p-4',
@@ -605,13 +606,6 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                             >
                               <Handshake className="size-3.5" />
                               {matchedCreators.includes(creator.id) ? 'Shortlisted' : 'Shortlist'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="h-8 border-border bg-white text-xs"
-                              onClick={() => setSelectedCreatorId(creator.id)}
-                            >
-                              View profile
                             </Button>
                           </div>
                         </div>
