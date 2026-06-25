@@ -126,7 +126,7 @@ useEffect(() => {
       verified: profile.verification_status === 'verified',
       approvalStatus: 'approved',
       badge: profile.creator_rank || 'Bronze1',
-      avatar: undefined,
+      avatar: profile.avatar_url ?? undefined,
       portfolioItems: [],
       trainingCompleted: [],
       engagementHistory: [],
