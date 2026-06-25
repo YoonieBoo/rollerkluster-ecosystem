@@ -23,15 +23,12 @@ import { useApp } from '@/lib/app-context';
 import { buildCurrentCreator, getSessionDisplayName } from '@/lib/current-creator';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Home', icon: Home, group: 'Operate' },
-  { href: '/creators', label: 'Discover creators', icon: Compass, group: 'Operate' },
+  { href: '/dashboard', label: 'Overview', icon: Home, group: 'Operate' },
+  { href: '/creators', label: 'Find creators', icon: Compass, group: 'Operate' },
   { href: '/campaigns', label: 'Campaigns', icon: Briefcase, group: 'Operate' },
   { href: '/admin', label: 'Applications', icon: ShieldCheck, group: 'Operate' },
-  { href: '/notifications', label: 'Alerts', icon: Bell, group: 'Operate' },
-  { href: '/creator-directory', label: 'Creator registry', icon: Users, group: 'Review' },
-  { href: '/analytics', label: 'Reports', icon: BarChart3, group: 'Review' },
-  { href: '/settings', label: 'Settings', icon: Settings, group: 'Account' },
-  { href: '/account', label: 'Account', icon: UserCircle },
+  { href: '/notifications', label: 'Inbox', icon: Bell, group: 'Operate' },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3, group: 'Review' },
 ];
 
 const creatorMenuItems = [

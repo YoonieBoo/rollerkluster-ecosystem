@@ -33,8 +33,9 @@ export function RightDashboardSidebar() {
 
   if (activeRole === 'admin') {
     const approvedCreators = creators.filter(item => item.approvalStatus === 'approved');
-    const activeCollaborations = engagements.filter(item => ['matched', 'in_discussion', 'active'].includes(item.status));
+    const activeCollaborations = engagements.filter(item => ['matched', 'in_discussion', 'accepted', 'active'].includes(item.status));
     const invitations = engagements.filter(item => item.status === 'matched' || item.status === 'in_discussion').slice(0, 3);
+    const acceptedInvitations = engagements.filter(item => item.status === 'accepted' || item.status === 'active').slice(0, 3);
 
     return (
       <aside className="right-dashboard-sidebar">
@@ -53,12 +54,13 @@ export function RightDashboardSidebar() {
         <SidebarCard title="Creator Network">
           <StatRow label="Recommended creators" value={approvedCreators.length} />
           <StatRow label="Active collaborations" value={activeCollaborations.length} />
-          <StatRow label="Campaign invitations" value={invitations.length} />
+          <StatRow label="Pending invitations" value={invitations.length} />
+          <StatRow label="Accepted invitations" value={acceptedInvitations.length} />
         </SidebarCard>
 
-        <SidebarCard title="Campaign Invitations">
+        <SidebarCard title="Invite Status">
           <div className="space-y-3">
-            {invitations.map((item) => {
+            {[...acceptedInvitations, ...invitations].slice(0, 3).map((item) => {
               const campaign = campaigns.find(campaignItem => campaignItem.id === item.campaignId);
               const invitedCreator = creators.find(creatorItem => creatorItem.id === item.creatorId);
               return (

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Plus, Search, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, Plus, Search, UserX, Users, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { statusLabel, statusTone } from '@/lib/platform-utils';
 
@@ -37,8 +37,8 @@ export default function CampaignManagement() {
     .filter(c => !selectedStatus || c.status === selectedStatus);
   const campaignStats: { label: string; value: number; Icon: LucideIcon }[] = [
     { label: 'Open campaigns', value: campaigns.filter(c => c.status === 'open' || c.status === 'in_progress').length, Icon: CalendarDays },
-    { label: 'Need assignments', value: campaigns.filter(c => c.status !== 'completed' && engagements.filter(e => e.campaignId === c.id).length < 2).length, Icon: Users },
-    { label: 'Creator assignments', value: engagements.length, Icon: Search },
+    { label: 'Need accepted creators', value: campaigns.filter(c => c.status !== 'completed' && getEngagementSummary(engagements.filter(e => e.campaignId === c.id)).accepted < 2).length, Icon: Users },
+    { label: 'Accepted invites', value: engagements.filter(e => e.status === 'accepted' || e.status === 'active' || e.status === 'completed').length, Icon: CheckCircle2 },
   ];
 
   return (
@@ -149,7 +149,10 @@ export default function CampaignManagement() {
           <div className="grid gap-3">
             {filteredCampaigns.map(campaign => {
               const campaignEngagements = engagements.filter(e => e.campaignId === campaign.id);
-              const completion = campaign.status === 'completed' ? 100 : Math.min(92, campaignEngagements.length * 34);
+              const summary = getEngagementSummary(campaignEngagements);
+              const acceptedTarget = 2;
+              const assignmentsNeeded = Math.max(0, acceptedTarget - summary.accepted);
+              const completion = campaign.status === 'completed' ? 100 : Math.min(100, Math.round((summary.accepted / acceptedTarget) * 100));
               const spent = Math.round(campaign.budget * completion / 100);
 
               return (
@@ -168,21 +171,16 @@ export default function CampaignManagement() {
 
                   <div>
                     <div className="mb-2 flex items-center justify-between text-xs">
-                      <span className="font-semibold text-muted-foreground">Engagement progress</span>
+                      <span className="font-semibold text-muted-foreground">Accepted creator coverage</span>
                       <span className="font-semibold">{completion}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${completion}%` }} />
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Creator assignments</p>
-                        <p className="font-semibold">{campaignEngagements.length} creators</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Budget allocation</p>
-                        <p className="font-semibold">${(spent / 1000).toFixed(0)}K</p>
-                      </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+                      <StatusMini label="Pending" value={summary.pending} Icon={Clock} />
+                      <StatusMini label="Accepted" value={summary.accepted} Icon={CheckCircle2} />
+                      <StatusMini label="Declined" value={summary.declined} Icon={UserX} />
                     </div>
                   </div>
 
@@ -190,7 +188,9 @@ export default function CampaignManagement() {
                     <p className="text-xs font-semibold text-muted-foreground">End date</p>
                     <p className="mt-1 text-sm font-semibold">{new Date(campaign.endDate).toLocaleDateString()}</p>
                     <p className="mt-3 text-xs font-semibold text-muted-foreground">Next step</p>
-                    <p className="mt-1 text-sm font-semibold">{campaignEngagements.length >= 2 ? 'Creator scope covered' : `${2 - campaignEngagements.length} creator assignments needed`}</p>
+                    <p className="mt-1 text-sm font-semibold">{assignmentsNeeded === 0 ? 'Creator coverage accepted' : `${assignmentsNeeded} accepted creator${assignmentsNeeded === 1 ? '' : 's'} needed`}</p>
+                    <p className="mt-3 text-xs font-semibold text-muted-foreground">Budget allocation</p>
+                    <p className="mt-1 text-sm font-semibold">${(spent / 1000).toFixed(0)}K planned</p>
                   </div>
                 </Link>
               );
@@ -198,6 +198,34 @@ export default function CampaignManagement() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function getEngagementSummary(campaignEngagements: { status: string }[]) {
+  return campaignEngagements.reduce(
+    (summary, engagement) => {
+      if (engagement.status === 'declined') {
+        summary.declined += 1;
+      } else if (engagement.status === 'accepted' || engagement.status === 'active' || engagement.status === 'completed') {
+        summary.accepted += 1;
+      } else {
+        summary.pending += 1;
+      }
+      return summary;
+    },
+    { pending: 0, accepted: 0, declined: 0 },
+  );
+}
+
+function StatusMini({ label, value, Icon }: { label: string; value: number; Icon: LucideIcon }) {
+  return (
+    <div className="min-w-0 rounded-[8px] border border-border bg-white px-2 py-2">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <Icon className="size-3.5 shrink-0" />
+        <p className="truncate text-[11px] font-semibold">{label}</p>
+      </div>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
     </div>
   );
 }

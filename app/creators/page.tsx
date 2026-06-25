@@ -331,7 +331,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                               }}
                             >
                               <Handshake className="size-3.5" />
-                              {matchedCreators.includes(creator.id) ? 'In scope' : 'Add to scope'}
+                              {matchedCreators.includes(creator.id) ? 'Shortlisted' : 'Shortlist'}
                             </Button>
                             <Button
                               variant="outline"

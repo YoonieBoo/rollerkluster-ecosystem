@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CheckCircle2, Clock, Mail, MessageSquare, Plus, Users } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, Mail, MessageSquare, Plus, UserX, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { useUiStore } from '@/lib/ui-store';
@@ -61,9 +61,11 @@ export default function CampaignDetail() {
     );
   }
 
+  const acceptedEngagements = campaignEngagements.filter(e => e.status === 'accepted');
   const confirmedEngagements = campaignEngagements.filter(e => e.status === 'active' || e.status === 'completed');
   const discussionEngagements = campaignEngagements.filter(e => e.status === 'in_discussion');
   const suggestedEngagements = campaignEngagements.filter(e => e.status === 'matched');
+  const declinedEngagements = campaignEngagements.filter(e => e.status === 'declined');
   const campaignSubmissions = submissions.filter(submission => submission.campaignId === campaign.id);
   const suggestedCreators = creators
     .filter(creator => creator.approvalStatus === 'approved')
@@ -71,7 +73,8 @@ export default function CampaignDetail() {
     .sort((a, b) => getCampaignFitScore(b, campaign) - getCampaignFitScore(a, campaign));
   const currentCreatorId = creatorProfile?.userId ?? sessionUser?.id ?? 'creator-1';
   const creatorEngagement = campaignEngagements.find(engagement => engagement.creatorId === currentCreatorId);
-  const completion = campaign.status === 'completed' ? 100 : Math.min(92, campaignEngagements.length * 34);
+  const acceptedCount = acceptedEngagements.length + confirmedEngagements.length;
+  const completion = campaign.status === 'completed' ? 100 : Math.min(100, Math.round((acceptedCount / 2) * 100));
 
   if (activeRole === 'creator') {
     return (
@@ -117,7 +120,7 @@ export default function CampaignDetail() {
                     onClick={() => suggestedCreators[0] && createEngagement(campaign.id, suggestedCreators[0].id, 84)}
                   >
                     <Plus className="size-4" />
-                    Add creator
+                    Invite top creator
                   </Button>
                 )}
               </div>
@@ -125,8 +128,8 @@ export default function CampaignDetail() {
 
             <div className="grid grid-cols-2 gap-px bg-border md:grid-cols-4">
               <HeroMetric label="Budget" value={`$${(campaign.budget / 1000).toFixed(0)}K`} />
-              <HeroMetric label="Minimum reach" value={`${(campaign.minFollowers / 1000).toFixed(0)}K`} />
-              <HeroMetric label="Assignments" value={confirmedEngagements.length} />
+              <HeroMetric label="Pending invites" value={suggestedEngagements.length + discussionEngagements.length} />
+              <HeroMetric label="Accepted" value={acceptedCount} />
               <HeroMetric label="End date" value={new Date(campaign.endDate).toLocaleDateString()} />
             </div>
           </section>
@@ -137,7 +140,7 @@ export default function CampaignDetail() {
                 <div className="mb-4 flex items-center justify-between gap-4">
                   <div>
                     <h2 className="section-heading">Matching progress</h2>
-                    <p className="section-subtitle">Creator coverage for this campaign brief.</p>
+                    <p className="section-subtitle">Accepted creator coverage for this campaign brief.</p>
                   </div>
                   <span className="text-sm font-semibold">{completion}%</span>
                 </div>
@@ -155,6 +158,15 @@ export default function CampaignDetail() {
                 onAction={(engagementId) => updateEngagementStatus(engagementId, 'completed')}
               />
               <AssignmentSection
+                title="Accepted invites"
+                icon={<CheckCircle2 className="size-4" />}
+                items={acceptedEngagements}
+                creators={creators}
+                action="Start work"
+                primary
+                onAction={(engagementId) => updateEngagementStatus(engagementId, 'active')}
+              />
+              <AssignmentSection
                 title="In discussion"
                 icon={<Clock className="size-4" />}
                 items={discussionEngagements}
@@ -163,13 +175,21 @@ export default function CampaignDetail() {
                 onAction={(engagementId) => updateEngagementStatus(engagementId, 'active')}
               />
               <AssignmentSection
-                title="Recommended creators"
+                title="Pending invitations"
                 icon={<Users className="size-4" />}
                 items={suggestedEngagements}
                 creators={creators}
                 action="Start discussion"
                 primary
                 onAction={(engagementId) => updateEngagementStatus(engagementId, 'in_discussion')}
+              />
+              <AssignmentSection
+                title="Declined invites"
+                icon={<UserX className="size-4" />}
+                items={declinedEngagements}
+                creators={creators}
+                action="Reopen"
+                onAction={(engagementId) => updateEngagementStatus(engagementId, 'matched')}
               />
 
               {suggestedCreators.length > 0 && (
@@ -188,7 +208,7 @@ export default function CampaignDetail() {
                             <p className="truncate text-xs text-muted-foreground">{creator.niche} · {creator.reputationScore} readiness score · {getCampaignFitScore(creator, campaign)}% fit</p>
                           </div>
                         </Link>
-                        <Button size="sm" className="h-8 bg-primary text-xs" onClick={() => createEngagement(campaign.id, creator.id, Math.min(96, creator.reputationScore))}>Create match</Button>
+                        <Button size="sm" className="h-8 bg-primary text-xs" onClick={() => createEngagement(campaign.id, creator.id, Math.min(96, creator.reputationScore))}>Send invite</Button>
                       </div>
                     ))}
                   </div>
