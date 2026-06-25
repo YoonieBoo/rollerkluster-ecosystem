@@ -271,7 +271,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
       <main className="flex-1 overflow-auto">
         <div className="page-wrap">
           <header className="mb-7 flex flex-col items-center border-b border-border pb-7 text-center">
-            <div className="relative mb-4 flex size-20 items-center justify-center">
+            <div className="relative mb-4 flex size-24 items-center justify-center">
               <style>{`
                 @property --orb-c1 { syntax: '<color>'; initial-value: #4ade80; inherits: false; }
                 @property --orb-c2 { syntax: '<color>'; initial-value: #22d3ee; inherits: false; }
@@ -282,23 +282,72 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                   66%  { --orb-c1: #da8ef0; --orb-c2: #C96AE7; --orb-c3: #9a4ab8; }
                   100% { --orb-c1: #4a72d4; --orb-c2: #2550B7; --orb-c3: #1a3a8a; }
                 }
-                .orb-bg { animation: orbColorCycle 4s ease-in-out infinite; background: radial-gradient(circle at 38% 35%, var(--orb-c1) 0%, var(--orb-c2) 55%, var(--orb-c3) 100%); }
+                .orb-bg { animation: orbColorCycle 5s ease-in-out infinite; background: radial-gradient(circle at 36% 32%, var(--orb-c1) 0%, var(--orb-c2) 55%, var(--orb-c3) 100%); }
+                @keyframes orbBounce {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-4px); }
+                }
+                @keyframes orbGlow {
+                  0%, 100% { box-shadow: 0 0 0 0 rgba(124,95,208,0); }
+                  50% { box-shadow: 0 6px 28px 4px rgba(124,95,208,0.28); }
+                }
+                @keyframes eyeBlink {
+                  0%, 84%, 100% { transform: scaleY(1); }
+                  88%, 92% { transform: scaleY(0.06); }
+                }
+                @keyframes scanPupil {
+                  0%, 100% { transform: translateX(0px); }
+                  30% { transform: translateX(2.5px); }
+                  70% { transform: translateX(-2.5px); }
+                }
+                @keyframes ringPulse {
+                  0%, 100% { opacity: 0.85; }
+                  50% { opacity: 1; }
+                }
+                .orb-idle { animation: orbBounce 2.6s ease-in-out infinite, orbGlow 2.6s ease-in-out infinite; }
+                .eye-l { display: block; animation: eyeBlink 4.2s ease-in-out infinite; transform-origin: center 65%; }
+                .eye-r { display: block; animation: eyeBlink 4.2s ease-in-out infinite 0.06s; transform-origin: center 65%; }
+                .scan-pupils { animation: scanPupil 1.1s ease-in-out infinite; }
+                .ring-spin { animation: spin 1.3s linear infinite, ringPulse 1.3s ease-in-out infinite; }
+                @keyframes spin { to { transform: rotate(360deg); } }
               `}</style>
-              <svg className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }} width="80" height="80" viewBox="0 0 80 80" fill="none">
-                <defs>
-                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#7E5FD0" stopOpacity="0.1" />
-                    <stop offset="100%" stopColor="#C96AE7" stopOpacity="0.85" />
-                  </linearGradient>
-                </defs>
-                <circle cx="40" cy="40" r="36" stroke="url(#ringGrad)" strokeWidth="5" strokeDasharray="205 27" strokeLinecap="round" />
-              </svg>
-              <div className="orb-bg relative flex size-14 items-center justify-center rounded-full">
-                <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
-                  <path d="M3 8 Q6.5 2 10 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M20 8 Q23.5 2 27 8" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
-              </div>
+
+              {aiMatching ? (
+                <>
+                  <svg className="ring-spin absolute inset-0" width="96" height="96" viewBox="0 0 96 96" fill="none">
+                    <defs>
+                      <linearGradient id="ringGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#7E5FD0" stopOpacity="0.05" />
+                        <stop offset="60%" stopColor="#C96AE7" stopOpacity="0.6" />
+                        <stop offset="100%" stopColor="#C96AE7" stopOpacity="0.95" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="48" cy="48" r="44" stroke="url(#ringGrad2)" strokeWidth="5" strokeDasharray="240 36" strokeLinecap="round" />
+                  </svg>
+                  <div className="orb-bg relative flex size-16 items-center justify-center rounded-full">
+                    <svg width="38" height="20" viewBox="0 0 38 20" fill="none">
+                      <circle cx="10" cy="10" r="5" fill="rgba(255,255,255,0.93)" />
+                      <circle cx="28" cy="10" r="5" fill="rgba(255,255,255,0.93)" />
+                      <g className="scan-pupils">
+                        <circle cx="10" cy="10" r="2.5" fill="rgba(15,25,80,0.72)" />
+                        <circle cx="28" cy="10" r="2.5" fill="rgba(15,25,80,0.72)" />
+                      </g>
+                    </svg>
+                  </div>
+                </>
+              ) : (
+                <div className="orb-idle orb-bg relative flex size-16 items-center justify-center rounded-full">
+                  <svg width="38" height="22" viewBox="0 0 38 22" fill="none">
+                    <g className="eye-l">
+                      <path d="M2 13 Q8 3 14 13" stroke="rgba(255,255,255,0.93)" strokeWidth="3" strokeLinecap="round" fill="none" />
+                    </g>
+                    <g className="eye-r">
+                      <path d="M24 13 Q30 3 36 13" stroke="rgba(255,255,255,0.93)" strokeWidth="3" strokeLinecap="round" fill="none" />
+                    </g>
+                    <path d="M11 18 Q19 22.5 27 18" stroke="rgba(255,255,255,0.65)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+                  </svg>
+                </div>
+              )}
             </div>
             <p className="text-lg font-semibold text-primary">Hello, {brandName}</p>
             <h1 className="mt-1 text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">What kind of creators do you want to find?</h1>
