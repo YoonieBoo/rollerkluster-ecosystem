@@ -113,27 +113,19 @@ function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[
 
   return creators
     .map(creator => {
-      // Only tokenize the creator's own niche-defining fields, not generic bio text
-      const creatorNicheText = tokenize([
-        creator.niche,
-        ...(creator.categories ?? []),
-      ].filter(Boolean).join(' '));
-      // Also check bio/name but with lower weight — kept separate
-      const creatorFullText = tokenize([
-        creator.name,
-        creator.bio,
-        creator.niche,
-        ...(creator.categories ?? []),
-        ...(creator.platforms ?? []).flatMap(platform => [platform.name, platform.handle]),
-      ].filter(Boolean).join(' '));
+      // Tier 1: primary niche label only (strongest signal)
+      const primaryNicheText = tokenize(creator.niche ?? '');
+      // Tier 2: secondary content categories (excluding primary niche)
+      const secondaryCategories = (creator.categories ?? []).filter(
+        cat => cat.toLowerCase() !== (creator.niche ?? '').toLowerCase(),
+      );
+      const categoryText = tokenize(secondaryCategories.join(' '));
+      // Tier 3: bio + name (weakest signal)
+      const bioText = tokenize([creator.name, creator.bio ?? ''].join(' '));
 
-      // Only count hits from niche-mapped terms (not generic words like "field", "see")
-      const nicheHits = hasNicheTerms
-        ? Array.from(nicheTerms).filter(term => creatorNicheText.has(term))
-        : [];
-      const fullHits = hasNicheTerms
-        ? Array.from(nicheTerms).filter(term => creatorFullText.has(term))
-        : [];
+      const primaryHits = hasNicheTerms ? Array.from(nicheTerms).filter(t => primaryNicheText.has(t)) : [];
+      const categoryHits = hasNicheTerms ? Array.from(nicheTerms).filter(t => categoryText.has(t)) : [];
+      const bioHits = hasNicheTerms ? Array.from(nicheTerms).filter(t => bioText.has(t)) : [];
 
       const totalFollowers = totalCreatorFollowers(creator);
       const platformMatch = requestedPlatforms.length === 0 || requestedPlatforms.some(platform =>
@@ -142,33 +134,37 @@ function rankCreators(prompt: string, creators: CreatorSnapshot[]): MatchResult[
       const followerFit = !requestedFollowerMinimum || totalFollowers >= requestedFollowerMinimum;
       const engagementFit = !requestedEngagementMinimum || Number(creator.engagementRate ?? 0) >= requestedEngagementMinimum;
 
-      let score = 20;
+      let score = 15;
       if (hasNicheTerms) {
-        // Primary niche/category match scores much higher than bio match
-        score += Math.min(45, nicheHits.length * 18);
-        // Bio/name mention adds a smaller bonus if niche didn't already match
-        if (nicheHits.length === 0) {
-          score += Math.min(10, fullHits.length * 5);
-        }
-        // Heavy penalty for zero niche hits — this creator is not relevant
-        if (nicheHits.length === 0 && fullHits.length === 0) {
-          score -= 20;
+        if (primaryHits.length > 0) {
+          // Primary niche matches the request — strong relevant creator
+          score += Math.min(50, primaryHits.length * 22);
+        } else if (categoryHits.length > 0) {
+          // Only a secondary category matches — partial relevance, much lower score
+          score += Math.min(18, categoryHits.length * 7);
+        } else if (bioHits.length > 0) {
+          // Only bio/name mention — minimal relevance
+          score += Math.min(6, bioHits.length * 3);
+        } else {
+          // No niche overlap at all — exclude from meaningful results
+          score -= 25;
         }
       }
-      score += platformMatch ? 12 : -6;
-      score += followerFit ? 8 : -4;
-      score += engagementFit ? 6 : -3;
-      score += Math.min(8, Math.round(Number(creator.reputationScore ?? 0) / 10));
+      score += platformMatch ? 10 : -5;
+      score += followerFit ? 7 : -3;
+      score += engagementFit ? 5 : -2;
+      score += Math.min(6, Math.round(Number(creator.reputationScore ?? 0) / 10));
       score += creator.verified ? 4 : 0;
-      score += Math.min(4, Math.round(Number(creator.contentQualityScore ?? 0)));
+      score += Math.min(3, Math.round(Number(creator.contentQualityScore ?? 0)));
       score = Math.max(1, Math.min(98, score));
 
+      const textHits = primaryHits.length > 0 ? primaryHits : categoryHits.length > 0 ? categoryHits : bioHits;
       return {
         creatorId: creator.id,
         score,
         reasons: buildRuleReasons({
           creator,
-          textHits: nicheHits.length > 0 ? nicheHits : fullHits,
+          textHits,
           platformMatch,
           followerFit,
           engagementFit,
