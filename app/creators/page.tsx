@@ -197,6 +197,8 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
     setAiMatching(true);
     setAiMatchError('');
     setAiNoMatchMessage('');
+    setAiMatches([]);
+    setAiSearchSubmitted(false);
     setInviteError('');
     try {
       const { data, error: sessionError } = supabase ? await supabase.auth.getSession() : { data: { session: null }, error: null };
