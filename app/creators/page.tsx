@@ -252,6 +252,16 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
         <div className="page-wrap">
           <header className="mb-7 flex flex-col items-center border-b border-border pb-7 text-center">
             <div className="relative mb-4 flex size-20 items-center justify-center">
+              <style>{`
+                @property --orb-c1 { syntax: '<color>'; initial-value: #4ade80; inherits: false; }
+                @property --orb-c2 { syntax: '<color>'; initial-value: #22d3ee; inherits: false; }
+                @property --orb-c3 { syntax: '<color>'; initial-value: #0ea5e9; inherits: false; }
+                @keyframes orbColorCycle {
+                  0%, 100% { --orb-c1: #4ade80; --orb-c2: #22d3ee; --orb-c3: #0ea5e9; }
+                  50% { --orb-c1: #e0a0f5; --orb-c2: #C377E4; --orb-c3: #9b3dcc; }
+                }
+                .orb-bg { animation: orbColorCycle 3s ease-in-out infinite; background: radial-gradient(circle at 38% 35%, var(--orb-c1) 0%, var(--orb-c2) 55%, var(--orb-c3) 100%); }
+              `}</style>
               <svg className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }} width="80" height="80" viewBox="0 0 80 80" fill="none">
                 <defs>
                   <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -261,7 +271,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 </defs>
                 <circle cx="40" cy="40" r="36" stroke="url(#ringGrad)" strokeWidth="5" strokeDasharray="205 27" strokeLinecap="round" />
               </svg>
-              <div className="relative flex size-14 items-center justify-center rounded-full" style={{ background: 'radial-gradient(circle at 38% 35%, #4ade80 0%, #22d3ee 55%, #0ea5e9 100%)' }}>
+              <div className="orb-bg relative flex size-14 items-center justify-center rounded-full">
                 <svg width="30" height="12" viewBox="0 0 30 12" fill="none">
                   <path d="M3 8 Q6.5 2 10 8" stroke="#0f2d4a" strokeWidth="2.5" strokeLinecap="round" />
                   <path d="M20 8 Q23.5 2 27 8" stroke="#0f2d4a" strokeWidth="2.5" strokeLinecap="round" />
