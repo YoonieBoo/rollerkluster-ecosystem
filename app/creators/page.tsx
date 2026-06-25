@@ -441,14 +441,6 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
               </div>
 
               <div className="panel overflow-hidden">
-                <div className="flex flex-col gap-3 border-b border-border px-5 py-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="section-label">Capability pool</p>
-                    <h2 className="mt-1 section-heading">{filteredCreators.length} creators available</h2>
-                  </div>
-                  <Badge variant="secondary" className="rounded-full">{topPerformerCount} advanced readiness</Badge>
-                </div>
-
                 {filteredCreators.length === 0 ? (
                   <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
                     <Users className="mb-3 size-8 text-muted-foreground/50" />
