@@ -23,7 +23,6 @@ import { useApp } from '@/lib/app-context';
 import { buildCurrentCreator, getSessionDisplayName } from '@/lib/current-creator';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Overview', icon: Home, group: 'Operate' },
   { href: '/creators', label: 'Find creators', icon: Compass, group: 'Operate' },
   { href: '/campaigns', label: 'Campaigns', icon: Briefcase, group: 'Operate' },
   { href: '/admin', label: 'Applications', icon: ShieldCheck, group: 'Operate' },

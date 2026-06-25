@@ -35,7 +35,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       isAuthEntryRoute &&
       !(activeRole === 'creator' && !creatorProfile?.onboardingCompleted)
     ) {
-      router.replace('/dashboard');
+      router.replace(activeRole === 'creator' ? '/dashboard' : '/creators');
     }
   }, [activeRole, authHydrated, creatorProfile?.onboardingCompleted, isAuthenticated, isAuthEntryRoute, pathname, router]);
 

@@ -59,6 +59,15 @@ function formatFollowers(value: number) {
   return value.toLocaleString();
 }
 
+function getBrandFirstName(value?: unknown) {
+  const fallback = 'there';
+  if (typeof value !== 'string') return fallback;
+  const clean = value.trim();
+  if (!clean) return fallback;
+  const name = clean.includes('@') ? clean.split('@')[0] : clean;
+  return name.split(/\s+/)[0] || fallback;
+}
+
 type AiCreatorMatch = {
   creatorId: string;
   score: number;
@@ -67,7 +76,7 @@ type AiCreatorMatch = {
 
 export default function CreatorDiscovery() {
   const { creators, campaigns, engagements, submissions, createEngagement } = useApp();
-  const { creatorView, setCreatorView } = useUiStore();
+  const { creatorView, setCreatorView, sessionEmail, sessionUser } = useUiStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [matchedCreators, setMatchedCreators] = useState<string[]>([]);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
@@ -140,6 +149,7 @@ useEffect(() => {
 const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved');
   const selectedCreator = approvedCreators.find(creator => creator.id === selectedCreatorId);
   const inviteCampaigns = campaigns.filter(campaign => campaign.status === 'open' || campaign.status === 'in_progress');
+  const brandName = getBrandFirstName(sessionUser?.user_metadata?.full_name ?? sessionUser?.user_metadata?.name ?? sessionEmail);
   const aiMatchedCreators = aiMatches
     .map(match => {
       const creator = approvedCreators.find(item => item.id === match.creatorId);
@@ -240,13 +250,16 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
       <Sidebar />
       <main className="flex-1 overflow-auto">
         <div className="page-wrap">
-          <header className="page-header">
-            <div>
-              <h1 className="page-title mt-2">Creator discovery</h1>
-              <p className="page-description">
-                Browse approved creators by fit, audience, and readiness. Use filters only when you need to narrow the pool.
-              </p>
+          <header className="mb-7 flex flex-col items-center border-b border-border pb-7 text-center">
+            <div className="relative mb-4 flex size-20 items-center justify-center rounded-full bg-primary/15 text-primary shadow-[0_0_38px_rgba(195,119,228,0.32)]">
+              <div className="absolute inset-2 rounded-full border border-primary/25" />
+              <Sparkles className="relative size-8" />
             </div>
+            <p className="text-lg font-semibold text-primary">Hello, {brandName}</p>
+            <h1 className="mt-1 text-3xl font-semibold leading-tight tracking-normal text-foreground">What kind of creators do you want to find?</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Describe the campaign, product category, platform, or content style, and RollerKluster will surface creators that fit.
+            </p>
           </header>
 
           <div className="space-y-5">
