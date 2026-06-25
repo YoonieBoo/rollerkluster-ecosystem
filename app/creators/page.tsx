@@ -458,6 +458,64 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                   </div>
                 )}
 
+              {matchedCreators.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-primary/20 bg-primary/5 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-2">
+                      {matchedCreators.slice(0, 4).map(id => {
+                        const c = approvedCreators.find(cr => cr.id === id);
+                        return c ? (
+                          <div key={id} className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-primary text-xs font-semibold text-white">
+                            {initials(c.name)}
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {matchedCreators.length} creator{matchedCreators.length > 1 ? 's' : ''} shortlisted
+                      </p>
+                      <p className="text-xs text-muted-foreground">Select a campaign below to invite them</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+                      <SelectTrigger className="h-8 min-w-[200px] rounded-[6px] border-border bg-white text-xs">
+                        <SelectValue placeholder={inviteCampaigns.length ? 'Choose campaign' : 'No active campaigns'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {inviteCampaigns.map(campaign => (
+                          <SelectItem key={campaign.id} value={campaign.id}>{campaign.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="h-8 bg-primary text-xs text-white"
+                      disabled={!selectedCampaignId || invitingCreatorId !== null}
+                      onClick={async () => {
+                        for (const id of matchedCreators) {
+                          const creator = approvedCreators.find(c => c.id === id);
+                          if (creator) await inviteCreator(creator, creator.reputationScore);
+                        }
+                        setMatchedCreators([]);
+                      }}
+                    >
+                      <Handshake className="size-3.5" />
+                      Invite all
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-muted-foreground"
+                      onClick={() => setMatchedCreators([])}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {!hideCreatorDirectory && (
                 <div className="flex justify-end">
                   <div className="flex rounded-[10px] border border-border bg-white p-1">
@@ -526,7 +584,6 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                           </div>
 
                           <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-                            <Metric label="Creator score" value={creator.reputationScore} />
                             <Metric label="Engagement rate" value={`${creator.engagementRate}%`} />
                           </div>
 
