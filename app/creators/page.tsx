@@ -433,8 +433,10 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                           <div key={creator.id} className="rounded-[10px] border border-border bg-white p-4">
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex min-w-0 gap-3">
-                                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
-                                  {initials(creator.name)}
+                                <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-semibold text-white">
+                                  {creator.avatar
+                                    ? <img src={creator.avatar} alt={creator.name} className="size-full object-cover" />
+                                    : initials(creator.name)}
                                 </div>
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-2">
@@ -447,7 +449,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                               </div>
                             </div>
                             <div className="mt-4 space-y-2">
-                              {match.reasons.slice(0, 3).map(reason => (
+                              {match.reasons.filter(r => !r.toLowerCase().startsWith('matches campaign terms')).slice(0, 3).map(reason => (
                                 <div key={reason} className="flex gap-2 text-sm leading-5 text-muted-foreground">
                                   <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
                                   <p>{reason}</p>
