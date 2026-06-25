@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
   const { data: engagement, error: loadError } = await adminClient
     .from('engagements')
-    .select('id, creator_id')
+    .select('id, creator_id, campaign_id')
     .eq('id', body.engagementId)
     .maybeSingle();
 
@@ -62,7 +62,19 @@ export async function POST(request: Request) {
     .maybeSingle();
   const storedRole = typeof platformUser?.role === 'string' ? platformUser.role : '';
   const role = metadataRole || storedRole;
-  const canUpdate = engagement.creator_id === userData.user.id || role === 'brand' || role === 'admin';
+  let ownsCampaign = false;
+  if (role === 'brand' || role === 'admin') {
+    const { data: campaign, error: campaignError } = await adminClient
+      .from('campaigns')
+      .select('brand_owner_id')
+      .eq('id', engagement.campaign_id)
+      .maybeSingle();
+    if (campaignError) {
+      return NextResponse.json({ error: campaignError.message }, { status: 500 });
+    }
+    ownsCampaign = role === 'admin' || campaign?.brand_owner_id === userData.user.id;
+  }
+  const canUpdate = engagement.creator_id === userData.user.id || ownsCampaign;
   if (!canUpdate) {
     return NextResponse.json({ error: 'You cannot update this invitation.' }, { status: 403 });
   }

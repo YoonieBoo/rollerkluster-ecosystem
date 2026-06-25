@@ -17,6 +17,8 @@ export default function CampaignManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [showNewCampaign, setShowNewCampaign] = useState(false);
+  const [campaignError, setCampaignError] = useState('');
+  const [campaignSaving, setCampaignSaving] = useState(false);
   const [campaignForm, setCampaignForm] = useState({
     title: '',
     brand: '',
@@ -85,29 +87,43 @@ export default function CampaignManagement() {
                   <Textarea placeholder="Campaign goals, one per line" value={campaignForm.goals} onChange={(event) => setCampaignForm({ ...campaignForm, goals: event.target.value })} />
                   <Textarea placeholder="Creator requirements, one per line" value={campaignForm.requirements} onChange={(event) => setCampaignForm({ ...campaignForm, requirements: event.target.value })} />
                 </div>
+                {campaignError && (
+                  <p className="rounded-[10px] border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                    {campaignError}
+                  </p>
+                )}
                 <Button
                   className="w-fit bg-primary"
-                  onClick={() => {
+                  disabled={campaignSaving}
+                  onClick={async () => {
+                    setCampaignError('');
                     if (!campaignForm.title || !campaignForm.brand) return;
-                    addCampaign({
-                      title: campaignForm.title,
-                      brand: campaignForm.brand,
-                      description: campaignForm.description,
-                      budget: Number(campaignForm.budget) || 0,
-                      startDate: campaignForm.startDate,
-                      endDate: campaignForm.endDate,
-                      targetNiches: campaignForm.targetNiches.split(',').map(item => item.trim()).filter(Boolean),
-                      targetPlatforms: campaignForm.targetPlatforms.split(',').map(item => item.trim()).filter(Boolean),
-                      minFollowers: Number(campaignForm.minFollowers) || 0,
-                      contentType: campaignForm.contentType,
-                      goals: campaignForm.goals.split('\n').map(item => item.trim()).filter(Boolean),
-                      requirements: campaignForm.requirements.split('\n').map(item => item.trim()).filter(Boolean),
-                      status: 'open',
-                    });
-                    setShowNewCampaign(false);
+                    setCampaignSaving(true);
+                    try {
+                      await addCampaign({
+                        title: campaignForm.title,
+                        brand: campaignForm.brand,
+                        description: campaignForm.description,
+                        budget: Number(campaignForm.budget) || 0,
+                        startDate: campaignForm.startDate,
+                        endDate: campaignForm.endDate,
+                        targetNiches: campaignForm.targetNiches.split(',').map(item => item.trim()).filter(Boolean),
+                        targetPlatforms: campaignForm.targetPlatforms.split(',').map(item => item.trim()).filter(Boolean),
+                        minFollowers: Number(campaignForm.minFollowers) || 0,
+                        contentType: campaignForm.contentType,
+                        goals: campaignForm.goals.split('\n').map(item => item.trim()).filter(Boolean),
+                        requirements: campaignForm.requirements.split('\n').map(item => item.trim()).filter(Boolean),
+                        status: 'open',
+                      });
+                      setShowNewCampaign(false);
+                    } catch (error) {
+                      setCampaignError(error instanceof Error ? error.message : 'Could not create campaign.');
+                    } finally {
+                      setCampaignSaving(false);
+                    }
                   }}
                 >
-                  Create campaign brief
+                  {campaignSaving ? 'Creating...' : 'Create campaign'}
                 </Button>
               </div>
             </section>

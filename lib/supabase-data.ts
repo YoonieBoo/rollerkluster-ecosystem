@@ -3,6 +3,7 @@ import type { Campaign, Creator, Engagement, Submission } from './mock-data';
 
 type CampaignRow = {
   id: string;
+  brand_owner_id: string | null;
   name: string;
   client_name: string;
   status: string;
@@ -92,9 +93,26 @@ export async function fetchCreatorSubmissions() {
   return rows.map(mapSubmissionFromRow);
 }
 
-export async function fetchCampaigns() {
-  const rows = await supabaseRequest<CampaignRow[]>('/rest/v1/campaigns?select=*&order=created_at.desc');
+export async function fetchCampaigns(brandOwnerId?: string) {
+  const ownerFilter = brandOwnerId ? `&brand_owner_id=eq.${encodeURIComponent(brandOwnerId)}` : '';
+  const rows = await supabaseRequest<CampaignRow[]>(`/rest/v1/campaigns?select=*&order=created_at.desc${ownerFilter}`);
   return rows.map(mapCampaignFromRow);
+}
+
+export async function insertCampaign(campaign: Campaign, brandOwnerId: string) {
+  const row = await supabaseRequest<CampaignRow[]>('/rest/v1/campaigns?select=*', {
+    method: 'POST',
+    headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({
+      brand_owner_id: brandOwnerId,
+      name: campaign.title,
+      client_name: campaign.brand,
+      status: denormalizeCampaignStatus(campaign.status),
+      campaign_start_date: campaign.startDate,
+      campaign_end_date: campaign.endDate,
+    }),
+  });
+  return mapCampaignFromRow(row[0]);
 }
 
 export async function fetchSignedUpCreators() {
@@ -215,6 +233,7 @@ function mapSubmissionFromRow(row: CreatorSubmissionRow): Submission {
 function mapCampaignFromRow(row: CampaignRow): Campaign {
   return {
     id: row.id,
+    brandOwnerId: row.brand_owner_id ?? undefined,
     title: row.name,
     description: `${row.client_name} campaign brief`,
     brand: row.client_name,
@@ -339,6 +358,11 @@ function mapCampaignStatus(status: string): Campaign['status'] {
   if (status === 'completed') return 'completed';
   if (status === 'draft') return 'draft';
   return 'open';
+}
+
+function denormalizeCampaignStatus(status: Campaign['status']) {
+  if (status === 'in_progress') return 'active';
+  return status;
 }
 
 function mapSubmissionToInsert(submission: Submission) {

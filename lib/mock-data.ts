@@ -36,6 +36,7 @@ export interface Creator {
 
 export interface Campaign {
   id: string;
+  brandOwnerId?: string;
   title: string;
   description: string;
   brand: string;

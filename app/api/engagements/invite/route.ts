@@ -68,6 +68,22 @@ export async function POST(request: Request) {
     ? createClient(supabaseUrl, supabaseServiceRoleKey)
     : authClient;
 
+  const { data: campaignOwner, error: campaignOwnerError } = await adminClient
+    .from('campaigns')
+    .select('brand_owner_id')
+    .eq('id', campaignId)
+    .maybeSingle();
+
+  if (campaignOwnerError) {
+    return NextResponse.json({ error: campaignOwnerError.message }, { status: 500 });
+  }
+  if (!campaignOwner) {
+    return NextResponse.json({ error: 'Campaign not found.' }, { status: 404 });
+  }
+  if (role !== 'admin' && campaignOwner.brand_owner_id !== userData.user.id) {
+    return NextResponse.json({ error: 'You can only invite creators to your own brand campaigns.' }, { status: 403 });
+  }
+
   const { error: inviteError } = await adminClient
     .from('engagements')
     .upsert(

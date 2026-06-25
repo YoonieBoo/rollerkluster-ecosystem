@@ -30,12 +30,14 @@ import {
   fetchEngagements,
   fetchSignedUpCreators,
   hasSupabaseConfig,
+  insertCampaign,
   insertCreatorSubmission,
   persistCreatorRank,
   updateCreatorSubmission,
 } from './supabase-data';
 import { getCreatorMonthlyPerformance } from './creator-performance-source';
 import { supabase } from './supabase-client';
+import { useUiStore } from './ui-store';
 
 interface AppContextType {
   creators: Creator[];
@@ -48,7 +50,7 @@ interface AppContextType {
   scholarshipHourLogs: ScholarshipHourLog[];
   addCreator: (creator: Omit<Creator, 'id' | 'approvalStatus' | 'verified' | 'reputationScore' | 'completedEngagements' | 'contentQualityScore' | 'approvalRate' | 'evaluations' | 'joinedDate'>) => void;
   updateCreator: (creator: Creator) => void;
-  addCampaign: (campaign: Omit<Campaign, 'id' | 'createdAt' | 'status'> & { status?: Campaign['status'] }) => void;
+  addCampaign: (campaign: Omit<Campaign, 'id' | 'createdAt' | 'status' | 'brandOwnerId'> & { status?: Campaign['status'] }) => Promise<Campaign>;
   updateCampaign: (campaign: Campaign) => void;
   addEngagement: (engagement: Engagement) => void;
   createEngagement: (campaignId: string, creatorId: string, matchScore?: number) => Promise<void>;
@@ -71,6 +73,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { activeRole, authHydrated, sessionUser } = useUiStore();
   const [creators, setCreators] = useState<Creator[]>(initialCreators);
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [engagements, setEngagements] = useState<Engagement[]>(initialEngagements);
@@ -81,16 +84,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [scholarshipHourLogs, setScholarshipHourLogs] = useState<ScholarshipHourLog[]>([]);
 
   useEffect(() => {
-    if (!hasSupabaseConfig()) return;
+    if (!hasSupabaseConfig() || !authHydrated) return;
 
     let mounted = true;
-    Promise.all([fetchCreatorSubmissions(), fetchCampaigns(), fetchSignedUpCreators(), fetchEngagements()])
+    const brandOwnerId = activeRole === 'admin' ? sessionUser?.id : undefined;
+    if (activeRole === 'admin' && !brandOwnerId) {
+      setCampaigns([]);
+      return;
+    }
+    Promise.all([fetchCreatorSubmissions(), fetchCampaigns(brandOwnerId), fetchSignedUpCreators(), fetchEngagements()])
       .then(([remoteSubmissions, remoteCampaigns, remoteCreators, remoteEngagements]) => {
         if (!mounted) return;
-        setSubmissions(remoteSubmissions);
         setCampaigns(remoteCampaigns);
+        const visibleCampaignIds = new Set(remoteCampaigns.map(campaign => campaign.id));
+        setSubmissions(activeRole === 'admin'
+          ? remoteSubmissions.filter(submission => visibleCampaignIds.has(submission.campaignId))
+          : remoteSubmissions);
         setCreators(current => mergeCreators(current, remoteCreators));
-        setEngagements(remoteEngagements);
+        setEngagements(activeRole === 'admin'
+          ? remoteEngagements.filter(engagement => visibleCampaignIds.has(engagement.campaignId))
+          : remoteEngagements);
       })
       .catch((error) => {
         console.error(error);
@@ -99,7 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [activeRole, authHydrated, sessionUser?.id]);
 
   const recalculateCreator = (creator: Creator): Creator => {
     const trainingCompletion = trainingModules.filter(module => module.completedBy.includes(creator.id)).length;
@@ -138,16 +151,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCreators(current => current.map(c => (c.id === updatedCreator.id ? recalculateCreator(updatedCreator) : c)));
   };
 
-  const addCampaign: AppContextType['addCampaign'] = (campaign) => {
-    setCampaigns(current => [
-      {
-        ...campaign,
-        id: `campaign-${Date.now()}`,
-        status: campaign.status ?? 'draft',
-        createdAt: new Date().toISOString().slice(0, 10),
-      },
-      ...current,
-    ]);
+  const addCampaign: AppContextType['addCampaign'] = async (campaign) => {
+    const nextCampaign: Campaign = {
+      ...campaign,
+      id: `campaign-${Date.now()}`,
+      brandOwnerId: sessionUser?.id,
+      status: campaign.status ?? 'draft',
+      createdAt: new Date().toISOString().slice(0, 10),
+    };
+    setCampaigns(current => [nextCampaign, ...current]);
+
+    if (!supabase) return nextCampaign;
+    if (!sessionUser?.id) throw new Error('You must be signed in before creating a campaign.');
+
+    try {
+      const savedCampaign = await insertCampaign(nextCampaign, sessionUser.id);
+      setCampaigns(current => current.map(item => (item.id === nextCampaign.id ? savedCampaign : item)));
+      return savedCampaign;
+    } catch (error) {
+      setCampaigns(current => current.filter(item => item.id !== nextCampaign.id));
+      throw error;
+    }
   };
 
   const updateCampaign = (updatedCampaign: Campaign) => {
