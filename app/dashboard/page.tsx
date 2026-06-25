@@ -64,21 +64,18 @@ export default function Dashboard() {
     {
       label: 'Creator applications',
       value: pendingCreators.length,
-      detail: 'creator profiles waiting for review',
       href: '/admin',
       icon: UserCheck,
     },
     {
       label: 'Campaign matches',
       value: campaignsNeedingMatches.length,
-      detail: 'campaigns need creator matches',
       href: '/campaigns',
       icon: Users,
     },
     {
       label: 'Active collaborations',
       value: activeEngagements.length,
-      detail: 'creator collaborations in motion',
       href: '/campaigns',
       icon: ClipboardCheck,
     },
@@ -91,7 +88,6 @@ export default function Dashboard() {
         <div className="page-wrap">
           <header className="page-header">
             <div>
-              <p className="section-label">Brand Side</p>
               <h1 className="page-title mt-2">Brand Campaign Hub</h1>
               <p className="page-description mt-2">Find creators, send campaign offers, and monitor creator collaborations.</p>
             </div>
@@ -120,7 +116,6 @@ export default function Dashboard() {
                     <div>
                       <p className="text-sm font-semibold text-muted-foreground">{item.label}</p>
                       <p className="mt-3 text-3xl font-semibold tracking-[-0.02em]">{item.value}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
                     </div>
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-secondary text-primary">
                       <Icon className="size-5" />

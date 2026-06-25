@@ -55,7 +55,7 @@ export function Sidebar() {
   );
   const visibleItems = activeRole === 'admin' ? menuItems : resolvedCreatorMenuItems;
   const groups = activeRole === 'admin' ? ['Operate', 'Review', 'Account'] : ['Creator portal', 'Support'];
-  const roleLabel = activeRole === 'admin' ? 'Brand Side' : 'Creator Side';
+  const roleLabel = activeRole === 'admin' ? 'Brand Workspace' : 'Creator Side';
   const roleDescription = activeRole === 'admin' ? 'For brands and campaign owners' : 'For student creators';
   const activeCreatorName = activeCreator?.name ?? getSessionDisplayName(sessionUser, sessionEmail);
 
@@ -144,7 +144,6 @@ export function Sidebar() {
               ) : (
                 <>
                   <p className="text-[12px] font-semibold text-sidebar-foreground">{roleLabel}</p>
-                  <p className="mt-0.5 text-[11px] font-medium leading-4 text-muted-foreground">{roleDescription}</p>
                   <p className="mt-2 truncate text-[11px] text-muted-foreground">{sessionEmail}</p>
                 </>
               )}
