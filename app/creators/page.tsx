@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Filter, Flag, Grid2X2, Handshake, Linkedin, List, Loader2, Mail, MoreHorizontal, Search, ShieldCheck, SlidersHorizontal, Sparkles, Star, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
+import { Briefcase, CheckCircle2, DollarSign, ExternalLink, Facebook, Flag, Grid2X2, Handshake, Linkedin, List, Loader2, Mail, MoreHorizontal, Search, ShieldCheck, Sparkles, Star, TrendingUp, Twitch, Twitter, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { RankBadgeIcon } from '@/components/rank-badge';
@@ -69,14 +69,7 @@ export default function CreatorDiscovery() {
   const { creators, campaigns, engagements, submissions, createEngagement } = useApp();
   const { creatorView, setCreatorView } = useUiStore();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedNiche, setSelectedNiche] = useState<string | null>(null);
-  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [availableOnly, setAvailableOnly] = useState(false);
-  const [minFollowers, setMinFollowers] = useState(0);
-  const [minEngagement, setMinEngagement] = useState(0);
   const [matchedCreators, setMatchedCreators] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [matchPrompt, setMatchPrompt] = useState('');
   const [aiMatches, setAiMatches] = useState<AiCreatorMatch[]>([]);
@@ -144,8 +137,6 @@ useEffect(() => {
   const allCreators = supabaseCreators.length > 0 ? supabaseCreators : creators;
 const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved');
   const selectedCreator = approvedCreators.find(creator => creator.id === selectedCreatorId);
-  const niches = Array.from(new Set(approvedCreators.map(c => c.niche)));
-  const platforms = Array.from(new Set(approvedCreators.flatMap(c => c.platforms.map(p => p.name))));
   const inviteCampaigns = campaigns.filter(campaign => campaign.status === 'open' || campaign.status === 'in_progress');
   const aiMatchedCreators = aiMatches
     .map(match => {
@@ -161,14 +152,8 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
         c.bio.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.niche.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .filter(c => !selectedNiche || c.niche === selectedNiche)
-      .filter(c => !selectedPlatform || c.platforms.some(p => p.name === selectedPlatform))
-      .filter(c => !verifiedOnly || c.verified)
-      .filter(c => !availableOnly || c.completedEngagements < 6)
-      .filter(c => c.engagementRate >= minEngagement)
-      .filter(c => c.platforms.reduce((sum, platform) => sum + platform.followers, 0) >= minFollowers)
       .sort((a, b) => b.reputationScore - a.reputationScore);
-  }, [approvedCreators, searchTerm, selectedNiche, selectedPlatform, verifiedOnly, availableOnly, minFollowers, minEngagement]);
+  }, [approvedCreators, searchTerm]);
 
   const topPerformerCount = approvedCreators.filter(c => {
     const label = rankLabel(c.badge);
@@ -328,8 +313,7 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                           </Button>
                         </div>
                         <p className="mt-2 max-w-5xl text-xs leading-5 text-muted-foreground">
-                          Describe creator content and persona only. Matching relevance is not guaranteed if you include characteristics like demographics or audience data.
-                          Try these: Relatable skincare creators with a clean girl aesthetic, tech review channels that provide accessible explanations.
+                          Tell the AI the campaign style, product category, preferred platforms, and the kind of content you want. For example: skincare creators with clean, polished Reels or tech creators who explain products clearly.
                         </p>
                       </>
                     )}
@@ -431,52 +415,15 @@ const approvedCreators = allCreators.filter(c => c.approvalStatus === 'approved'
                 )}
               </div>
 
-              <div className="panel p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="h-10 justify-start border-border bg-white lg:w-auto">
-                    <SlidersHorizontal className="size-4" />
-                    {showFilters ? 'Hide filters' : 'Show filters'}
-                  </Button>
-                  <div className="flex rounded-[10px] border border-border bg-white p-1">
-                    <button type="button" onClick={() => setCreatorView('list')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'list' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
-                      <List className="size-4" />
-                    </button>
-                    <button type="button" onClick={() => setCreatorView('grid')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'grid' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
-                      <Grid2X2 className="size-4" />
-                    </button>
-                  </div>
+              <div className="flex justify-end">
+                <div className="flex rounded-[10px] border border-border bg-white p-1">
+                  <button type="button" onClick={() => setCreatorView('list')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'list' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
+                    <List className="size-4" />
+                  </button>
+                  <button type="button" onClick={() => setCreatorView('grid')} className={cn('flex size-8 items-center justify-center rounded-[8px] transition', creatorView === 'grid' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted')}>
+                    <Grid2X2 className="size-4" />
+                  </button>
                 </div>
-
-                {showFilters && <div className="mt-4 grid gap-3 border-t border-border pt-4 lg:grid-cols-[90px_1fr]">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                    <Filter className="size-3.5" />
-                    Category
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <FilterButton active={selectedNiche === null} onClick={() => setSelectedNiche(null)}>All</FilterButton>
-                    {niches.map(niche => (
-                      <FilterButton key={niche} active={selectedNiche === niche} onClick={() => setSelectedNiche(niche)}>
-                        {niche}
-                      </FilterButton>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">Platform</div>
-                  <div className="flex flex-wrap gap-2">
-                    <FilterButton active={selectedPlatform === null} onClick={() => setSelectedPlatform(null)}>All</FilterButton>
-                    {platforms.map(platform => (
-                      <FilterButton key={platform} active={selectedPlatform === platform} onClick={() => setSelectedPlatform(platform)}>
-                        {platform}
-                      </FilterButton>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">Readiness</div>
-                  <div className="flex flex-wrap gap-2">
-                    <FilterButton active={verifiedOnly} onClick={() => setVerifiedOnly(!verifiedOnly)}>Verified creators</FilterButton>
-                    <FilterButton active={availableOnly} onClick={() => setAvailableOnly(!availableOnly)}>Available</FilterButton>
-                    <FilterButton active={minFollowers >= 100000} onClick={() => setMinFollowers(minFollowers >= 100000 ? 0 : 100000)}>100K+ followers</FilterButton>
-                    <FilterButton active={minEngagement >= 6} onClick={() => setMinEngagement(minEngagement >= 6 ? 0 : 6)}>6%+ engagement</FilterButton>
-                  </div>
-                </div>}
               </div>
 
               <div className="panel overflow-hidden">
@@ -613,23 +560,6 @@ function SearchModeButton({
     >
       {icon}
       {label}
-    </button>
-  );
-}
-
-function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
-        active
-          ? 'border-primary bg-primary text-white'
-          : 'border-border bg-white text-muted-foreground hover:border-primary/20 hover:text-primary',
-      )}
-    >
-      {children}
     </button>
   );
 }
