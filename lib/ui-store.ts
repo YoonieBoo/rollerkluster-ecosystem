@@ -31,6 +31,9 @@ type SaveCreatorOnboardingInput = {
   bio?: string;
   contentCategories?: string[];
   isScholarshipStudent?: boolean;
+  language?: string;
+  province?: string;
+  country?: string;
 };
 
 interface UiState {
@@ -312,6 +315,9 @@ export const useUiStore = create<UiState>((set, get) => ({
       university: input.university ?? null,
       faculty: input.faculty ?? null,
       bio: input.bio ?? null,
+      language: input.language ?? null,
+      province: input.province ?? null,
+      country: input.country ?? null,
       content_categories: input.contentCategories ?? [],
       is_scholarship_student: input.isScholarshipStudent ?? false,
       platform: input.platform,
@@ -359,6 +365,9 @@ export const useUiStore = create<UiState>((set, get) => ({
       university: existingProfile.university ?? null,
       faculty: existingProfile.faculty ?? null,
       bio: existingProfile.bio ?? null,
+      language: input.language ?? existingProfile.language ?? null,
+      province: input.province ?? existingProfile.province ?? null,
+      country: input.country ?? existingProfile.country ?? null,
       content_categories: existingProfile.contentCategories,
       is_scholarship_student: existingProfile.isScholarshipStudent,
       platform: input.platform,

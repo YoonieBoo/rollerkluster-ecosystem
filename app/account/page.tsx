@@ -118,6 +118,9 @@ function CreatorProfileSetup() {
     socialHandle: '',
     socialProfileUrl: '',
     followerCount: '',
+    language: '',
+    province: '',
+    country: '',
   });
 
   useEffect(() => {
@@ -128,6 +131,9 @@ function CreatorProfileSetup() {
       socialHandle: creatorProfile.socialHandle,
       socialProfileUrl: creatorProfile.socialProfileUrl,
       followerCount: String(creatorProfile.followerCount),
+      language: creatorProfile.language ?? '',
+      province: creatorProfile.province ?? '',
+      country: creatorProfile.country ?? '',
     });
   }, [creatorProfile, sessionEmail]);
 
@@ -160,6 +166,9 @@ function CreatorProfileSetup() {
         socialHandle: form.socialHandle.trim(),
         socialProfileUrl: form.socialProfileUrl.trim(),
         followerCount,
+        language: form.language.trim() || undefined,
+        province: form.province.trim() || undefined,
+        country: form.country.trim() || undefined,
       });
       setEditing(false);
       setSaved(true);
@@ -224,6 +233,9 @@ function CreatorProfileSetup() {
                     <EditField label="Profile URL" value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://..." />
                     <EditField label="Follower count" value={form.followerCount} onChange={(followerCount) => setForm(current => ({ ...current, followerCount }))} placeholder="15000" inputMode="numeric" />
                     <ProfileMetric label="Estimated rank" value={estimatedRank} />
+                    <EditField label="Language" value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="e.g. English, Malay" />
+                    <EditField label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Selangor" />
+                    <EditField label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Malaysia" />
                   </div>
                 ) : (
                   <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -231,6 +243,9 @@ function CreatorProfileSetup() {
                     <ProfileMetric label="Platform" value={creatorProfile?.platform ?? 'Not connected'} />
                     <ProfileMetric label="Social handle" value={creatorProfile?.socialHandle ?? 'Not connected'} />
                     <ProfileMetric label="Follower count" value={(creatorProfile?.followerCount ?? 0).toLocaleString()} />
+                    <ProfileMetric label="Language" value={creatorProfile?.language ?? '—'} />
+                    <ProfileMetric label="Province / State" value={creatorProfile?.province ?? '—'} />
+                    <ProfileMetric label="Country" value={creatorProfile?.country ?? '—'} />
                   </div>
                 )}
 

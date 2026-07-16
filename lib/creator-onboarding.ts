@@ -26,6 +26,9 @@ export interface CreatorProfileRecord {
   university?: string;
   faculty?: string;
   bio?: string;
+  language?: string;
+  province?: string;
+  country?: string;
   contentCategories: string[];
   isScholarshipStudent: boolean;
   platform: OnboardingPlatform;
@@ -65,6 +68,9 @@ export function normalizeCreatorProfileRow(row: CreatorProfileRow): CreatorProfi
     university: row.university ?? undefined,
     faculty: row.faculty ?? undefined,
     bio: row.bio ?? undefined,
+    language: row.language ?? undefined,
+    province: row.province ?? undefined,
+    country: row.country ?? undefined,
     contentCategories: row.content_categories ?? [],
     isScholarshipStudent: row.is_scholarship_student ?? false,
     platform: row.platform as OnboardingPlatform,
@@ -89,6 +95,9 @@ export type CreatorProfileRow = {
   university?: string | null;
   faculty?: string | null;
   bio?: string | null;
+  language?: string | null;
+  province?: string | null;
+  country?: string | null;
   content_categories?: string[] | null;
   is_scholarship_student?: boolean | null;
   platform: string;
