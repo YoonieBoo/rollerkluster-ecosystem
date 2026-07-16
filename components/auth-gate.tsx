@@ -517,11 +517,11 @@ function CreatorOnboardingScreen() {
       <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <OnboardingField label="Creator name" value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Yoonie" />
-          <OnboardingField label="University" value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder="Assumption University" />
+          <OnboardingSelect label="University" value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder="Select university" options={['Assumption University', 'Khon Kaen University', 'Chiang Mai University']} />
           <OnboardingField label="Faculty" value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" required />
-          <OnboardingField label="Language" value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="e.g. English, Malay" />
-          <OnboardingField label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Selangor" />
-          <OnboardingField label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Malaysia" />
+          <OnboardingSelect label="Language" value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="Select language" options={['Thai', 'English', 'Myanmar']} />
+          <OnboardingSelect label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="Select province / state" options={['Bangkok', 'Samut Prakan (Bang Bo)', 'Chiang Mai', 'Khon Kaen', 'Chiang Rai', 'Nonthaburi', 'Pathum Thani', 'Yangon', 'Mandalay', 'Shan', 'Sagaing']} />
+          <OnboardingSelect label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="Select country" options={['Thailand', 'Myanmar']} />
           <div className="grid gap-2 sm:col-span-2">
             <span className="text-sm font-semibold text-foreground">Content categories</span>
             <div className="flex flex-wrap gap-2">
@@ -649,6 +649,30 @@ function OnboardingField({
         {required && <span className="text-primary"> *</span>}
       </span>
       <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} inputMode={inputMode} required={required} className="h-11 bg-white" />
+    </label>
+  );
+}
+
+function OnboardingSelect({
+  label,
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  options: string[];
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-semibold text-foreground">{label}</span>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-11 bg-white"><SelectValue placeholder={placeholder} /></SelectTrigger>
+        <SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
+      </Select>
     </label>
   );
 }
