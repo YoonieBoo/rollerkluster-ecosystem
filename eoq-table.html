@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EOQ Checklist — RollerKluster Ecosystem</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #fff;
+      padding: 48px 56px;
+      color: #1a1a2e;
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 28px;
+      letter-spacing: -0.01em;
+    }
+    h1 span { color: #2550B7; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+    thead tr {
+      background: #dce8f8;
+    }
+    thead th {
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: #2550B7;
+      border: 1px solid #c5d8f0;
+      font-size: 13px;
+      letter-spacing: 0.01em;
+    }
+    tbody tr {
+      border: 1px solid #dde5f0;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) { background: #f7f9fd; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    tbody td {
+      padding: 11px 14px;
+      border: 1px solid #dde5f0;
+      color: #1a1a2e;
+    }
+    td.area { font-weight: 600; min-width: 220px; }
+    td.owner { text-align: center; font-weight: 500; }
+
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .badge-partial { background: #FFF3CD; color: #7d5a00; }
+    .badge-yes     { background: #d4edda; color: #1a5e2a; }
+    .badge-no      { background: #f8d7da; color: #721c24; }
+
+    /* Evidence column — blue pill */
+    .ev-yes { background: #dce8f8; color: #2550B7; font-weight: 700; display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 12px; }
+    .ev-no  { background: #f0f0f0; color: #666; font-weight: 700; display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 12px; }
+
+    td.q3 { color: #333; max-width: 340px; }
+    .divider-row td { background: #eef3fb; font-weight: 700; font-size: 12.5px; color: #2550B7; letter-spacing: 0.04em; text-transform: uppercase; padding: 7px 14px; }
+  </style>
+</head>
+<body>
+  <h1>Red Baron Collective — EOQ Checklist for <span>ROLLERKLUSTER</span> Ecosystem Platform</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>Status</th>
+        <th>Evidence</th>
+        <th>Owner</th>
+        <th>Q3 Next Step</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- Supply Layer -->
+      <tr class="divider-row"><td colspan="5">2.1 Supply Layer — Creators</td></tr>
+      <tr>
+        <td class="area">Creator profile structure</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Creator profiles on the live platform capture name, bio, university, niche, platforms (TikTok / Instagram / YouTube), follower counts, engagement rate, content categories, and portfolio items. Screenshot: <em>/creators/[id]</em></td>
+      </tr>
+      <tr>
+        <td class="area">Creator approval workflow</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Admin panel shows Creator Applications tab with Approve / Reject actions, readiness score, applied date, platform, and portfolio. Status tracks: pending → approved / rejected. Screenshot: <em>/admin</em> → Creator Applications</td>
+      </tr>
+      <tr>
+        <td class="area">Creator registration form</td>
+        <td><span class="badge badge-no">No</span></td>
+        <td><span class="ev-no">No</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Build a creator self-registration form so AU Creator Campus creators can apply directly through the platform. Replace seeded data with live records in Q3.</td>
+      </tr>
+      <tr>
+        <td class="area">Real AU Creator Campus creator data</td>
+        <td><span class="badge badge-no">No</span></td>
+        <td><span class="ev-no">No</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">All creator data is currently seeded / demo. Onboard first real AU Creator Campus cohort through the live approval workflow in Q3.</td>
+      </tr>
+
+      <!-- Demand Layer -->
+      <tr class="divider-row"><td colspan="5">2.2 Demand Layer — Brands &amp; Campaigns</td></tr>
+      <tr>
+        <td class="area">Campaign brief structure &amp; creation form</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">New Campaign form captures: title, brand, description, budget, start/end dates, target niches, target platforms, min followers, content type, goals, and requirements. Screenshot: <em>/campaigns</em> → New Campaign</td>
+      </tr>
+      <tr>
+        <td class="area">Campaign detail view (full brief)</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Each campaign page shows full structured brief: content type, goals, requirements, CTA, budget, timeline, and creator engagement summary. Screenshot: <em>/campaigns/[id]</em></td>
+      </tr>
+      <tr>
+        <td class="area">Brief quality flagging (incomplete brief detection)</td>
+        <td><span class="badge badge-no">No</span></td>
+        <td><span class="ev-no">No</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Implement brief completeness validation — flag campaigns missing key fields (content type, goals, requirements) before they are activated.</td>
+      </tr>
+      <tr>
+        <td class="area">Real AU Creator Campus campaign submitted</td>
+        <td><span class="badge badge-no">No</span></td>
+        <td><span class="ev-no">No</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">All campaigns are demo data (TechCorp, StyleBrand, WellnessPlus). Submit and structure first real AU Creator Campus campaign brief through the platform in Q3.</td>
+      </tr>
+
+      <!-- Training Layer -->
+      <tr class="divider-row"><td colspan="5">2.3 Training Layer</td></tr>
+      <tr>
+        <td class="area">Training module library &amp; curriculum</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Training page shows full module library with categories, duration, descriptions, and category filters. Includes "Readiness curriculum" pathway from onboarding to campaign-ready delivery. Screenshot: <em>/training</em></td>
+      </tr>
+      <tr>
+        <td class="area">Creator completion tracking</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Per-creator progress bar, "Next recommended module" card, and Complete button. Admin view shows ecosystem-wide % completion per module. Screenshot: <em>/training</em> (creator view vs admin view)</td>
+      </tr>
+      <tr>
+        <td class="area">Real AU Creator Campus onboarding run through platform</td>
+        <td><span class="badge badge-no">No</span></td>
+        <td><span class="ev-no">No</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">All completion data is seeded. Run first real AU Creator Campus cohort through the training module pathway in Q3. Link actual onboarding content (videos, PDFs) to modules.</td>
+      </tr>
+
+      <!-- Engagement Layer -->
+      <tr class="divider-row"><td colspan="5">2.4 Engagement Layer</td></tr>
+      <tr>
+        <td class="area">AI creator matching (natural language search)</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">AI search on Creator Discovery accepts natural language campaign brief and returns ranked creator matches with match % scores. Screenshot: <em>/creators</em> → AI search in action</td>
+      </tr>
+      <tr>
+        <td class="area">Engagement status tracking</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Full engagement status flow: matched → in discussion → accepted → active → completed / declined. Visible on creator profile Campaign Activity section. Screenshot: <em>/creators/[id]</em></td>
+      </tr>
+      <tr>
+        <td class="area">Content submission review queue</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Admin Submission Queue shows submitted content links with review actions: approve / request changes / reject. Admin can add performance metrics (views, likes, impressions) and written feedback. Screenshot: <em>/admin</em> → Submission Queue</td>
+      </tr>
+      <tr>
+        <td class="area">Real AU Creator Campus engagement recorded</td>
+        <td><span class="badge badge-no">No</span></td>
+        <td><span class="ev-no">No</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">All engagement data is demo. Run first real AU Creator Campus campaign engagement end-to-end through the platform in Q3.</td>
+      </tr>
+
+      <!-- Governance Layer -->
+      <tr class="divider-row"><td colspan="5">2.5 Governance Layer</td></tr>
+      <tr>
+        <td class="area">Admin hub (creator approvals, submissions, performance, ranks)</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Admin hub has 4 tabs: Creator Applications, Submission Queue, Monthly Performance, Ranks &amp; Hours. Full visibility across all ecosystem activity. Screenshot: <em>/admin</em></td>
+      </tr>
+      <tr>
+        <td class="area">Analytics &amp; ecosystem visibility</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Analytics page shows: campaign performance per brand (bar chart), creator quality scores, completed vs active engagements, and campaign demand count. Screenshot: <em>/analytics</em></td>
+      </tr>
+      <tr>
+        <td class="area">Creator leaderboard &amp; rank tracking</td>
+        <td><span class="badge badge-yes">Yes</span></td>
+        <td><span class="ev-yes">Yes</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Public leaderboard ranks all creators (Bronze → Silver → Gold → Platinum) with rank progression %. Screenshot: <em>/leaderboard</em></td>
+      </tr>
+      <tr>
+        <td class="area">Real AU Creator Campus data used for governance</td>
+        <td><span class="badge badge-no">No</span></td>
+        <td><span class="ev-no">No</span></td>
+        <td class="owner">Yoonie</td>
+        <td class="q3">Governance infrastructure is built but has not yet been used for live AU Creator Campus operations. Use admin hub to manage real AU Creator Campus cohort in Q3.</td>
+      </tr>
+
+    </tbody>
+  </table>
+</body>
+</html>
