@@ -596,8 +596,21 @@ function CreatorOnboardingScreen() {
     ),
   }[step];
 
+  const { lang, toggleLang } = useLanguage();
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-background px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto mb-3 flex w-full max-w-[1120px] justify-end">
+        <button
+          type="button"
+          onClick={toggleLang}
+          className="flex items-center gap-1 rounded-md border border-border bg-white px-3 py-1.5 text-[12px] font-bold text-muted-foreground shadow-sm transition hover:text-primary"
+        >
+          <span className={cn(lang === 'en' ? 'text-primary' : 'opacity-40')}>EN</span>
+          <span className="opacity-30">/</span>
+          <span className={cn(lang === 'th' ? 'text-primary' : 'opacity-40')}>TH</span>
+        </button>
+      </div>
       <section className="mx-auto w-full max-w-[1120px]">
         <form className="panel min-w-0 overflow-hidden" onSubmit={(event) => event.preventDefault()}>
           <div className="border-b border-border px-5 py-4 sm:px-6">
