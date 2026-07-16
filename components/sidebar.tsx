@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { useApp } from '@/lib/app-context';
 import { buildCurrentCreator } from '@/lib/current-creator';
+import { useLanguage } from '@/lib/language-context';
 
 const menuItems = [
   { href: '/creators', label: 'Find creators', icon: Compass, group: 'Operate' },
@@ -37,6 +38,7 @@ const creatorMenuItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar, activeRole, sessionEmail, sessionUser, creatorProfile, signOut } = useUiStore();
+  const { lang, toggleLang } = useLanguage();
   const { creators, engagements } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const demoCreator = creators.find(creator => creator.id === 'creator-1') ?? creators.find(creator => creator.approvalStatus === 'approved') ?? creators[0];
@@ -131,7 +133,19 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className={cn('mt-auto px-4 pb-4 transition-opacity', collapsed && 'hidden')}>
+      <div className={cn('mt-auto px-4 pb-4 space-y-2 transition-opacity', collapsed && 'hidden')}>
+        <div className="flex items-center justify-between rounded-[8px] border border-border bg-white px-3 py-2">
+          <span className="text-[12px] font-semibold text-muted-foreground">Language</span>
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[11px] font-bold text-foreground transition hover:bg-primary/10 hover:text-primary"
+          >
+            <span className={cn('transition-opacity', lang === 'en' ? 'opacity-100' : 'opacity-40')}>EN</span>
+            <span className="text-muted-foreground">/</span>
+            <span className={cn('transition-opacity', lang === 'th' ? 'opacity-100' : 'opacity-40')}>TH</span>
+          </button>
+        </div>
         <button
           type="button"
           onClick={signOut}

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useUiStore } from '@/lib/ui-store';
 import { calculateStartingRank, onboardingContentCategories, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/language-context';
 
 type SignInRole = 'admin' | 'creator';
 
@@ -300,8 +301,20 @@ function BackToWebsiteLink() {
 }
 
 function AuthShell({ children }: { children: ReactNode }) {
+  const { lang, toggleLang } = useLanguage();
   return (
     <main className="min-h-screen overflow-y-auto bg-[#e5e5e3] px-3 py-5 sm:px-6 sm:py-8">
+      <div className="mx-auto mb-3 flex w-full max-w-[1080px] justify-end">
+        <button
+          type="button"
+          onClick={toggleLang}
+          className="flex items-center gap-1 rounded-md bg-white px-3 py-1.5 text-[12px] font-bold text-muted-foreground shadow-sm transition hover:text-primary"
+        >
+          <span className={cn(lang === 'en' ? 'text-primary' : 'opacity-40')}>EN</span>
+          <span className="opacity-30">/</span>
+          <span className={cn(lang === 'th' ? 'text-primary' : 'opacity-40')}>TH</span>
+        </button>
+      </div>
       <section className="mx-auto grid w-full max-w-[1080px] overflow-hidden rounded-[28px] bg-white p-3 shadow-sm sm:rounded-[34px] lg:min-h-[620px] lg:grid-cols-[1.04fr_0.96fr]">
         <AuthVisualPanel />
         {children}

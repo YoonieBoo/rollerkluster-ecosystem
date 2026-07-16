@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { AppProvider } from '@/lib/app-context';
 import { AuthGate } from '@/components/auth-gate';
 import { PushSubscriptionManager } from '@/components/push-subscription-manager';
+import { LanguageProvider } from '@/lib/language-context';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -21,10 +22,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppProvider>
-        <PushSubscriptionManager />
-        <AuthGate>{children}</AuthGate>
-      </AppProvider>
+      <LanguageProvider>
+        <AppProvider>
+          <PushSubscriptionManager />
+          <AuthGate>{children}</AuthGate>
+        </AppProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
