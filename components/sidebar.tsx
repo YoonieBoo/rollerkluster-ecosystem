@@ -21,24 +21,25 @@ import { cn } from '@/lib/utils';
 import { useUiStore } from '@/lib/ui-store';
 import { useApp } from '@/lib/app-context';
 import { buildCurrentCreator } from '@/lib/current-creator';
-import { useLanguage } from '@/lib/language-context';
+import { useLanguage, useT } from '@/lib/language-context';
 
-const menuItems = [
-  { href: '/creators', label: 'Find creators', icon: Compass, group: 'Operate' },
-  { href: '/campaigns', label: 'Campaigns', icon: Briefcase, group: 'Operate' },
-  { href: '/admin', label: 'Applications', icon: ShieldCheck, group: 'Operate' },
+const menuItemsDef = [
+  { href: '/creators', labelKey: 'findCreators' as const, icon: Compass, group: 'Operate' },
+  { href: '/campaigns', labelKey: 'campaigns' as const, icon: Briefcase, group: 'Operate' },
+  { href: '/admin', labelKey: 'applications' as const, icon: ShieldCheck, group: 'Operate' },
 ];
 
-const creatorMenuItems = [
-  { href: '/dashboard', label: 'Home', icon: Home, group: 'Creator portal' },
-  { href: '/creators/creator-1', label: 'My profile', icon: UserCircle, group: 'Creator portal' },
-  { href: '/notifications', label: 'Invites', icon: Bell, group: 'Support' },
+const creatorMenuItemsDef = [
+  { href: '/dashboard', labelKey: 'home' as const, icon: Home, group: 'Creator portal' },
+  { href: '/creators/creator-1', labelKey: 'myProfile' as const, icon: UserCircle, group: 'Creator portal' },
+  { href: '/notifications', labelKey: 'invites' as const, icon: Bell, group: 'Support' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar, activeRole, sessionEmail, sessionUser, creatorProfile, signOut } = useUiStore();
   const { lang, toggleLang } = useLanguage();
+  const t = useT();
   const { creators, engagements } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const demoCreator = creators.find(creator => creator.id === 'creator-1') ?? creators.find(creator => creator.approvalStatus === 'approved') ?? creators[0];
@@ -49,6 +50,8 @@ export function Sidebar() {
         (engagement.status === 'matched' || engagement.status === 'in_discussion' || engagement.status === 'accepted'),
       ).length
     : 0;
+  const menuItems = menuItemsDef.map(item => ({ ...item, label: t[item.labelKey] }));
+  const creatorMenuItems = creatorMenuItemsDef.map(item => ({ ...item, label: t[item.labelKey] }));
   const resolvedCreatorMenuItems = creatorMenuItems.map(item =>
     item.href === '/creators/creator-1' && activeCreator ? { ...item, href: `/creators/${activeCreator.id}` } : item,
   );
@@ -135,7 +138,7 @@ export function Sidebar() {
 
       <div className={cn('mt-auto px-4 pb-4 space-y-2 transition-opacity', collapsed && 'hidden')}>
         <div className="flex items-center justify-between rounded-[8px] border border-border bg-white px-3 py-2">
-          <span className="text-[12px] font-semibold text-muted-foreground">Language</span>
+          <span className="text-[12px] font-semibold text-muted-foreground">{t.language}</span>
           <button
             type="button"
             onClick={toggleLang}
@@ -152,7 +155,7 @@ export function Sidebar() {
           className="flex w-full items-center justify-center gap-2 rounded-[8px] border border-border bg-white px-3 py-2 text-[12px] font-semibold text-muted-foreground transition hover:text-foreground"
         >
           <LogOut className="size-3.5" />
-          Sign out
+          {t.signOut}
         </button>
       </div>
     </>

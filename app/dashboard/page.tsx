@@ -25,6 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import { initials, statusLabel, statusTone, TierBadge } from '@/lib/platform-utils';
 import { useUiStore } from '@/lib/ui-store';
+import { useT } from '@/lib/language-context';
 import {
   SUPPORTED_SUBMISSION_PLATFORMS,
   getMonthYear,
@@ -177,6 +178,7 @@ export default function Dashboard() {
 }
 
 function CreatorPortal() {
+  const t = useT();
   const { creators, campaigns, engagements, submissions, addSubmission, generateMonthlyReport } = useApp();
   const { creatorAvatarUrl, creatorProfile, sessionEmail, sessionUser } = useUiStore();
   const [submissionOpen, setSubmissionOpen] = useState(false);
@@ -260,25 +262,25 @@ function CreatorPortal() {
         <div className="page-wrap">
           <header className="page-header">
             <div>
-              <h1 className="page-title">Welcome back, {creator?.name ?? sessionEmail}</h1>
+              <h1 className="page-title">{t.welcomeCreator(creator?.name ?? sessionEmail)}</h1>
             </div>
             <div className="flex flex-wrap gap-2">
               <Dialog open={submissionOpen} onOpenChange={setSubmissionOpen}>
                 <DialogTrigger asChild>
                   <Button className="h-10 bg-primary text-white hover:bg-primary/90">
-                    Submit Content
+                    {t.submitContent}
                     <ArrowUpRight className="size-4" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Submit content</DialogTitle>
-                    <DialogDescription>Share a published content link for review.</DialogDescription>
+                    <DialogTitle>{t.submitContentTitle}</DialogTitle>
+                    <DialogDescription>{t.submitContentDesc}</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-3">
                     <Select value={submissionForm.campaignId} onValueChange={(campaignId) => setSubmissionForm(current => ({ ...current, campaignId }))}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose campaign" />
+                        <SelectValue placeholder={t.chooseCampaign} />
                       </SelectTrigger>
                       <SelectContent>
                         {selectableCampaigns.map(campaign => (
@@ -288,7 +290,7 @@ function CreatorPortal() {
                     </Select>
                     <Select value={submissionForm.platform} onValueChange={(platform: SubmissionPlatform) => setSubmissionForm(current => ({ ...current, platform }))}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose platform" />
+                        <SelectValue placeholder={t.choosePlatform} />
                       </SelectTrigger>
                       <SelectContent>
                         {SUPPORTED_SUBMISSION_PLATFORMS.map(platform => (
@@ -298,7 +300,7 @@ function CreatorPortal() {
                     </Select>
                     <Select value={submissionForm.contentType} onValueChange={(contentType) => setSubmissionForm(current => ({ ...current, contentType }))}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Content type" />
+                        <SelectValue placeholder={t.contentType} />
                       </SelectTrigger>
                       <SelectContent>
                         {['Reel', 'Short video', 'Carousel', 'Story', 'Video', 'Post'].map(type => (
@@ -309,20 +311,20 @@ function CreatorPortal() {
                     <Input
                       value={submissionForm.contentUrl}
                       onChange={(event) => setSubmissionForm(current => ({ ...current, contentUrl: event.target.value }))}
-                      placeholder="Paste content link"
+                      placeholder={t.pasteContentLink}
                     />
                     <Textarea
                       value={submissionForm.note}
                       onChange={(event) => setSubmissionForm(current => ({ ...current, note: event.target.value }))}
-                      placeholder="Optional note for the campaign manager"
+                      placeholder={t.noteForManager}
                       className="min-h-20"
                     />
                     {submissionError && <p className="text-sm font-medium text-red-600">{submissionError}</p>}
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" className="border-border bg-white" onClick={() => setSubmissionOpen(false)}>Cancel</Button>
+                    <Button variant="outline" className="border-border bg-white" onClick={() => setSubmissionOpen(false)}>{t.cancel}</Button>
                     <Button className="bg-primary text-white" onClick={submitContent} disabled={submissionSubmitting}>
-                      {submissionSubmitting ? 'Submitting...' : 'Submit for review'}
+                      {submissionSubmitting ? t.submitting : t.submitForReview}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -337,58 +339,30 @@ function CreatorPortal() {
 
           <section className="space-y-6">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <CreatorDashboardMetric
-                label="Approved Content"
-                value={approvedContentThisMonth}
-                description=""
-              />
-              <CreatorDashboardMetric
-                label="Submitted Content"
-                value={submittedContentThisMonth}
-                description=""
-              />
-              <CreatorDashboardMetric
-                label="Pending Review"
-                value={pendingReviewThisMonth}
-                description=""
-              />
-              <CreatorDashboardMetric
-                label="Weekly Consistency"
-                value={`${weeklyConsistency.completed} / ${weeklyConsistency.required} Weeks`}
-                description=""
-              />
+              <CreatorDashboardMetric label={t.approvedContent} value={approvedContentThisMonth} description="" />
+              <CreatorDashboardMetric label={t.submittedContent} value={submittedContentThisMonth} description="" />
+              <CreatorDashboardMetric label={t.pendingReview} value={pendingReviewThisMonth} description="" />
+              <CreatorDashboardMetric label={t.weeklyConsistency} value={`${weeklyConsistency.completed} / ${weeklyConsistency.required} Weeks`} description="" />
             </div>
 
             <div className="panel overflow-hidden">
               <div className="border-b border-border px-5 py-4">
-                <h2 className="section-heading">Monthly Performance</h2>
+                <h2 className="section-heading">{t.monthlyPerformance}</h2>
               </div>
               <div className="grid gap-px bg-border md:grid-cols-3">
-                <MonthlyPerformanceMetric
-                  label="Views"
-                  value={(monthlyPerformance?.totalViews ?? 0).toLocaleString()}
-                  description=""
-                />
-                <MonthlyPerformanceMetric
-                  label="Impressions"
-                  value={(monthlyPerformance?.totalImpressions ?? 0).toLocaleString()}
-                  description=""
-                />
-                <MonthlyPerformanceMetric
-                  label="Engagement Rate"
-                  value={`${monthlyPerformance?.averageEngagementRate ?? 0}%`}
-                  description=""
-                />
+                <MonthlyPerformanceMetric label={t.views} value={(monthlyPerformance?.totalViews ?? 0).toLocaleString()} description="" />
+                <MonthlyPerformanceMetric label={t.impressions} value={(monthlyPerformance?.totalImpressions ?? 0).toLocaleString()} description="" />
+                <MonthlyPerformanceMetric label={t.engagementRate} value={`${monthlyPerformance?.averageEngagementRate ?? 0}%`} description="" />
               </div>
             </div>
 
             <div className="panel overflow-hidden">
               <div className="border-b border-border px-5 py-4">
-                <h2 className="section-heading">Recent submissions</h2>
+                <h2 className="section-heading">{t.recentSubmissions}</h2>
               </div>
               <div className="divide-y divide-border">
                 {recentSubmissions.length === 0 ? (
-                  <div className="px-5 py-8 text-sm text-muted-foreground">No content has been submitted yet.</div>
+                  <div className="px-5 py-8 text-sm text-muted-foreground">{t.noSubmissions}</div>
                 ) : recentSubmissions.map(submission => {
                   const campaign = campaigns.find(item => item.id === submission.campaignId);
                   return (
@@ -418,11 +392,11 @@ function CreatorPortal() {
 
             <div className="panel overflow-hidden">
               <div className="border-b border-border px-5 py-4">
-                <h2 className="section-heading">New Campaigns Available</h2>
+                <h2 className="section-heading">{t.newCampaigns}</h2>
               </div>
               <div className="divide-y divide-border">
                 {availableCampaigns.length === 0 ? (
-                  <div className="px-5 py-8 text-sm text-muted-foreground">No new campaigns are available right now.</div>
+                  <div className="px-5 py-8 text-sm text-muted-foreground">{t.noCampaigns}</div>
                 ) : availableCampaigns.map(campaign => (
                   <Link key={campaign.id} href={`/campaigns/${campaign.id}`} className="block px-5 py-4 transition hover:bg-muted/35">
                     <div className="flex flex-col gap-3">

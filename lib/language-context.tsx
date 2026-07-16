@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import translations from './translations';
 
 type Lang = 'en' | 'th';
 
@@ -40,4 +41,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 export function useLanguage() {
   return useContext(LanguageContext);
+}
+
+export function useT() {
+  const { lang } = useContext(LanguageContext);
+  return translations[lang];
 }

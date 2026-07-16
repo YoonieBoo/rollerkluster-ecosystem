@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ExternalLink, UserCircle } from 'lucide-react';
 import { useUiStore } from '@/lib/ui-store';
+import { useT } from '@/lib/language-context';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { calculateStartingRank, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
@@ -104,6 +105,7 @@ export default function AccountPage() {
 }
 
 function CreatorProfileSetup() {
+  const t = useT();
   const { creatorProfile, sessionEmail, updateCreatorProfile } = useUiStore();
   const searchParams = useSearchParams();
   const requestedMode = searchParams.get('mode');
@@ -146,15 +148,15 @@ function CreatorProfileSetup() {
     setSaved(false);
     const followerCount = Number(form.followerCount);
     if (!form.creatorName.trim()) {
-      setError('Add your user name.');
+      setError(t.addUserName);
       return;
     }
     if (!form.socialHandle.trim()) {
-      setError('Add your social handle.');
+      setError(t.addSocialHandle);
       return;
     }
     if (Number.isNaN(followerCount) || followerCount < 0) {
-      setError('Enter a valid follower count.');
+      setError(t.invalidFollowerCount);
       return;
     }
 
@@ -181,10 +183,10 @@ function CreatorProfileSetup() {
 
   const estimatedRank = calculateStartingRank(Number(form.followerCount) || creatorProfile?.followerCount || 0);
   const profileHref = `/creators/${creatorProfile?.userId ?? 'creator-1'}`;
-  const pageTitle = editing ? (requestedMode === 'platforms' ? 'Update platforms' : 'Edit creator profile') : 'Creator profile';
+  const pageTitle = editing ? (requestedMode === 'platforms' ? t.updatePlatforms : t.editCreatorProfile) : t.creatorProfile;
   const pageDescription = editing
-    ? 'Make your changes, then save them here. No second edit step is needed.'
-    : 'Your submitted social profile and starting rank.';
+    ? t.editModeSub
+    : t.viewModeSub;
 
   return (
     <div className="flex h-screen ecosystem-shell">
@@ -193,11 +195,11 @@ function CreatorProfileSetup() {
         <div className="page-wrap max-w-[980px]">
           <Link href={profileHref} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
             <ArrowLeft className="size-4" />
-            Back to my profile
+            {t.backToMyProfile}
           </Link>
           <header className="page-header">
             <div>
-              <p className="section-label">Creator ecosystem portal</p>
+              <p className="section-label">{t.creatorEcosystemPortal}</p>
               <h1 className="page-title mt-2">{pageTitle}</h1>
               <p className="page-description">{pageDescription}</p>
             </div>
@@ -214,58 +216,56 @@ function CreatorProfileSetup() {
                   <Badge className="rounded-full bg-primary/10 text-primary hover:bg-blue-50">{editing ? estimatedRank : creatorProfile?.creatorRank ?? 'Bronze I'}</Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {editing
-                    ? 'Edit your user name, connected platform, handle, profile link, and follower count.'
-                    : 'Your starting rank has been estimated from your submitted social profile. Future rank progression follows AU Creator Campus activity layers, not follower count.'}
+                  {editing ? t.editFieldsSub : t.viewModeSub}
                 </p>
 
                 {editing ? (
                   <div className="mt-5 grid gap-4 md:grid-cols-2">
-                    <EditField label="User name" value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Your display name" />
+                    <EditField label={t.userName} value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Your display name" />
                     <label className="grid gap-2">
-                      <span className="text-xs font-semibold uppercase text-muted-foreground">Platform</span>
+                      <span className="text-xs font-semibold uppercase text-muted-foreground">{t.platform}</span>
                       <Select value={form.platform} onValueChange={(platform) => setForm(current => ({ ...current, platform: platform as OnboardingPlatform }))}>
-                        <SelectTrigger className="h-10 bg-white"><SelectValue placeholder="Choose platform" /></SelectTrigger>
+                        <SelectTrigger className="h-10 bg-white"><SelectValue placeholder={t.choosePlatform} /></SelectTrigger>
                         <SelectContent>{onboardingPlatforms.map(platform => <SelectItem key={platform} value={platform}>{platform}</SelectItem>)}</SelectContent>
                       </Select>
                     </label>
-                    <EditField label="Social handle" value={form.socialHandle} onChange={(socialHandle) => setForm(current => ({ ...current, socialHandle }))} placeholder="@yourhandle" />
-                    <EditField label="Profile URL" value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://..." />
-                    <EditField label="Follower count" value={form.followerCount} onChange={(followerCount) => setForm(current => ({ ...current, followerCount }))} placeholder="15000" inputMode="numeric" />
-                    <ProfileMetric label="Estimated rank" value={estimatedRank} />
-                    <EditField label="Language" value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="e.g. English, Malay" />
-                    <EditField label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Selangor" />
-                    <EditField label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Malaysia" />
+                    <EditField label={t.socialHandle} value={form.socialHandle} onChange={(socialHandle) => setForm(current => ({ ...current, socialHandle }))} placeholder="@yourhandle" />
+                    <EditField label={t.profileUrl} value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://..." />
+                    <EditField label={t.followerCount} value={form.followerCount} onChange={(followerCount) => setForm(current => ({ ...current, followerCount }))} placeholder="15000" inputMode="numeric" />
+                    <ProfileMetric label={t.estimatedRank} value={estimatedRank} />
+                    <EditField label={t.languageField} value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="e.g. English, Thai" />
+                    <EditField label={t.provinceState} value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Bangkok" />
+                    <EditField label={t.country} value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Thailand" />
                   </div>
                 ) : (
                   <div className="mt-5 grid gap-3 md:grid-cols-2">
-                    <ProfileMetric label="User name" value={creatorProfile?.creatorName ?? sessionEmail.split('@')[0] ?? 'Creator account'} />
-                    <ProfileMetric label="Platform" value={creatorProfile?.platform ?? 'Not connected'} />
-                    <ProfileMetric label="Social handle" value={creatorProfile?.socialHandle ?? 'Not connected'} />
-                    <ProfileMetric label="Follower count" value={(creatorProfile?.followerCount ?? 0).toLocaleString()} />
-                    <ProfileMetric label="Language" value={creatorProfile?.language ?? '—'} />
-                    <ProfileMetric label="Province / State" value={creatorProfile?.province ?? '—'} />
-                    <ProfileMetric label="Country" value={creatorProfile?.country ?? '—'} />
+                    <ProfileMetric label={t.userName} value={creatorProfile?.creatorName ?? sessionEmail.split('@')[0] ?? 'Creator account'} />
+                    <ProfileMetric label={t.platform} value={creatorProfile?.platform ?? 'Not connected'} />
+                    <ProfileMetric label={t.socialHandle} value={creatorProfile?.socialHandle ?? 'Not connected'} />
+                    <ProfileMetric label={t.followerCount} value={(creatorProfile?.followerCount ?? 0).toLocaleString()} />
+                    <ProfileMetric label={t.languageField} value={creatorProfile?.language ?? '—'} />
+                    <ProfileMetric label={t.provinceState} value={creatorProfile?.province ?? '—'} />
+                    <ProfileMetric label={t.country} value={creatorProfile?.country ?? '—'} />
                   </div>
                 )}
 
                 {error && <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
-                {saved && <p className="mt-4 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">Profile updated.</p>}
+                {saved && <p className="mt-4 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">{t.profileUpdated}</p>}
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   {editing ? (
                     <>
-                      <Button className="bg-primary text-white" disabled={saving} onClick={() => void saveProfile()}>{saving ? 'Saving...' : 'Save changes'}</Button>
-                      <Button variant="outline" className="border-border bg-white" disabled={saving} onClick={() => setEditing(false)}>Cancel</Button>
+                      <Button className="bg-primary text-white" disabled={saving} onClick={() => void saveProfile()}>{saving ? t.savingProfile : t.saveChanges}</Button>
+                      <Button variant="outline" className="border-border bg-white" disabled={saving} onClick={() => setEditing(false)}>{t.cancel}</Button>
                     </>
                   ) : (
                     <>
-                      <Button className="bg-primary text-white" onClick={() => setEditing(true)}>Edit profile</Button>
+                      <Button className="bg-primary text-white" onClick={() => setEditing(true)}>{t.editProfile}</Button>
                       {creatorProfile?.socialProfileUrl && (
                         <Button asChild variant="outline" className="border-border bg-white">
                           <a href={creatorProfile.socialProfileUrl} target="_blank" rel="noreferrer">
                             <ExternalLink className="size-4" />
-                            Open social profile
+                            {t.openSocialProfile}
                           </a>
                         </Button>
                       )}

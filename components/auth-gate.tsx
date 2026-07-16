@@ -11,9 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useUiStore } from '@/lib/ui-store';
 import { calculateStartingRank, onboardingContentCategories, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/lib/language-context';
+import { useLanguage, useT } from '@/lib/language-context';
 
 type SignInRole = 'admin' | 'creator';
+
+function LoadingLabel() {
+  const t = useT();
+  return <>{t.loading}</>;
+}
 
 function LoadingScreen() {
   return (
@@ -43,7 +48,7 @@ function LoadingScreen() {
           }}
         />
       </div>
-      <p className="text-[13px] font-semibold text-muted-foreground">Loading RollerKluster</p>
+      <p className="text-[13px] font-semibold text-muted-foreground"><LoadingLabel /></p>
     </div>
   );
 }
@@ -101,6 +106,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 }
 
 function SignInScreen() {
+  const t = useT();
   const { authError, signInWithPassword, sendPasswordReset } = useUiStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -137,21 +143,21 @@ function SignInScreen() {
         <div className="mx-auto w-full max-w-[370px]">
           <AuthFormBrand />
           <div className="mt-9">
-            <h1 className="text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">Welcome Back!</h1>
-            <p className="mt-2 text-xs font-medium text-muted-foreground">Enter your details below</p>
+            <h1 className="text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">{t.welcomeBack}</h1>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">{t.enterDetails}</p>
           </div>
 
           <form onSubmit={submit} className="mt-8 grid gap-5">
-            <AuthField label="Email" value={email} onChange={setEmail} placeholder="you@company.edu" type="email" />
-            <AuthField label="Password" value={password} onChange={setPassword} placeholder="Enter password" type="password" />
+            <AuthField label={t.email} value={email} onChange={setEmail} placeholder="you@company.edu" type="email" />
+            <AuthField label={t.password} value={password} onChange={setPassword} placeholder="Enter password" type="password" />
 
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <label className="inline-flex items-center gap-2 font-medium">
                 <input type="checkbox" className="size-3.5 rounded border-border accent-primary" />
-                Remember me
+                {t.rememberMe}
               </label>
               <button type="button" className="font-semibold text-muted-foreground hover:text-foreground" onClick={() => void forgotPassword()}>
-                Forgot password?
+                {t.forgotPassword}
               </button>
             </div>
 
@@ -167,11 +173,11 @@ function SignInScreen() {
             )}
 
             <Button type="submit" className="mt-1 h-12 rounded-full bg-primary text-white hover:bg-primary/90" disabled={submitting}>
-              {submitting ? 'Signing in...' : 'Log in'}
+              {submitting ? t.signingIn : t.logIn}
             </Button>
             <div className="text-center text-xs text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="font-semibold text-foreground hover:text-primary">Sign Up</Link>
+              {t.noAccount}{' '}
+              <Link href="/signup" className="font-semibold text-foreground hover:text-primary">{t.signUp}</Link>
             </div>
           </form>
           <BackToWebsiteLink />
@@ -182,6 +188,7 @@ function SignInScreen() {
 }
 
 function SignUpScreen() {
+  const t = useT();
   const { authError, signUpWithPassword } = useUiStore();
   const [form, setForm] = useState({
     fullName: '',
@@ -241,24 +248,24 @@ function SignUpScreen() {
         <div className="mx-auto w-full max-w-[390px]">
           <AuthFormBrand />
           <div className="mt-8">
-            <h1 className="text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">Create Account</h1>
-            <p className="mt-2 text-xs font-medium text-muted-foreground">Choose your workspace and create your login</p>
+            <h1 className="text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">{t.createAccount}</h1>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">{t.createAccountSub}</p>
           </div>
 
           <form onSubmit={submit} className="mt-7 grid gap-4">
-            <AuthField label="Full Name" value={form.fullName} onChange={(fullName) => setForm(current => ({ ...current, fullName }))} placeholder="Yoonie" />
-            <AuthField label="Email" value={form.email} onChange={(email) => setForm(current => ({ ...current, email }))} placeholder="you@company.edu" type="email" />
-            <AuthField label="Password" value={form.password} onChange={(password) => setForm(current => ({ ...current, password }))} placeholder="Create password" type="password" />
-            <AuthField label="Confirm Password" value={form.confirmPassword} onChange={(confirmPassword) => setForm(current => ({ ...current, confirmPassword }))} placeholder="Confirm password" type="password" />
+            <AuthField label={t.fullName} value={form.fullName} onChange={(fullName) => setForm(current => ({ ...current, fullName }))} placeholder="Yoonie" />
+            <AuthField label={t.email} value={form.email} onChange={(email) => setForm(current => ({ ...current, email }))} placeholder="you@company.edu" type="email" />
+            <AuthField label={t.password} value={form.password} onChange={(password) => setForm(current => ({ ...current, password }))} placeholder="Create password" type="password" />
+            <AuthField label={t.confirmPassword} value={form.confirmPassword} onChange={(confirmPassword) => setForm(current => ({ ...current, confirmPassword }))} placeholder="Confirm password" type="password" />
             <label className="grid gap-2">
-              <span className="text-xs font-semibold text-muted-foreground">Account Type</span>
+              <span className="text-xs font-semibold text-muted-foreground">{t.accountType}</span>
               <Select value={form.role} onValueChange={(role) => setForm(current => ({ ...current, role: role as SignInRole }))}>
                 <SelectTrigger className="h-11 rounded-none border-x-0 border-t-0 border-border bg-white px-0 shadow-none focus:ring-0">
                   <SelectValue placeholder="Select account type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="creator">Creator Side</SelectItem>
-                  <SelectItem value="admin">Brand Side</SelectItem>
+                  <SelectItem value="creator">{t.creatorSide}</SelectItem>
+                  <SelectItem value="admin">{t.brandSide}</SelectItem>
                 </SelectContent>
               </Select>
             </label>
@@ -275,11 +282,11 @@ function SignUpScreen() {
             )}
 
             <Button type="submit" className="mt-1 h-12 rounded-full bg-primary text-white hover:bg-primary/90" disabled={submitting}>
-              {submitting ? 'Creating account...' : 'Create Account'}
+              {submitting ? t.creatingAccount : t.createAccount}
             </Button>
             <div className="text-center text-xs text-muted-foreground">
-              Already have an account?{' '}
-              <Link href="/login" className="font-semibold text-foreground hover:text-primary">Log in</Link>
+              {t.alreadyHaveAccount}{' '}
+              <Link href="/login" className="font-semibold text-foreground hover:text-primary">{t.logIn}</Link>
             </div>
           </form>
           <BackToWebsiteLink />
@@ -290,12 +297,13 @@ function SignUpScreen() {
 }
 
 function BackToWebsiteLink() {
+  const t = useT();
   return (
     <a
       href="https://rollerkluster.com/"
       className="mt-5 block text-center text-xs font-semibold text-muted-foreground hover:text-foreground"
     >
-      Back to RollerKluster website
+      {t.backToWebsite}
     </a>
   );
 }
@@ -372,6 +380,7 @@ function AuthField({
 }
 
 function CreatorOnboardingScreen() {
+  const t = useT();
   const { saveCreatorOnboarding } = useUiStore();
   const searchParams = useSearchParams();
   const hasAppliedSignupParams = useRef(false);
@@ -421,10 +430,10 @@ function CreatorOnboardingScreen() {
   const validateStep = () => {
     setError('');
     if (step === 1) {
-      if (!form.followerCount.trim() || Number.isNaN(Number(form.followerCount))) return 'Add your follower count so we can estimate your starting rank.';
+      if (!form.followerCount.trim() || Number.isNaN(Number(form.followerCount))) return t.validationFollowerCount;
     }
-    if (step === 2 && (!form.creatorName.trim() || !form.faculty.trim() || !form.bio.trim())) return 'Add your creator name, faculty, and short bio.';
-    if (step === 2 && form.categories.length === 0) return 'Choose at least one content category.';
+    if (step === 2 && (!form.creatorName.trim() || !form.faculty.trim() || !form.bio.trim())) return t.validationStep2;
+    if (step === 2 && form.categories.length === 0) return t.validationCategories;
     return '';
   };
 
@@ -482,29 +491,29 @@ function CreatorOnboardingScreen() {
           <div className="mx-auto flex size-20 items-center justify-center rounded-[18px] bg-white text-primary shadow-sm sm:size-24">
             <Trophy className="size-10 sm:size-12" />
           </div>
-          <p className="mt-5 text-sm font-semibold uppercase text-primary">Rank preview</p>
+          <p className="mt-5 text-sm font-semibold uppercase text-primary">{t.rankPreview}</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">{suggestedRank}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{Number(form.followerCount || 0).toLocaleString()} followers entered</p>
+          <p className="mt-2 text-sm text-muted-foreground">{Number(form.followerCount || 0).toLocaleString()} {t.followersEntered}</p>
         </div>
         <div className="min-w-0 space-y-5">
           <div>
-            <h2 className="text-xl font-semibold tracking-normal sm:text-2xl">Add your social profile</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Follower count estimates your entry rank only. After joining, you rank up through AU Creator Campus activity.</p>
+            <h2 className="text-xl font-semibold tracking-normal sm:text-2xl">{t.addSocialProfile}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.rankExplainer}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2">
-              <span className="text-sm font-semibold text-foreground">Primary platform</span>
+              <span className="text-sm font-semibold text-foreground">{t.primaryPlatform}</span>
               <Select value={form.platform} onValueChange={(platform) => setForm(current => ({ ...current, platform: platform as OnboardingPlatform }))}>
-                <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Choose platform" /></SelectTrigger>
+                <SelectTrigger className="h-11 bg-white"><SelectValue placeholder={t.choosePlatform} /></SelectTrigger>
                 <SelectContent>{onboardingPlatforms.map(platform => <SelectItem key={platform} value={platform}>{platform}</SelectItem>)}</SelectContent>
               </Select>
             </label>
-            <OnboardingField label="Estimated follower count" value={form.followerCount} onChange={(followerCount) => setForm(current => ({ ...current, followerCount }))} placeholder="15000" inputMode="numeric" />
-            <OnboardingField label="Username / handle" value={form.socialHandle} onChange={(socialHandle) => setForm(current => ({ ...current, socialHandle }))} placeholder="@yourhandle" />
-            <OnboardingField label="Profile URL" value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://instagram.com/yourhandle" />
+            <OnboardingField label={t.estimatedFollowerCount} value={form.followerCount} onChange={(followerCount) => setForm(current => ({ ...current, followerCount }))} placeholder="15000" inputMode="numeric" />
+            <OnboardingField label={t.usernameHandle} value={form.socialHandle} onChange={(socialHandle) => setForm(current => ({ ...current, socialHandle }))} placeholder="@yourhandle" />
+            <OnboardingField label={t.profileUrl} value={form.socialProfileUrl} onChange={(socialProfileUrl) => setForm(current => ({ ...current, socialProfileUrl }))} placeholder="https://instagram.com/yourhandle" />
           </div>
           <label className="grid gap-2">
-            <span className="text-sm font-semibold text-foreground">Screenshot of your {form.platform} profile (optional)</span>
+            <span className="text-sm font-semibold text-foreground">{t.screenshotLabel(form.platform)}</span>
             <Input
               type="file"
               accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -529,14 +538,14 @@ function CreatorOnboardingScreen() {
     2: (
       <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
-          <OnboardingField label="Creator name" value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Yoonie" />
-          <OnboardingSelect label="University" value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder="Select university" options={['Assumption University', 'Khon Kaen University', 'Chiang Mai University']} />
-          <OnboardingField label="Faculty" value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" required />
-          <OnboardingSelect label="Language" value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="Select language" options={['Thai', 'English', 'Myanmar']} />
-          <OnboardingField label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Bangkok" hint="e.g. Bangkok, Samut Prakan, Chiang Mai" />
-          <OnboardingField label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Thailand" hint="e.g. Thailand, Myanmar" />
+          <OnboardingField label={t.creatorName} value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Yoonie" />
+          <OnboardingSelect label={t.university} value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder={t.university} options={['Assumption University', 'Khon Kaen University', 'Chiang Mai University']} />
+          <OnboardingField label={t.faculty} value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" required />
+          <OnboardingSelect label={t.languageField} value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder={t.languageField} options={['Thai', 'English', 'Myanmar']} />
+          <OnboardingField label={t.provinceState} value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Bangkok" hint="e.g. Bangkok, Samut Prakan, Chiang Mai" />
+          <OnboardingField label={t.country} value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Thailand" hint="e.g. Thailand, Myanmar" />
           <div className="grid gap-2 sm:col-span-2">
-            <span className="text-sm font-semibold text-foreground">Content categories</span>
+            <span className="text-sm font-semibold text-foreground">{t.contentCategories}</span>
             <div className="flex flex-wrap gap-2">
               {onboardingContentCategories.map(category => {
                 const selected = form.categories.includes(category);
@@ -562,11 +571,11 @@ function CreatorOnboardingScreen() {
             </div>
           </div>
           <div className="grid gap-2 sm:col-span-2">
-            <span className="text-sm font-semibold text-foreground">Are you a scholarship student?</span>
+            <span className="text-sm font-semibold text-foreground">{t.scholarshipQuestion}</span>
             <div className="flex flex-wrap gap-2">
               {[
-                { label: 'No', value: false },
-                { label: 'Yes', value: true },
+                { label: t.no, value: false },
+                { label: t.yes, value: true },
               ].map(option => (
                 <button
                   key={option.label}
@@ -584,11 +593,11 @@ function CreatorOnboardingScreen() {
           </div>
         </div>
         <label className="grid gap-2">
-          <span className="text-sm font-semibold text-foreground">Short bio</span>
+          <span className="text-sm font-semibold text-foreground">{t.shortBio}</span>
           <textarea
             value={form.bio}
             onChange={(event) => setForm(current => ({ ...current, bio: event.target.value }))}
-            placeholder="Tell brands what kind of content you create and what student communities you connect with."
+            placeholder={t.shortBioPlaceholder}
             className="min-h-28 rounded-md border border-input bg-white px-3 py-2 text-sm shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
           />
         </label>
@@ -616,8 +625,8 @@ function CreatorOnboardingScreen() {
           <div className="border-b border-border px-5 py-4 sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Step {step} of {totalSteps}</p>
-                <h2 className="mt-1 text-xl font-semibold text-foreground">{['Preview your starting rank', 'Complete your creator profile'][step - 1]}</h2>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">{t.stepOf(step, totalSteps)}</p>
+                <h2 className="mt-1 text-xl font-semibold text-foreground">{t.stepTitles[step - 1]}</h2>
               </div>
             </div>
           </div>
@@ -627,16 +636,16 @@ function CreatorOnboardingScreen() {
             <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
               <Button type="button" variant="outline" className="w-full border-border bg-white sm:w-auto" disabled={step === 1 || saving} onClick={() => setStep(current => Math.max(1, current - 1))}>
                 <ArrowLeft className="size-4" />
-                Back
+                {t.back}
               </Button>
               {step < totalSteps ? (
                 <Button type="button" className="w-full bg-primary text-white sm:w-auto" onClick={goNext}>
-                  Continue
+                  {t.continue}
                   <ArrowRight className="size-4" />
                 </Button>
               ) : (
                 <Button type="button" className="w-full bg-primary text-white sm:w-auto" disabled={saving} onClick={() => void submit()}>
-                  {saving ? 'Saving profile...' : 'Enter Creator Dashboard'}
+                  {saving ? t.savingProfile : t.enterDashboard}
                 </Button>
               )}
             </div>
