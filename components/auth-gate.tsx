@@ -520,8 +520,8 @@ function CreatorOnboardingScreen() {
           <OnboardingSelect label="University" value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder="Select university" options={['Assumption University', 'Khon Kaen University', 'Chiang Mai University']} />
           <OnboardingField label="Faculty" value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" required />
           <OnboardingSelect label="Language" value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="Select language" options={['Thai', 'English', 'Myanmar']} />
-          <OnboardingSelect label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="Select province / state" options={['Bangkok', 'Samut Prakan (Bang Bo)', 'Chiang Mai', 'Khon Kaen', 'Chiang Rai', 'Nonthaburi', 'Pathum Thani', 'Yangon', 'Mandalay', 'Shan', 'Sagaing']} />
-          <OnboardingSelect label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="Select country" options={['Thailand', 'Myanmar']} />
+          <OnboardingField label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Bangkok" hint="e.g. Bangkok, Samut Prakan, Chiang Mai" />
+          <OnboardingField label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Thailand" hint="e.g. Thailand, Myanmar" />
           <div className="grid gap-2 sm:col-span-2">
             <span className="text-sm font-semibold text-foreground">Content categories</span>
             <div className="flex flex-wrap gap-2">
@@ -634,6 +634,7 @@ function OnboardingField({
   placeholder,
   inputMode,
   required = false,
+  hint,
 }: {
   label: string;
   value: string;
@@ -641,6 +642,7 @@ function OnboardingField({
   placeholder: string;
   inputMode?: 'numeric' | 'decimal';
   required?: boolean;
+  hint?: string;
 }) {
   return (
     <label className="grid gap-2">
@@ -649,6 +651,7 @@ function OnboardingField({
         {required && <span className="text-primary"> *</span>}
       </span>
       <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} inputMode={inputMode} required={required} className="h-11 bg-white" />
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </label>
   );
 }
