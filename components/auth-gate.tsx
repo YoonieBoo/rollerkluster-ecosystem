@@ -375,6 +375,9 @@ function CreatorOnboardingScreen() {
     bio: '',
     categories: [] as string[],
     isScholarshipStudent: false,
+    language: '',
+    province: '',
+    country: '',
   });
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [error, setError] = useState('');
@@ -447,6 +450,9 @@ function CreatorOnboardingScreen() {
         bio: form.bio.trim(),
         contentCategories: form.categories,
         isScholarshipStudent: form.isScholarshipStudent,
+        language: form.language.trim() || undefined,
+        province: form.province.trim() || undefined,
+        country: form.country.trim() || undefined,
       });
     } catch (onboardingError) {
       console.error('CREATOR ONBOARDING FORM SUBMIT FAILED', onboardingError);
@@ -513,6 +519,9 @@ function CreatorOnboardingScreen() {
           <OnboardingField label="Creator name" value={form.creatorName} onChange={(creatorName) => setForm(current => ({ ...current, creatorName }))} placeholder="Yoonie" />
           <OnboardingField label="University" value={form.university} onChange={(university) => setForm(current => ({ ...current, university }))} placeholder="Assumption University" />
           <OnboardingField label="Faculty" value={form.faculty} onChange={(faculty) => setForm(current => ({ ...current, faculty }))} placeholder="Communication Arts" required />
+          <OnboardingField label="Language" value={form.language} onChange={(language) => setForm(current => ({ ...current, language }))} placeholder="e.g. English, Malay" />
+          <OnboardingField label="Province / State" value={form.province} onChange={(province) => setForm(current => ({ ...current, province }))} placeholder="e.g. Selangor" />
+          <OnboardingField label="Country" value={form.country} onChange={(country) => setForm(current => ({ ...current, country }))} placeholder="e.g. Malaysia" />
           <div className="grid gap-2 sm:col-span-2">
             <span className="text-sm font-semibold text-foreground">Content categories</span>
             <div className="flex flex-wrap gap-2">
