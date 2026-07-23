@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Briefcase, Camera, CheckCircle2, Mail, MapPin, MoreHorizontal, Pencil, Users } from 'lucide-react';
+import { ArrowLeft, Briefcase, Camera, CheckCircle2, CircleDashed, Mail, MapPin, MoreHorizontal, Pencil, Users, XCircle } from 'lucide-react';
 import { initials, statusLabel, statusTone } from '@/lib/platform-utils';
 import { cn } from '@/lib/utils';
 import { getMonthYear } from '@/lib/creator-performance';
@@ -48,6 +48,16 @@ export default function CreatorProfile() {
   ].filter(Boolean);
   const acceptedCampusInvitation = creator?.id === 'creator-1' && creatorInvitationStatus === 'accepted';
   const canEditOwnProfile = activeRole === 'creator' && creatorProfile && creator?.id === creatorProfile.userId;
+
+  const isOwnProfile = activeRole === 'creator' && creatorProfile && creator?.id === creatorProfile.userId;
+  const profileSubmitted = isOwnProfile ? (creatorProfile?.onboardingCompleted ?? false) : (creator?.approvalStatus !== 'pending');
+  const verificationStatus = isOwnProfile ? (creatorProfile?.verificationStatus ?? 'pending_review') : (creator?.verified ? 'verified' : 'pending_review');
+  const hasCategories = (creator?.contentCategories?.length ?? 0) > 0;
+  const bestMatchScore = creatorEngagements.length > 0
+    ? Math.max(...creatorEngagements.map(e => ('matchScore' in e ? (e as { matchScore?: number }).matchScore ?? 0 : 0)))
+    : null;
+  const suitabilityScore = bestMatchScore
+    ?? (profileSubmitted && verificationStatus === 'verified' ? 80 : profileSubmitted ? 55 : 30);
 
   const uploadAvatar = async (file?: File) => {
     if (!file) return;
@@ -121,6 +131,20 @@ export default function CreatorProfile() {
                   {avatarError && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{avatarError}</p>}
                   <ProfileInfo icon={<MapPin className="size-4" />} label="University" value="Assumption University" />
                   <ProfileInfo icon={<Users className="size-4" />} label="Followers" value={totalFollowers.toLocaleString()} />
+
+                  <div className="rounded-[10px] border border-border bg-white p-3">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Creator Readiness</p>
+                    <div className="mt-3 space-y-2">
+                      <ReadinessRow done={profileSubmitted} label="Profile submitted" />
+                      <ReadinessRow
+                        done={verificationStatus === 'verified'}
+                        pending={verificationStatus === 'pending_review'}
+                        label={verificationStatus === 'verified' ? 'Verified' : verificationStatus === 'pending_review' ? 'Verification pending' : 'Verification rejected'}
+                      />
+                      <ReadinessRow done={hasCategories} label="Content categories set" />
+                    </div>
+                  </div>
+
                   {activeRole === 'admin' && (
                     <div>
                       <p className="text-xs font-semibold uppercase text-muted-foreground">Contact</p>
@@ -200,10 +224,58 @@ export default function CreatorProfile() {
                 </div>
                 <ReviewList creator={creator} />
               </section>
+
+              <section className="panel overflow-hidden">
+                <div className="border-b border-border px-5 py-4">
+                  <h2 className="section-heading">Campaign Suitability</h2>
+                  <p className="section-subtitle">Estimated campaign fit based on profile completeness, verification status, and engagement history.</p>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-end gap-3">
+                    <p className="text-4xl font-semibold tracking-tight">{suitabilityScore}%</p>
+                    <p className="mb-1 text-sm text-muted-foreground">
+                      {bestMatchScore !== null ? 'from AI campaign match' : verificationStatus === 'verified' ? 'profile verified' : 'profile pending verification'}
+                    </p>
+                  </div>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={cn('h-full rounded-full transition-all', suitabilityScore >= 75 ? 'bg-primary' : suitabilityScore >= 50 ? 'bg-amber-400' : 'bg-rose-400')}
+                      style={{ width: `${suitabilityScore}%` }}
+                    />
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                    <SuitabilityFactor label="Rank" value={displayRank} met />
+                    <SuitabilityFactor label="Verification" value={verificationStatus === 'verified' ? 'Verified' : 'Pending'} met={verificationStatus === 'verified'} />
+                    <SuitabilityFactor label="Categories" value={`${creator.contentCategories?.length ?? 0} set`} met={hasCategories} />
+                  </div>
+                </div>
+              </section>
             </section>
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function ReadinessRow({ done, pending = false, label }: { done: boolean; pending?: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {done
+        ? <CheckCircle2 className="size-4 shrink-0 text-primary" />
+        : pending
+          ? <CircleDashed className="size-4 shrink-0 text-amber-400" />
+          : <XCircle className="size-4 shrink-0 text-rose-400" />}
+      <span className="text-sm font-medium text-foreground">{label}</span>
+    </div>
+  );
+}
+
+function SuitabilityFactor({ label, value, met }: { label: string; value: string; met: boolean }) {
+  return (
+    <div className={cn('rounded-[10px] border p-3', met ? 'border-primary/20 bg-primary/5' : 'border-border bg-muted/30')}>
+      <p className="text-[11px] font-semibold uppercase text-muted-foreground">{label}</p>
+      <p className={cn('mt-1 text-sm font-semibold', met ? 'text-primary' : 'text-muted-foreground')}>{value}</p>
     </div>
   );
 }
