@@ -56,8 +56,37 @@ export default function CreatorProfile() {
   const bestMatchScore = creatorEngagements.length > 0
     ? Math.max(...creatorEngagements.map(e => ('matchScore' in e ? (e as { matchScore?: number }).matchScore ?? 0 : 0)))
     : null;
-  const suitabilityScore = bestMatchScore
-    ?? (profileSubmitted && verificationStatus === 'verified' ? 80 : profileSubmitted ? 55 : 30);
+
+  // Compute suitability from real profile fields when no campaign matchScore exists
+  const followerCount = isOwnProfile
+    ? (creatorProfile?.followerCount ?? totalFollowers)
+    : totalFollowers;
+  const engagementRate = isOwnProfile
+    ? (creatorProfile?.engagementRate ?? creator?.engagementRate ?? 0)
+    : (creator?.engagementRate ?? 0);
+  const computedSuitabilityScore = (() => {
+    let score = 0;
+    // Verification status: up to 35 pts
+    if (verificationStatus === 'verified') score += 35;
+    else if (profileSubmitted) score += 15;
+    // Follower count: up to 30 pts
+    if (followerCount >= 50000) score += 30;
+    else if (followerCount >= 10000) score += 22;
+    else if (followerCount >= 5000) score += 18;
+    else if (followerCount >= 1000) score += 12;
+    else if (followerCount >= 500) score += 8;
+    else score += 3;
+    // Engagement rate: up to 20 pts
+    if (engagementRate >= 6) score += 20;
+    else if (engagementRate >= 4) score += 15;
+    else if (engagementRate >= 2) score += 10;
+    else if (engagementRate >= 1) score += 6;
+    else score += 2;
+    // Has content categories: 15 pts
+    if (hasCategories) score += 15;
+    return Math.min(score, 100);
+  })();
+  const suitabilityScore = bestMatchScore !== null ? bestMatchScore : computedSuitabilityScore;
 
   const uploadAvatar = async (file?: File) => {
     if (!file) return;
@@ -234,7 +263,7 @@ export default function CreatorProfile() {
                   <div className="flex items-end gap-3">
                     <p className="text-4xl font-semibold tracking-tight">{suitabilityScore}%</p>
                     <p className="mb-1 text-sm text-muted-foreground">
-                      {bestMatchScore !== null ? 'from AI campaign match' : verificationStatus === 'verified' ? 'profile verified' : 'profile pending verification'}
+                      {bestMatchScore !== null ? 'from AI campaign match' : verificationStatus === 'verified' ? 'based on profile · verified' : profileSubmitted ? 'based on profile · pending review' : 'based on profile · not yet submitted'}
                     </p>
                   </div>
                   <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">

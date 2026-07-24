@@ -101,13 +101,23 @@ type RealCreatorApplication = {
   contentCategories: string[];
   university: string | null;
   faculty: string | null;
+  onboardingCompleted: boolean | null;
   verificationStatus: string;
   createdAt: string | null;
 };
 
+type LifecycleStage = 'registered' | 'submitted' | 'pending' | 'approved' | 'rejected';
+
+function getLifecycleStage(applicant: RealCreatorApplication): LifecycleStage {
+  if (applicant.verificationStatus === 'verified') return 'approved';
+  if (applicant.verificationStatus === 'rejected') return 'rejected';
+  if (applicant.onboardingCompleted) return 'pending';
+  return 'registered';
+}
+
 export default function GovernanceAdmin() {
   const { creators, campaigns, engagements, submissions, approveCreator, rejectCreator, reviewSubmission, updateEngagementStatus } = useApp();
-  const [activeTab, setActiveTab] = useState<'approvals' | 'submissions' | 'performance' | 'ranks'>('approvals');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'lifecycle' | 'submissions' | 'performance' | 'ranks'>('approvals');
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
   const [realApplicants, setRealApplicants] = useState<RealCreatorApplication[]>([]);
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -120,7 +130,7 @@ export default function GovernanceAdmin() {
     if (!supabase) return;
     const { data, error } = await supabase
       .from('creator_profiles')
-      .select('user_id, creator_name, platform, social_handle, follower_count, content_categories, university, faculty, verification_status, created_at')
+      .select('user_id, creator_name, platform, social_handle, follower_count, content_categories, university, faculty, onboarding_completed, verification_status, created_at')
       .order('created_at', { ascending: false });
     if (error) { console.error('fetchRealApplicants:', error.message); return; }
     if (!data) return;
@@ -140,6 +150,7 @@ export default function GovernanceAdmin() {
       contentCategories: (row.content_categories as string[] | null) ?? [],
       university: row.university as string | null,
       faculty: row.faculty as string | null,
+      onboardingCompleted: row.onboarding_completed as boolean | null,
       verificationStatus: (row.verification_status as string) ?? 'pending_review',
       createdAt: row.created_at as string | null,
     })));
@@ -237,7 +248,7 @@ export default function GovernanceAdmin() {
 
           {/* Tabs */}
           <div className="mb-6 flex gap-2 overflow-x-auto border-b border-border pb-px">
-            {(['approvals', 'submissions', 'performance', 'ranks'] as const).map(tab => (
+            {(['approvals', 'lifecycle', 'submissions', 'performance', 'ranks'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -248,6 +259,7 @@ export default function GovernanceAdmin() {
                 }`}
               >
                 {tab === 'approvals' && 'Creator Applications'}
+                {tab === 'lifecycle' && 'Creator Lifecycle'}
                 {tab === 'submissions' && 'Submission Queue'}
                 {tab === 'performance' && 'Monthly Performance'}
                 {tab === 'ranks' && 'Ranks & Hours'}
@@ -356,6 +368,122 @@ export default function GovernanceAdmin() {
               )}
             </div>
           )}
+
+          {activeTab === 'lifecycle' && (() => {
+            const stageOf = (a: RealCreatorApplication) => getLifecycleStage(a);
+            const total = realApplicants.length;
+            const submitted = realApplicants.filter(a => stageOf(a) !== 'registered').length;
+            const pending = realApplicants.filter(a => stageOf(a) === 'pending').length;
+            const approved = realApplicants.filter(a => stageOf(a) === 'approved').length;
+            const rejected = realApplicants.filter(a => stageOf(a) === 'rejected').length;
+
+            const stageConfig: { key: LifecycleStage; label: string; count: number; color: string; barColor: string }[] = [
+              { key: 'registered', label: 'Registered', count: total, color: 'bg-blue-50 border-blue-200 text-blue-700', barColor: 'bg-blue-400' },
+              { key: 'submitted', label: 'Profile Submitted', count: submitted, color: 'bg-indigo-50 border-indigo-200 text-indigo-700', barColor: 'bg-indigo-400' },
+              { key: 'pending', label: 'Pending Review', count: pending, color: 'bg-amber-50 border-amber-200 text-amber-700', barColor: 'bg-amber-400' },
+              { key: 'approved', label: 'Approved', count: approved, color: 'bg-green-50 border-green-200 text-green-700', barColor: 'bg-green-500' },
+            ];
+
+            const stageBadgeStyle: Record<LifecycleStage, string> = {
+              registered: 'border-blue-200 bg-blue-50 text-blue-700',
+              submitted: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+              pending: 'border-amber-200 bg-amber-50 text-amber-700',
+              approved: 'border-green-200 bg-green-50 text-green-700',
+              rejected: 'border-red-200 bg-red-50 text-red-700',
+            };
+            const stageBadgeLabel: Record<LifecycleStage, string> = {
+              registered: 'Registered',
+              submitted: 'Profile Submitted',
+              pending: 'Pending Review',
+              approved: 'Approved',
+              rejected: 'Rejected',
+            };
+
+            return (
+              <div className="space-y-6">
+                {/* Funnel stats */}
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {stageConfig.map(stage => (
+                    <div key={stage.key} className={cn('rounded-xl border p-4', stage.color)}>
+                      <p className="text-xs font-semibold uppercase opacity-70">{stage.label}</p>
+                      <p className="mt-2 text-3xl font-semibold tracking-tight">{stage.count}</p>
+                      <p className="mt-1 text-xs opacity-70">
+                        {total > 0 ? Math.round((stage.count / total) * 100) : 0}% of registered
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Visual funnel pipeline */}
+                <div className="overflow-hidden rounded-xl border border-border bg-white p-6 shadow-sm">
+                  <h2 className="mb-1 text-sm font-semibold">Registration → Activation funnel</h2>
+                  <p className="mb-5 text-xs text-muted-foreground">
+                    Drop-off at each stage of the creator lifecycle.
+                    {rejected > 0 && ` ${rejected} creator${rejected > 1 ? 's' : ''} rejected.`}
+                  </p>
+                  <div className="space-y-3">
+                    {stageConfig.map((stage, index) => {
+                      const pct = total > 0 ? Math.round((stage.count / total) * 100) : 0;
+                      const prevCount = index === 0 ? total : stageConfig[index - 1].count;
+                      const dropOff = prevCount - stage.count;
+                      return (
+                        <div key={stage.key}>
+                          <div className="mb-1.5 flex items-center justify-between text-xs">
+                            <span className="font-semibold text-foreground">{stage.label}</span>
+                            <span className="text-muted-foreground">
+                              {stage.count} creator{stage.count !== 1 ? 's' : ''}
+                              {index > 0 && dropOff > 0 && <span className="ml-2 text-rose-500">−{dropOff} dropped off</span>}
+                            </span>
+                          </div>
+                          <div className="h-7 overflow-hidden rounded-lg bg-muted/50">
+                            <div
+                              className={cn('h-full rounded-lg transition-all duration-500', stage.barColor)}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Per-creator lifecycle table */}
+                {realApplicants.length === 0 ? (
+                  <Card className="p-12 text-center border border-border rounded-xl shadow-sm">
+                    <p className="text-foreground font-medium">No creators have registered yet.</p>
+                  </Card>
+                ) : (
+                  <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+                    <div className="border-b border-border px-5 py-3">
+                      <h2 className="text-sm font-semibold">All creators by stage</h2>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {realApplicants.map(applicant => {
+                        const stage = stageOf(applicant);
+                        const displayName = applicant.creatorName ?? applicant.email ?? 'Creator';
+                        return (
+                          <div key={applicant.userId} className="flex items-center gap-4 px-5 py-3.5">
+                            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-primary">
+                              {initials(displayName)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
+                              <p className="truncate text-xs text-muted-foreground">{applicant.email ?? ''}</p>
+                            </div>
+                            <div className="hidden text-xs text-muted-foreground md:block">{applicant.platform}</div>
+                            <div className="hidden text-xs text-muted-foreground md:block">{applicant.createdAt ? new Date(applicant.createdAt).toLocaleDateString() : '—'}</div>
+                            <span className={cn('inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-semibold', stageBadgeStyle[stage])}>
+                              {stageBadgeLabel[stage]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {activeTab === 'submissions' && (
             <div className="space-y-4">
