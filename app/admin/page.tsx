@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase-client';
 import { Sidebar } from '@/components/sidebar';
 import { useApp } from '@/lib/app-context';
 import Link from 'next/link';
@@ -90,10 +91,80 @@ const emptyReviewDraft: ReviewDraft = {
   cpiScore: '',
 };
 
+type RealCreatorApplication = {
+  userId: string;
+  creatorName: string | null;
+  email: string | null;
+  platform: string;
+  socialHandle: string;
+  followerCount: number;
+  contentCategories: string[];
+  university: string | null;
+  faculty: string | null;
+  language: string | null;
+  province: string | null;
+  country: string | null;
+  verificationStatus: string;
+  createdAt: string;
+};
+
 export default function GovernanceAdmin() {
   const { creators, campaigns, engagements, submissions, approveCreator, rejectCreator, reviewSubmission, updateEngagementStatus } = useApp();
   const [activeTab, setActiveTab] = useState<'approvals' | 'submissions' | 'performance' | 'ranks'>('approvals');
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [realApplicants, setRealApplicants] = useState<RealCreatorApplication[]>([]);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetchRealApplicants();
+  }, []);
+
+  const fetchRealApplicants = async () => {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from('creator_profiles')
+      .select('user_id, creator_name, platform, social_handle, follower_count, content_categories, university, faculty, language, province, country, verification_status, created_at')
+      .order('created_at', { ascending: false });
+    if (!data) return;
+    const userIds = data.map(row => row.user_id as string);
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, email')
+      .in('id', userIds);
+    const emailMap = Object.fromEntries((users ?? []).map(u => [u.id as string, u.email as string]));
+    setRealApplicants(data.map(row => ({
+      userId: row.user_id as string,
+      creatorName: row.creator_name as string | null,
+      email: emailMap[row.user_id as string] ?? null,
+      platform: row.platform as string,
+      socialHandle: row.social_handle as string,
+      followerCount: row.follower_count as number,
+      contentCategories: (row.content_categories as string[]) ?? [],
+      university: row.university as string | null,
+      faculty: row.faculty as string | null,
+      language: row.language as string | null,
+      province: row.province as string | null,
+      country: row.country as string | null,
+      verificationStatus: row.verification_status as string,
+      createdAt: row.created_at as string,
+    })));
+  };
+
+  const approveRealCreator = async (userId: string) => {
+    if (!supabase) return;
+    setApprovingId(userId);
+    await supabase.from('creator_profiles').update({ verification_status: 'verified' }).eq('user_id', userId);
+    await fetchRealApplicants();
+    setApprovingId(null);
+  };
+
+  const rejectRealCreator = async (userId: string) => {
+    if (!supabase) return;
+    setApprovingId(userId);
+    await supabase.from('creator_profiles').update({ verification_status: 'rejected' }).eq('user_id', userId);
+    await fetchRealApplicants();
+    setApprovingId(null);
+  };
 
   const pendingCreators = creators.filter(c => c.approvalStatus === 'pending');
   const recentActivity = engagements
@@ -191,8 +262,8 @@ export default function GovernanceAdmin() {
 
           {/* Content */}
           {activeTab === 'approvals' && (
-            <div>
-              {pendingCreators.length === 0 ? (
+            <div className="space-y-6">
+              {realApplicants.length === 0 ? (
                 <Card className="p-12 text-center border border-border rounded-xl shadow-sm">
                   <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
                   <p className="text-foreground font-medium">No creator applications are waiting.</p>
@@ -200,8 +271,8 @@ export default function GovernanceAdmin() {
                 </Card>
               ) : (
                 <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_1px_2px_rgba(17,24,39,0.03)]">
-                  <div className="hidden grid-cols-[minmax(230px,1.55fr)_minmax(145px,1fr)_115px_130px_105px_125px_80px] items-center gap-5 border-b border-border bg-white px-6 py-3 text-xs font-semibold text-gray-400 xl:grid">
-                    {['Creator', 'Category', 'Applied', 'Readiness', 'Portfolio', 'Status', 'Action'].map((label) => (
+                  <div className="hidden grid-cols-[minmax(220px,1.6fr)_minmax(120px,1fr)_110px_140px_130px_80px] items-center gap-5 border-b border-border bg-white px-6 py-3 text-xs font-semibold text-gray-400 xl:grid">
+                    {['Creator', 'Platform', 'Applied', 'Categories', 'Status', 'Action'].map((label) => (
                       <span key={label} className={cn('inline-flex items-center gap-1', label === 'Action' && 'justify-end')}>
                         {label}
                         <ChevronsUpDown className="size-3 text-gray-300" />
@@ -210,48 +281,55 @@ export default function GovernanceAdmin() {
                   </div>
 
                   <div className="divide-y divide-gray-100">
-                    {pendingCreators.map(creator => {
-                      const readiness = Math.round(creator.contentQualityScore * 20);
+                    {realApplicants.map(applicant => {
+                      const statusStyle = applicant.verificationStatus === 'verified'
+                        ? creatorApprovalStatusStyles.approved
+                        : applicant.verificationStatus === 'rejected'
+                          ? creatorApprovalStatusStyles.rejected
+                          : creatorApprovalStatusStyles.pending;
+                      const statusText = applicant.verificationStatus === 'verified' ? 'Approved'
+                        : applicant.verificationStatus === 'rejected' ? 'Rejected' : 'Pending';
+                      const displayName = applicant.creatorName ?? applicant.email ?? 'Creator';
+                      const isActing = approvingId === applicant.userId;
                       return (
                         <div
-                          key={creator.id}
-                          className="grid gap-4 bg-white px-4 py-5 transition hover:bg-gray-50/60 xl:grid-cols-[minmax(230px,1.55fr)_minmax(145px,1fr)_115px_130px_105px_125px_80px] xl:items-center xl:gap-5 xl:px-6 xl:py-4"
+                          key={applicant.userId}
+                          className="grid gap-4 bg-white px-4 py-5 transition hover:bg-gray-50/60 xl:grid-cols-[minmax(220px,1.6fr)_minmax(120px,1fr)_110px_140px_130px_80px] xl:items-center xl:gap-5 xl:px-6 xl:py-4"
                         >
                           <div className="flex min-w-0 items-center gap-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-primary">
-                              {initials(creator.name)}
+                              {initials(displayName)}
                             </div>
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-foreground">{creator.name}</p>
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">{creator.niche} / Campus Creator</p>
+                              <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">{applicant.email ?? ''}</p>
+                              {(applicant.university ?? applicant.faculty) && (
+                                <p className="mt-0.5 truncate text-xs text-muted-foreground">{[applicant.faculty, applicant.university].filter(Boolean).join(' · ')}</p>
+                              )}
                             </div>
                           </div>
 
                           <div>
-                            <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Category</p>
-                            <p className="text-sm font-medium text-gray-500">{creator.platforms.slice(0, 3).map(platform => platform.name).join(', ')}</p>
+                            <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Platform</p>
+                            <p className="text-sm font-medium text-gray-500">{applicant.platform}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{applicant.socialHandle}</p>
                           </div>
 
                           <div>
                             <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Applied</p>
-                            <p className="text-sm font-medium text-gray-500">{new Date(creator.joinedDate).toLocaleDateString()}</p>
+                            <p className="text-sm font-medium text-gray-500">{new Date(applicant.createdAt).toLocaleDateString()}</p>
                           </div>
 
                           <div>
-                            <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Readiness</p>
-                            <p className="text-sm font-semibold text-gray-700">{rankLabel(creator.badge)}</p>
-                            <p className="mt-0.5 text-xs text-gray-400">{readiness}% ready</p>
-                          </div>
-
-                          <div>
-                            <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Portfolio</p>
-                            <p className="text-sm font-medium text-gray-500">{creator.portfolioItems.length} items</p>
+                            <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Categories</p>
+                            <p className="text-sm font-medium text-gray-500 truncate">{applicant.contentCategories.slice(0, 2).join(', ') || '—'}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{applicant.followerCount.toLocaleString()} followers</p>
                           </div>
 
                           <div className="flex items-center justify-between gap-3 xl:justify-start">
                             <p className="text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Status</p>
-                            <span className={cn('inline-flex min-w-[78px] justify-center rounded-full border px-3 py-1.5 text-xs font-semibold', creatorApprovalStatusStyles[creator.approvalStatus])}>
-                              {approvalStatusLabel(creator.approvalStatus)}
+                            <span className={cn('inline-flex min-w-[78px] justify-center rounded-full border px-3 py-1.5 text-xs font-semibold', statusStyle)}>
+                              {statusText}
                             </span>
                           </div>
 
@@ -259,20 +337,17 @@ export default function GovernanceAdmin() {
                             <p className="text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Action</p>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                                <Button variant="ghost" size="icon" className="size-8 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700" disabled={isActing}>
                                   <MoreHorizontal className="size-4" />
-                                  <span className="sr-only">Open approval actions for {creator.name}</span>
+                                  <span className="sr-only">Actions for {displayName}</span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-36">
-                                <DropdownMenuItem asChild>
-                                  <Link href={`/creators/${creator.id}`}>View profile</Link>
-                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => approveCreator(creator.id)} className="text-green-700 focus:text-green-700">
+                                <DropdownMenuItem onClick={() => void approveRealCreator(applicant.userId)} className="text-green-700 focus:text-green-700">
                                   Approve
                                 </DropdownMenuItem>
-                                <DropdownMenuItem variant="destructive" onClick={() => rejectCreator(creator.id)}>
+                                <DropdownMenuItem variant="destructive" onClick={() => void rejectRealCreator(applicant.userId)}>
                                   Reject
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
