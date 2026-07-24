@@ -97,15 +97,12 @@ type RealCreatorApplication = {
   email: string | null;
   platform: string;
   socialHandle: string;
-  followerCount: number;
+  followerCount: number | null;
   contentCategories: string[];
   university: string | null;
   faculty: string | null;
-  language: string | null;
-  province: string | null;
-  country: string | null;
   verificationStatus: string;
-  createdAt: string;
+  createdAt: string | null;
 };
 
 export default function GovernanceAdmin() {
@@ -121,10 +118,11 @@ export default function GovernanceAdmin() {
 
   const fetchRealApplicants = async () => {
     if (!supabase) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('creator_profiles')
-      .select('user_id, creator_name, platform, social_handle, follower_count, content_categories, university, faculty, language, province, country, verification_status, created_at')
+      .select('user_id, creator_name, platform, social_handle, follower_count, content_categories, university, faculty, verification_status, created_at')
       .order('created_at', { ascending: false });
+    if (error) { console.error('fetchRealApplicants:', error.message); return; }
     if (!data) return;
     const userIds = data.map(row => row.user_id as string);
     const { data: users } = await supabase
@@ -138,15 +136,12 @@ export default function GovernanceAdmin() {
       email: emailMap[row.user_id as string] ?? null,
       platform: row.platform as string,
       socialHandle: row.social_handle as string,
-      followerCount: row.follower_count as number,
-      contentCategories: (row.content_categories as string[]) ?? [],
+      followerCount: (row.follower_count as number | null) ?? null,
+      contentCategories: (row.content_categories as string[] | null) ?? [],
       university: row.university as string | null,
       faculty: row.faculty as string | null,
-      language: row.language as string | null,
-      province: row.province as string | null,
-      country: row.country as string | null,
-      verificationStatus: row.verification_status as string,
-      createdAt: row.created_at as string,
+      verificationStatus: (row.verification_status as string) ?? 'pending_review',
+      createdAt: row.created_at as string | null,
     })));
   };
 
@@ -317,13 +312,13 @@ export default function GovernanceAdmin() {
 
                           <div>
                             <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Applied</p>
-                            <p className="text-sm font-medium text-gray-500">{new Date(applicant.createdAt).toLocaleDateString()}</p>
+                            <p className="text-sm font-medium text-gray-500">{applicant.createdAt ? new Date(applicant.createdAt).toLocaleDateString() : '—'}</p>
                           </div>
 
                           <div>
                             <p className="mb-1 text-[11px] font-semibold uppercase text-muted-foreground xl:hidden">Categories</p>
                             <p className="text-sm font-medium text-gray-500 truncate">{applicant.contentCategories.slice(0, 2).join(', ') || '—'}</p>
-                            <p className="mt-0.5 text-xs text-muted-foreground">{applicant.followerCount.toLocaleString()} followers</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{(applicant.followerCount ?? 0).toLocaleString()} followers</p>
                           </div>
 
                           <div className="flex items-center justify-between gap-3 xl:justify-start">
