@@ -366,10 +366,14 @@ function CreatorCampaignBrief({
                   <BriefDetail label="Content direction" value={campaign.contentType} />
                   <BriefDetail label="Platforms" value={campaign.targetPlatforms.join(', ')} />
                   <BriefDetail label="Deadline" value={new Date(campaign.endDate).toLocaleDateString()} />
+                  <BriefDetail label="CTA" value={campaign.cta || 'Use the campaign call to action provided by the manager.'} />
                   <BriefDetail label="Hashtags" value={campaign.hashtags?.join(' ') || 'Campaign hashtags will be confirmed by the manager.'} />
                   <BriefDetail label="Mentions" value={campaign.mentions?.join(' ') || 'Brand mentions will be confirmed by the manager.'} />
-                  <BriefDetail label="CTA" value={campaign.cta || 'Use the campaign call to action provided by the manager.'} />
-                  <BriefDetail label="Poster images" value={campaign.posterImages?.length ? `${campaign.posterImages.length} reference images available` : 'No poster images attached yet.'} />
+                  <BriefDetail
+                    className="md:col-span-2"
+                    label="Poster images"
+                    value={campaign.posterImages?.length ? `${campaign.posterImages.length} reference images available` : 'No poster images attached yet.'}
+                  />
                 </div>
               </div>
 
@@ -475,9 +479,9 @@ function HeroMetric({ label, value }: { label: string; value: string | number })
   );
 }
 
-function BriefDetail({ label, value }: { label: string; value: string }) {
+function BriefDetail({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div className="bg-white p-4">
+    <div className={cn('bg-white p-4', className)}>
       <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
       <p className="mt-2 text-sm leading-6 text-foreground">{value}</p>
     </div>
