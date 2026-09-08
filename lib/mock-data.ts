@@ -28,6 +28,7 @@ export interface Creator {
   badge?: 'Bronze1' | 'Bronze2' | 'Bronze3' | 'Silver1' | 'Silver2' | 'Gold' | 'TopPerformer' | CreatorRank;
   reputationScore: number;
   completedEngagements: number;
+  totalEngagements: number;
   contentQualityScore: number;
   approvalRate: number;
   evaluations: CreatorEvaluation[];
@@ -147,6 +148,7 @@ export const creators: Creator[] = [
     badge: 'Silver1',
     reputationScore: 82,
     completedEngagements: 2,
+    totalEngagements: 3,
     contentQualityScore: 4.4,
     approvalRate: 92,
     joinedDate: '2023-08-15',
@@ -186,6 +188,7 @@ export const creators: Creator[] = [
     badge: 'Silver1',
     reputationScore: 76,
     completedEngagements: 1,
+    totalEngagements: 2,
     contentQualityScore: 4.1,
     approvalRate: 88,
     joinedDate: '2024-05-20',
@@ -213,6 +216,7 @@ export const creators: Creator[] = [
     badge: 'TopPerformer',
     reputationScore: 95,
     completedEngagements: 5,
+    totalEngagements: 6,
     contentQualityScore: 4.8,
     approvalRate: 98,
     joinedDate: '2022-11-05',
@@ -253,6 +257,7 @@ export const creators: Creator[] = [
     badge: 'Gold',
     reputationScore: 89,
     completedEngagements: 6,
+    totalEngagements: 7,
     contentQualityScore: 4.6,
     approvalRate: 96,
     joinedDate: '2023-03-12',

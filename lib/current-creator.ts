@@ -56,6 +56,7 @@ export function buildCurrentCreator({
     engagementHistory: [],
     reputationScore: 0,
     completedEngagements: 0,
+    totalEngagements: 0,
     contentQualityScore: 0,
     approvalRate: 0,
     evaluations: [],

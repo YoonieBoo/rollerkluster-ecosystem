@@ -97,9 +97,11 @@ useEffect(() => {
   async function loadSignedUpCreators() {
     if (!supabase) return;
 
-    const [{ data, error }, { data: userData }] = await Promise.all([
+    const [{ data, error }, { data: userData }, { data: engagementData }, { data: submissionData }] = await Promise.all([
       supabase.from('creator_profiles').select('*').eq('onboarding_completed', true),
       supabase.from('users').select('id, avatar_url').eq('role', 'creator'),
+      supabase.from('engagements').select('creator_id, status'),
+      supabase.from('submissions').select('creator_ref, status'),
     ]);
 
     if (error) {
@@ -109,7 +111,33 @@ useEffect(() => {
 
     const avatarMap = new Map((userData ?? []).map((u: { id: string; avatar_url: string | null }) => [u.id, u.avatar_url]));
 
-    const mappedCreators: Creator[] = (data ?? []).map((profile) => ({
+    // completedEngagements/approvalRate used to be hardcoded to 0 regardless
+    // of real activity — compute them from the same engagements/submissions
+    // status data used elsewhere in the app.
+    const statsById = new Map<string, { completed: number; total: number; approved: number; reviewed: number }>();
+    const getStats = (id: string) => {
+      let stats = statsById.get(id);
+      if (!stats) {
+        stats = { completed: 0, total: 0, approved: 0, reviewed: 0 };
+        statsById.set(id, stats);
+      }
+      return stats;
+    };
+    for (const row of (engagementData ?? []) as { creator_id: string; status: string }[]) {
+      const stats = getStats(row.creator_id);
+      stats.total += 1;
+      if (row.status === 'completed') stats.completed += 1;
+    }
+    for (const row of (submissionData ?? []) as { creator_ref: string; status: string }[]) {
+      if (row.status !== 'approved' && row.status !== 'rejected') continue;
+      const stats = getStats(row.creator_ref);
+      stats.reviewed += 1;
+      if (row.status === 'approved') stats.approved += 1;
+    }
+
+    const mappedCreators: Creator[] = (data ?? []).map((profile) => {
+      const stats = statsById.get(profile.user_id);
+      return {
       id: profile.user_id,
       name: profile.creator_name || profile.social_handle || 'Creator',
       bio: profile.bio || 'Campus creator building a verified RollerKluster profile.',
@@ -134,12 +162,14 @@ useEffect(() => {
       trainingCompleted: [],
       engagementHistory: [],
       reputationScore: profile.follower_count ? Math.min(100, Math.round(profile.follower_count / 5000)) : 0,
-      completedEngagements: 0,
+      completedEngagements: stats?.completed ?? 0,
+      totalEngagements: stats?.total ?? 0,
       contentQualityScore: 0,
-      approvalRate: 0,
+      approvalRate: stats && stats.reviewed > 0 ? Math.round((stats.approved / stats.reviewed) * 100) : 0,
       evaluations: [],
       joinedDate: profile.created_at ?? new Date().toISOString(),
-    }));
+      };
+    });
 
     setSupabaseCreators(mappedCreators);
   }
@@ -904,7 +934,10 @@ function CreatorPortfolioOverlay({
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <OverlayStat label="Impressions" value={formatFollowers(monthlyPerformance.totalImpressions)} />
               <OverlayStat label="Avg. Engagement" value={`${monthlyPerformance.averageEngagementRate}%`} />
-              <OverlayStat label="Completion Rate" value={`${creator.completedEngagements ? 92 : 0}%`} />
+              <OverlayStat
+                label="Completion Rate"
+                value={`${creator.totalEngagements > 0 ? Math.round((creator.completedEngagements / creator.totalEngagements) * 100) : 0}%`}
+              />
             </div>
           </section>
         </main>

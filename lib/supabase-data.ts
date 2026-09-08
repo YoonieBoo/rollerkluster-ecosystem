@@ -178,10 +178,43 @@ export async function insertCampaign(campaign: Campaign, brandOwnerId: string) {
   return mapCampaignFromRow(row[0]);
 }
 
+type CreatorStats = { completed: number; total: number; approved: number; reviewed: number };
+
+// completedEngagements and approvalRate used to be hardcoded (always 0, or a
+// binary 90/0 based on verification_status) rather than reflecting any real
+// activity. Both have real source data — engagements.status and
+// submissions.status — so compute them for real instead.
+function buildCreatorStats(engagementRows: EngagementRow[], submissionRows: CreatorSubmissionRow[]) {
+  const statsById = new Map<string, CreatorStats>();
+  const get = (id: string) => {
+    let stats = statsById.get(id);
+    if (!stats) {
+      stats = { completed: 0, total: 0, approved: 0, reviewed: 0 };
+      statsById.set(id, stats);
+    }
+    return stats;
+  };
+
+  for (const row of engagementRows) {
+    const stats = get(row.creator_id);
+    stats.total += 1;
+    if (row.status === 'completed') stats.completed += 1;
+  }
+
+  for (const row of submissionRows) {
+    if (row.status !== 'approved' && row.status !== 'rejected') continue;
+    const stats = get(row.creator_ref);
+    stats.reviewed += 1;
+    if (row.status === 'approved') stats.approved += 1;
+  }
+
+  return statsById;
+}
+
 export async function fetchSignedUpCreators() {
   if (!supabase) return [];
 
-  const [{ data: profileRows, error: profileError }, { data: userRows, error: usersError }] = await Promise.all([
+  const [{ data: profileRows, error: profileError }, { data: userRows, error: usersError }, engagementRows, submissionRows] = await Promise.all([
     supabase
       .from('creator_profiles')
       .select('user_id, creator_name, university, faculty, bio, content_categories, is_scholarship_student, platform, social_handle, social_profile_url, follower_count, engagement_rate, verification_status, creator_rank, onboarding_completed, created_at')
@@ -191,6 +224,8 @@ export async function fetchSignedUpCreators() {
       .from('users')
       .select('id, email, full_name, avatar_url, role, created_at')
       .eq('role', 'creator'),
+    supabaseRequest<EngagementRow[]>('/rest/v1/engagements?select=creator_id,status').catch(() => []),
+    supabaseRequest<CreatorSubmissionRow[]>('/rest/v1/submissions?select=creator_ref,status').catch(() => []),
   ]);
   if (profileError) {
     console.error('CREATOR DIRECTORY LOAD FAILED', profileError);
@@ -199,14 +234,18 @@ export async function fetchSignedUpCreators() {
     console.error('CREATOR DIRECTORY USERS LOAD FAILED', usersError);
   }
 
+  const statsById = buildCreatorStats(engagementRows, submissionRows);
+
   const profiles = (profileRows ?? []) as CreatorProfileDirectoryRow[];
   const users = (userRows ?? []) as PlatformUserDirectoryRow[];
   const usersById = new Map((userRows ?? []).map((user) => [(user as PlatformUserDirectoryRow).id, user as PlatformUserDirectoryRow]));
-  const profiledCreators = profiles.map(profile => mapCreatorProfileToCreator(profile, usersById.get(profile.user_id)));
+  const profiledCreators = profiles.map(profile =>
+    mapCreatorProfileToCreator(profile, usersById.get(profile.user_id), statsById.get(profile.user_id))
+  );
   const profiledCreatorIds = new Set(profiledCreators.map(creator => creator.id));
   const usersWithoutProfiles = users
     .filter(user => !profiledCreatorIds.has(user.id))
-    .map(mapUserToSignedUpCreator);
+    .map(user => mapUserToSignedUpCreator(user, statsById.get(user.id)));
 
   return [...profiledCreators, ...usersWithoutProfiles];
 }
@@ -361,7 +400,11 @@ function mapCampaignFromRow(row: CampaignRow, brief?: BriefRow, criteria?: Accep
   };
 }
 
-function mapCreatorProfileToCreator(profile: CreatorProfileDirectoryRow, user?: PlatformUserDirectoryRow): Creator {
+function mapCreatorProfileToCreator(
+  profile: CreatorProfileDirectoryRow,
+  user?: PlatformUserDirectoryRow,
+  stats?: CreatorStats
+): Creator {
   const handle = normalizeHandle(profile.social_handle);
   const platform = normalizeCreatorPlatform(profile.platform);
   const followers = profile.follower_count ?? 0;
@@ -395,15 +438,19 @@ function mapCreatorProfileToCreator(profile: CreatorProfileDirectoryRow, user?: 
     engagementHistory: [],
     badge: badgeFromCreatorRank(profile.creator_rank),
     reputationScore: score,
-    completedEngagements: 0,
+    completedEngagements: stats?.completed ?? 0,
+    totalEngagements: stats?.total ?? 0,
+    // No real per-content quality signal exists yet (submissions.cpi_score
+    // and engagement_rate are unpopulated) — keeping this as a neutral
+    // placeholder rather than inventing a formula with no real data behind it.
     contentQualityScore: profile.verification_status === 'verified' ? 4.2 : 3.5,
-    approvalRate: profile.verification_status === 'verified' ? 90 : 0,
+    approvalRate: stats && stats.reviewed > 0 ? Math.round((stats.approved / stats.reviewed) * 100) : 0,
     evaluations: [],
     joinedDate: dateOnly(profile.created_at) ?? new Date().toISOString().slice(0, 10),
   };
 }
 
-function mapUserToSignedUpCreator(user: PlatformUserDirectoryRow): Creator {
+function mapUserToSignedUpCreator(user: PlatformUserDirectoryRow, stats?: CreatorStats): Creator {
   const handle = normalizeHandle((user.email ?? user.full_name ?? 'creator').split('@')[0]);
   const displayName = user.full_name || user.email || 'Signed-up creator';
 
@@ -431,9 +478,10 @@ function mapUserToSignedUpCreator(user: PlatformUserDirectoryRow): Creator {
     engagementHistory: [],
     badge: 'Bronze1',
     reputationScore: 35,
-    completedEngagements: 0,
+    completedEngagements: stats?.completed ?? 0,
+    totalEngagements: stats?.total ?? 0,
     contentQualityScore: 3.5,
-    approvalRate: 0,
+    approvalRate: stats && stats.reviewed > 0 ? Math.round((stats.approved / stats.reviewed) * 100) : 0,
     evaluations: [],
     joinedDate: dateOnly(user.created_at) ?? new Date().toISOString().slice(0, 10),
   };
