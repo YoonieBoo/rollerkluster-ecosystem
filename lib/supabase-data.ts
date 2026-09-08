@@ -67,6 +67,27 @@ type EngagementRow = {
   created_at: string | null;
 };
 
+type BriefRow = {
+  id: string;
+  campaign_id: string;
+  objective: string | null;
+  target_audience: string | null;
+  content_direction: string | null;
+  platforms: string[] | null;
+  poster_image_urls: string[] | null;
+  raw_brief: string | null;
+  updated_at: string | null;
+};
+
+type AcceptanceCriteriaRow = {
+  campaign_id: string;
+  key_messages: string[] | null;
+  brand_rules_do: string[] | null;
+  hashtags: string[] | null;
+  mentions: string[] | null;
+  cta: string | null;
+};
+
 type PlatformUserDirectoryRow = {
   id: string;
   email: string | null;
@@ -93,10 +114,51 @@ export async function fetchCreatorSubmissions() {
   return rows.map(mapSubmissionFromRow);
 }
 
+// Campaign briefs are authored in the operations app (RollerKluster) and
+// stored in the shared `briefs` / `acceptance_criteria` tables — this app
+// must read the real thing rather than keeping its own separate copy of
+// brief content, so the two apps can never show a creator something
+// different from what a manager actually wrote.
+function getRawBriefStatus(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { status?: string };
+    return parsed.status ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchCampaigns(brandOwnerId?: string) {
   const ownerFilter = brandOwnerId ? `&brand_owner_id=eq.${encodeURIComponent(brandOwnerId)}` : '';
   const rows = await supabaseRequest<CampaignRow[]>(`/rest/v1/campaigns?select=*&order=created_at.desc${ownerFilter}`);
-  return rows.map(mapCampaignFromRow);
+
+  if (rows.length === 0) return [];
+
+  const idFilter = `in.(${rows.map((r) => r.id).join(',')})`;
+  const [briefRows, criteriaRows] = await Promise.all([
+    supabaseRequest<BriefRow[]>(
+      `/rest/v1/briefs?select=id,campaign_id,objective,target_audience,content_direction,platforms,poster_image_urls,raw_brief,updated_at&campaign_id=${idFilter}&order=updated_at.desc`
+    ).catch(() => []),
+    supabaseRequest<AcceptanceCriteriaRow[]>(
+      `/rest/v1/acceptance_criteria?select=campaign_id,key_messages,brand_rules_do,hashtags,mentions,cta&campaign_id=${idFilter}`
+    ).catch(() => []),
+  ]);
+
+  // Keep only the latest brief per campaign (a campaign can have more than
+  // one row if it was edited before RollerKluster's update-vs-insert lookup
+  // found the existing one) — already ordered by updated_at desc above.
+  const briefByCampaignId = new Map<string, BriefRow>();
+  for (const brief of briefRows) {
+    if (!briefByCampaignId.has(brief.campaign_id)) {
+      briefByCampaignId.set(brief.campaign_id, brief);
+    }
+  }
+  const criteriaByCampaignId = new Map(criteriaRows.map((c) => [c.campaign_id, c] as const));
+
+  return rows.map((row) =>
+    mapCampaignFromRow(row, briefByCampaignId.get(row.id), criteriaByCampaignId.get(row.id))
+  );
 }
 
 export async function insertCampaign(campaign: Campaign, brandOwnerId: string) {
@@ -230,22 +292,43 @@ function mapSubmissionFromRow(row: CreatorSubmissionRow): Submission {
   };
 }
 
-function mapCampaignFromRow(row: CampaignRow): Campaign {
+function mapCampaignFromRow(row: CampaignRow, brief?: BriefRow, criteria?: AcceptanceCriteriaRow): Campaign {
+  // Only trust the brief's real content once a manager has actually
+  // published it (see RollerKluster's Publish Brief action) — a draft may
+  // be half-written, so creators should keep seeing the generic fallback
+  // text until it's finished, same as before this brief was connected.
+  const isPublished = brief ? getRawBriefStatus(brief.raw_brief) === 'published' : false;
+
+  const requirements = [
+    ...(criteria?.key_messages ?? []),
+    ...(criteria?.brand_rules_do ?? []),
+  ].filter(Boolean);
+
   return {
     id: row.id,
     brandOwnerId: row.brand_owner_id ?? undefined,
     title: row.name,
-    description: `${row.client_name} campaign brief`,
+    description:
+      (isPublished && brief?.objective) ||
+      (isPublished && brief?.target_audience && `${brief.objective ?? ''} ${brief.target_audience}`.trim()) ||
+      `${row.client_name} campaign brief`,
     brand: row.client_name,
     budget: 0,
     startDate: dateOnly(row.campaign_start_date ?? row.created_at) ?? new Date().toISOString().slice(0, 10),
     endDate: dateOnly(row.campaign_end_date ?? row.created_at) ?? new Date().toISOString().slice(0, 10),
     targetNiches: ['Creator Campus'],
-    targetPlatforms: ['Instagram', 'TikTok', 'Facebook'],
+    targetPlatforms:
+      (isPublished && brief?.platforms?.length ? brief.platforms : undefined) ?? ['Instagram', 'TikTok', 'Facebook'],
     minFollowers: 0,
-    contentType: 'Creator content',
-    goals: ['Create content according to the campaign brief.'],
-    requirements: ['Submit a published content link for review.'],
+    contentType: (isPublished && brief?.content_direction) || 'Creator content',
+    goals: (isPublished && brief?.objective ? [brief.objective] : undefined) ?? [
+      'Create content according to the campaign brief.',
+    ],
+    requirements: requirements.length > 0 ? requirements : ['Submit a published content link for review.'],
+    hashtags: isPublished ? criteria?.hashtags ?? undefined : undefined,
+    mentions: isPublished ? criteria?.mentions ?? undefined : undefined,
+    cta: isPublished ? criteria?.cta ?? undefined : undefined,
+    posterImages: isPublished ? brief?.poster_image_urls ?? undefined : undefined,
     status: mapCampaignStatus(row.status),
     createdAt: dateOnly(row.created_at) ?? new Date().toISOString().slice(0, 10),
   };
