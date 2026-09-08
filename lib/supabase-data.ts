@@ -292,6 +292,26 @@ function mapSubmissionFromRow(row: CreatorSubmissionRow): Submission {
   };
 }
 
+// RollerKluster's array-ish columns aren't consistently stored as real
+// Postgres arrays — e.g. key_messages has come back as a JSON-stringified
+// string ('["a","b"]') rather than a native array on some rows, while
+// brand_rules_do/hashtags/mentions on the same row were real arrays.
+// Spreading a string with `...` iterates it character-by-character, which
+// is exactly what produced garbled single-letter "requirements" — so every
+// array-typed field read from these tables goes through this first.
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string' && v.length > 0);
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return toStringArray(parsed);
+    } catch {
+      return [value];
+    }
+  }
+  return [];
+}
+
 function mapCampaignFromRow(row: CampaignRow, brief?: BriefRow, criteria?: AcceptanceCriteriaRow): Campaign {
   // Only trust the brief's real content once a manager has actually
   // published it (see RollerKluster's Publish Brief action) — a draft may
@@ -300,9 +320,13 @@ function mapCampaignFromRow(row: CampaignRow, brief?: BriefRow, criteria?: Accep
   const isPublished = brief ? getRawBriefStatus(brief.raw_brief) === 'published' : false;
 
   const requirements = [
-    ...(criteria?.key_messages ?? []),
-    ...(criteria?.brand_rules_do ?? []),
-  ].filter(Boolean);
+    ...toStringArray(criteria?.key_messages),
+    ...toStringArray(criteria?.brand_rules_do),
+  ];
+  const platforms = toStringArray(brief?.platforms);
+  const posterImages = toStringArray(brief?.poster_image_urls);
+  const hashtags = toStringArray(criteria?.hashtags);
+  const mentions = toStringArray(criteria?.mentions);
 
   return {
     id: row.id,
@@ -317,18 +341,17 @@ function mapCampaignFromRow(row: CampaignRow, brief?: BriefRow, criteria?: Accep
     startDate: dateOnly(row.campaign_start_date ?? row.created_at) ?? new Date().toISOString().slice(0, 10),
     endDate: dateOnly(row.campaign_end_date ?? row.created_at) ?? new Date().toISOString().slice(0, 10),
     targetNiches: ['Creator Campus'],
-    targetPlatforms:
-      (isPublished && brief?.platforms?.length ? brief.platforms : undefined) ?? ['Instagram', 'TikTok', 'Facebook'],
+    targetPlatforms: (isPublished && platforms.length ? platforms : undefined) ?? ['Instagram', 'TikTok', 'Facebook'],
     minFollowers: 0,
     contentType: (isPublished && brief?.content_direction) || 'Creator content',
     goals: (isPublished && brief?.objective ? [brief.objective] : undefined) ?? [
       'Create content according to the campaign brief.',
     ],
-    requirements: requirements.length > 0 ? requirements : ['Submit a published content link for review.'],
-    hashtags: isPublished ? criteria?.hashtags ?? undefined : undefined,
-    mentions: isPublished ? criteria?.mentions ?? undefined : undefined,
+    requirements: isPublished && requirements.length > 0 ? requirements : ['Submit a published content link for review.'],
+    hashtags: isPublished && hashtags.length > 0 ? hashtags : undefined,
+    mentions: isPublished && mentions.length > 0 ? mentions : undefined,
     cta: isPublished ? criteria?.cta ?? undefined : undefined,
-    posterImages: isPublished ? brief?.poster_image_urls ?? undefined : undefined,
+    posterImages: isPublished && posterImages.length > 0 ? posterImages : undefined,
     status: mapCampaignStatus(row.status),
     createdAt: dateOnly(row.created_at) ?? new Date().toISOString().slice(0, 10),
   };
