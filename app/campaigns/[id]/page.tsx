@@ -361,8 +361,12 @@ function CreatorCampaignBrief({
                   <h2 className="section-heading">Campaign Brief</h2>
                 </div>
                 <div className="grid gap-px bg-border md:grid-cols-2">
-                  <BriefDetail label="Campaign goal" value={campaign.goals.join(' ')} />
-                  <BriefDetail label="Target audience" value={campaign.targetAudience || 'Not set yet.'} />
+                  {/* Campaign goal is already shown as the intro paragraph above — not repeated here. */}
+                  <BriefDetail
+                    className="md:col-span-2"
+                    label="Target audience"
+                    value={campaign.targetAudience || 'Not set yet.'}
+                  />
                   <BriefDetail label="Content direction" value={campaign.contentType} />
                   <BriefDetail label="Platforms" value={campaign.targetPlatforms.join(', ')} />
                   <BriefDetail label="Deadline" value={new Date(campaign.endDate).toLocaleDateString()} />
