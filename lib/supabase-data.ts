@@ -83,6 +83,7 @@ type AcceptanceCriteriaRow = {
   campaign_id: string;
   key_messages: string[] | null;
   brand_rules_do: string[] | null;
+  brand_rules_dont: string[] | null;
   hashtags: string[] | null;
   mentions: string[] | null;
   cta: string | null;
@@ -141,7 +142,7 @@ export async function fetchCampaigns(brandOwnerId?: string) {
       `/rest/v1/briefs?select=id,campaign_id,objective,target_audience,content_direction,platforms,poster_image_urls,raw_brief,updated_at&campaign_id=${idFilter}&order=updated_at.desc`
     ).catch(() => []),
     supabaseRequest<AcceptanceCriteriaRow[]>(
-      `/rest/v1/acceptance_criteria?select=campaign_id,key_messages,brand_rules_do,hashtags,mentions,cta&campaign_id=${idFilter}`
+      `/rest/v1/acceptance_criteria?select=campaign_id,key_messages,brand_rules_do,brand_rules_dont,hashtags,mentions,cta&campaign_id=${idFilter}`
     ).catch(() => []),
   ]);
 
@@ -319,14 +320,13 @@ function mapCampaignFromRow(row: CampaignRow, brief?: BriefRow, criteria?: Accep
   // text until it's finished, same as before this brief was connected.
   const isPublished = brief ? getRawBriefStatus(brief.raw_brief) === 'published' : false;
 
-  const requirements = [
-    ...toStringArray(criteria?.key_messages),
-    ...toStringArray(criteria?.brand_rules_do),
-  ];
   const platforms = toStringArray(brief?.platforms);
   const posterImages = toStringArray(brief?.poster_image_urls);
   const hashtags = toStringArray(criteria?.hashtags);
   const mentions = toStringArray(criteria?.mentions);
+  const keyMessages = toStringArray(criteria?.key_messages);
+  const brandRulesDo = toStringArray(criteria?.brand_rules_do);
+  const brandRulesDont = toStringArray(criteria?.brand_rules_dont);
 
   return {
     id: row.id,
@@ -347,7 +347,11 @@ function mapCampaignFromRow(row: CampaignRow, brief?: BriefRow, criteria?: Accep
     goals: (isPublished && brief?.objective ? [brief.objective] : undefined) ?? [
       'Create content according to the campaign brief.',
     ],
-    requirements: isPublished && requirements.length > 0 ? requirements : ['Submit a published content link for review.'],
+    requirements: ['Submit a published content link for review.'],
+    targetAudience: isPublished ? brief?.target_audience ?? undefined : undefined,
+    keyMessages: isPublished && keyMessages.length > 0 ? keyMessages : undefined,
+    brandRulesDo: isPublished && brandRulesDo.length > 0 ? brandRulesDo : undefined,
+    brandRulesDont: isPublished && brandRulesDont.length > 0 ? brandRulesDont : undefined,
     hashtags: isPublished && hashtags.length > 0 ? hashtags : undefined,
     mentions: isPublished && mentions.length > 0 ? mentions : undefined,
     cta: isPublished ? criteria?.cta ?? undefined : undefined,

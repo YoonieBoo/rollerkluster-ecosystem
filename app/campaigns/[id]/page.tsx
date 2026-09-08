@@ -362,6 +362,7 @@ function CreatorCampaignBrief({
                 </div>
                 <div className="grid gap-px bg-border md:grid-cols-2">
                   <BriefDetail label="Campaign goal" value={campaign.goals.join(' ')} />
+                  <BriefDetail label="Target audience" value={campaign.targetAudience || 'Not set yet.'} />
                   <BriefDetail label="Content direction" value={campaign.contentType} />
                   <BriefDetail label="Platforms" value={campaign.targetPlatforms.join(', ')} />
                   <BriefDetail label="Deadline" value={new Date(campaign.endDate).toLocaleDateString()} />
@@ -400,6 +401,18 @@ function CreatorCampaignBrief({
 
             <aside className="space-y-6">
               <BriefPanel title="Requirements" items={campaign.requirements} />
+              <BriefPanel
+                title="Key Messages"
+                items={campaign.keyMessages?.length ? campaign.keyMessages : ['Not set yet.']}
+              />
+              <BriefPanel
+                title="Brand Rules — Do"
+                items={campaign.brandRulesDo?.length ? campaign.brandRulesDo : ['Not set yet.']}
+              />
+              <BriefPanel
+                title="Brand Rules — Don't"
+                items={campaign.brandRulesDont?.length ? campaign.brandRulesDont : ['Not set yet.']}
+              />
             </aside>
           </div>
         </div>

@@ -49,6 +49,10 @@ export interface Campaign {
   contentType: string;
   goals: string[];
   requirements: string[];
+  targetAudience?: string;
+  keyMessages?: string[];
+  brandRulesDo?: string[];
+  brandRulesDont?: string[];
   hashtags?: string[];
   mentions?: string[];
   cta?: string;
