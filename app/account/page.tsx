@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { calculateStartingRank, onboardingPlatforms, type OnboardingPlatform } from '@/lib/creator-onboarding';
 import { getSessionDisplayName } from '@/lib/current-creator';
+import { supabase } from '@/lib/supabase-client';
 
 export default function AccountPage() {
   const { activeRole, sessionEmail, sessionUser, updateAccountName } = useUiStore();
@@ -106,7 +107,7 @@ export default function AccountPage() {
 
 function CreatorProfileSetup() {
   const t = useT();
-  const { creatorProfile, sessionEmail, updateCreatorProfile } = useUiStore();
+  const { creatorProfile, sessionEmail, sessionUser, updateCreatorProfile } = useUiStore();
   const searchParams = useSearchParams();
   const requestedMode = searchParams.get('mode');
   const opensInEditMode = requestedMode === 'edit' || requestedMode === 'platforms';
@@ -275,9 +276,123 @@ function CreatorProfileSetup() {
               </div>
             </div>
           </Card>
+
+          {sessionUser && <ConnectLineCard userId={sessionUser.id} />}
         </div>
       </main>
     </div>
+  );
+}
+
+function generateLinkCode() {
+  // Short, easy to type back into a LINE chat by hand.
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+function ConnectLineCard({ userId }: { userId: string }) {
+  const [status, setStatus] = useState<'loading' | 'connected' | 'code' | 'none'>('loading');
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const addFriendUrl = process.env.NEXT_PUBLIC_LINE_OA_ADD_FRIEND_URL;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!supabase) return;
+      const { data } = await supabase
+        .from('creator_profiles')
+        .select('line_user_id, line_link_code')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data?.line_user_id) {
+        setStatus('connected');
+      } else if (data?.line_link_code) {
+        setLinkCode(data.line_link_code);
+        setStatus('code');
+      } else {
+        setStatus('none');
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const generateCode = async () => {
+    if (!supabase) return;
+    setError('');
+    setGenerating(true);
+    try {
+      const code = generateLinkCode();
+      const { error: updateError } = await supabase
+        .from('creator_profiles')
+        .update({ line_link_code: code })
+        .eq('user_id', userId);
+      if (updateError) throw updateError;
+      setLinkCode(code);
+      setStatus('code');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not generate a LINE code.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <Card className="mt-6 p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Get campaign invites on LINE</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Browser notifications only reach you if you've allowed them, which most people never do.
+            Connect LINE so campaign invites always find you.
+          </p>
+        </div>
+        {status === 'connected' && (
+          <Badge className="shrink-0 rounded-full bg-primary/10 text-primary hover:bg-blue-50">Connected</Badge>
+        )}
+      </div>
+
+      {status === 'loading' && <p className="mt-4 text-sm text-muted-foreground">Checking connection status…</p>}
+
+      {status === 'none' && (
+        <div className="mt-4">
+          <Button className="bg-primary text-white" disabled={generating} onClick={() => void generateCode()}>
+            {generating ? 'Generating…' : 'Get my LINE code'}
+          </Button>
+        </div>
+      )}
+
+      {status === 'code' && linkCode && (
+        <div className="mt-4 space-y-3">
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-foreground">
+            <li>
+              {addFriendUrl ? (
+                <a href={addFriendUrl} target="_blank" rel="noreferrer" className="font-semibold text-primary underline">
+                  Add us on LINE
+                </a>
+              ) : (
+                <span>Add our LINE Official Account as a friend (ask your campaign manager for the link).</span>
+              )}
+            </li>
+            <li>Send this code as a message in that chat:</li>
+          </ol>
+          <p className="w-fit rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-lg font-bold tracking-widest text-primary">
+            {linkCode}
+          </p>
+          <p className="text-xs text-muted-foreground">You'll be connected automatically once we receive it.</p>
+        </div>
+      )}
+
+      {status === 'connected' && (
+        <p className="mt-4 text-sm text-muted-foreground">Campaign invites will be sent to your LINE.</p>
+      )}
+
+      {error && <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
+    </Card>
   );
 }
 
