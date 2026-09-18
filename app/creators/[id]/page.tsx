@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Sidebar } from '@/components/sidebar';
 import { useApp } from '@/lib/app-context';
 import { useParams } from 'next/navigation';
@@ -17,6 +17,7 @@ import { RankBadge } from '@/components/rank-badge';
 import { getCreatorMonthlyPerformance } from '@/lib/creator-performance-source';
 import { useUiStore } from '@/lib/ui-store';
 import { buildCurrentCreator } from '@/lib/current-creator';
+import { supabase } from '@/lib/supabase-client';
 
 export default function CreatorProfile() {
   const { creators, engagements, campaigns, submissions } = useApp();
@@ -234,6 +235,8 @@ export default function CreatorProfile() {
 
               </section>
 
+              {isOwnProfile && sessionUser && <ConnectLineSection userId={sessionUser.id} />}
+
               <section className="panel overflow-hidden">
                 <div className="border-b border-border px-5 py-4">
                   <h2 className="section-heading">Campaign Activity</h2>
@@ -297,6 +300,119 @@ function ReadinessRow({ done, pending = false, label }: { done: boolean; pending
           : <XCircle className="size-4 shrink-0 text-rose-400" />}
       <span className="text-sm font-medium text-foreground">{label}</span>
     </div>
+  );
+}
+
+function generateLineLinkCode() {
+  // Short, easy to type back into a LINE chat by hand.
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+function ConnectLineSection({ userId }: { userId: string }) {
+  const [status, setStatus] = useState<'loading' | 'connected' | 'code' | 'none'>('loading');
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const addFriendUrl = process.env.NEXT_PUBLIC_LINE_OA_ADD_FRIEND_URL;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      if (!supabase) return;
+      const { data } = await supabase
+        .from('creator_profiles')
+        .select('line_user_id, line_link_code')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data?.line_user_id) {
+        setStatus('connected');
+      } else if (data?.line_link_code) {
+        setLinkCode(data.line_link_code);
+        setStatus('code');
+      } else {
+        setStatus('none');
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const generateCode = async () => {
+    if (!supabase) return;
+    setError('');
+    setGenerating(true);
+    try {
+      const code = generateLineLinkCode();
+      const { error: updateError } = await supabase
+        .from('creator_profiles')
+        .update({ line_link_code: code })
+        .eq('user_id', userId);
+      if (updateError) throw updateError;
+      setLinkCode(code);
+      setStatus('code');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not generate a LINE code.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <section className="panel overflow-hidden">
+      <div className="border-b border-border px-5 py-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="section-heading">Get campaign invites on LINE</h2>
+            <p className="section-subtitle">
+              Browser notifications only reach you if you've allowed them, which most people never do.
+              Connect LINE so campaign invites always find you.
+            </p>
+          </div>
+          {status === 'connected' && (
+            <Badge className="shrink-0 rounded-full bg-primary/10 text-primary hover:bg-blue-50">Connected</Badge>
+          )}
+        </div>
+      </div>
+      <div className="p-5">
+        {status === 'loading' && <p className="text-sm text-muted-foreground">Checking connection status…</p>}
+
+        {status === 'none' && (
+          <Button className="bg-primary text-white" disabled={generating} onClick={() => void generateCode()}>
+            {generating ? 'Generating…' : 'Get my LINE code'}
+          </Button>
+        )}
+
+        {status === 'code' && linkCode && (
+          <div className="space-y-3">
+            <ol className="list-decimal space-y-2 pl-5 text-sm text-foreground">
+              <li>
+                {addFriendUrl ? (
+                  <a href={addFriendUrl} target="_blank" rel="noreferrer" className="font-semibold text-primary underline">
+                    Add us on LINE
+                  </a>
+                ) : (
+                  <span>Add our LINE Official Account as a friend (ask your campaign manager for the link).</span>
+                )}
+              </li>
+              <li>Send this code as a message in that chat:</li>
+            </ol>
+            <p className="w-fit rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-lg font-bold tracking-widest text-primary">
+              {linkCode}
+            </p>
+            <p className="text-xs text-muted-foreground">You'll be connected automatically once we receive it.</p>
+          </div>
+        )}
+
+        {status === 'connected' && (
+          <p className="text-sm text-muted-foreground">Campaign invites will be sent to your LINE.</p>
+        )}
+
+        {error && <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
+      </div>
+    </section>
   );
 }
 
